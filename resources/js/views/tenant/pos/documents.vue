@@ -100,7 +100,7 @@
                             <button v-if="row.state_type_id != '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
                                     @click.prevent="clickVoided(row.id)"
                                     >Anular</button>
-                            <button v-if="row.has_purchase_coupon" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2" click.prevent="clickDownloadCoupon(row.id)" title="Descargar cupón">
+                            <button v-if="row.has_purchase_coupon" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2" @click.prevent="clickDownloadCoupon(row.id)" title="Descargar cupón">
                             <i class="fas fa-ticket-alt"></i>
                             </button>
                         </td>
