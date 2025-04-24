@@ -913,7 +913,8 @@
                     phone: customer.phone,
                     address: customer.address,
                     email: customer.email,
-                    merchant_registration: "000000"
+                    merchant_registration: "000000",
+                    municipality_id_fact: customer.city_id,
                 };
                 this.form.customer_id = customer.id
                 if (customer.type_person_id == 2) {
