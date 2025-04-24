@@ -238,10 +238,12 @@
                 window.open(`/${this.resource}/print/${this.form.id}/${format}`, '_blank');
             },
             clickSendEmail() {
-                this.loading=true
+                this.loading = true
                 this.$http.post(`/${this.resource}/email`, {
                     customer_email: this.form.customer_email,
-                    id: this.form.id
+                    id: this.form.id,
+                    format: this.activeName === 'first' ? 'a4' : 
+                           this.activeName === 'second' ? 'a5' : 'ticket'
                 })
                     .then(response => {
                         if (response.data.success) {
@@ -257,9 +259,8 @@
                             this.$message.error(error.response.data.message)
                         }
                     })
-                    .then(() => {
-                        this.loading=false
-
+                    .finally(() => {
+                        this.loading = false
                     })
             },
 
