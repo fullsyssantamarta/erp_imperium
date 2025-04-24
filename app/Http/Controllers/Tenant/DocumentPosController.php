@@ -662,15 +662,35 @@ class DocumentPosController extends Controller
             throw new Exception('Resolución no establecida en caja chica actual.');
         }
         $number = null;
-        $document = DocumentPos::select('id', 'number')
+        //verificar si existe un documento con el mismo número y serie
+        $config_pos = ConfigurationPos::first();
+        if ($config_pos && $config_pos->generated) {
+            // Verificar si ese número ya fue usado y enviado exitosamente
+            $existing_doc = DocumentPos::where('prefix', $config->prefix)
+                                     ->where('number', $config_pos->generated + 1)
+                                     ->first();
+            
+            if (!$existing_doc) {
+                // Si no existe documento con ese número, lo usamos
+                $number = $config_pos->generated + 1;
+            }
+        }
+    
+        // Si no se pudo usar el número de ConfigurationPos, buscamos el último documento
+        if (!$number) {
+            $document = DocumentPos::select('id', 'number')
                                 ->where('prefix', $config->prefix)
                                 ->orderBy('id', 'desc')
                                 ->first();
-        $number_by_documents = ($document) ? (int)$document->number + 1 : 1;
-        if($number_by_documents < $config['generated'])
-            $number = $config['generated'];
-        else
-            $number = ($document) ? (int)$document->number + 1 : 1;
+                                
+            $number_by_documents = ($document) ? (int)$document->number + 1 : 1;
+            
+            if($number_by_documents < $config['generated']) {
+                $number = $config['generated'];
+            } else {
+                $number = ($document) ? (int)$document->number + 1 : 1;
+            }
+        }
 //\Log::debug($config);
         $allowanceCharges = $inputs['allowance_charges'] ?? [];
         $total_discount = collect($allowanceCharges)->sum(function ($charge) {
