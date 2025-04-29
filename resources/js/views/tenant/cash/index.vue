@@ -49,7 +49,7 @@
                         <td class="text-center">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="showReportModal(row.id)">Reporte</button>
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickDownload(row.id, 'resumido')">Reporte Resumen</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickDownloadArqueo(row.id)">Arqueo</button>
+                            <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="showArqueoModal(row.id)">Arqueo</button>
 
                             <template v-if="row.state">
 
@@ -84,6 +84,22 @@
                 <el-button type="primary" @click="generateReport">Generar</el-button>
             </span>
         </el-dialog>
+
+        <!-- Modal para tipo de arqueo -->
+        <el-dialog title="Seleccionar Tipo de Arqueo" :visible.sync="showArqueoDialog" append-to-body>
+            <div class="row">
+                <div class="col-md-12">
+                    <el-select v-model="selectedArqueoType" placeholder="Seleccione tipo de llenado">
+                        <el-option label="Automatico" value="complete"></el-option>
+                        <el-option label="Manual" value="simple"></el-option>
+                    </el-select>
+                </div>
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="showArqueoDialog = false">Cancelar</el-button>
+                <el-button type="primary" @click="generateArqueo">Generar</el-button>
+            </span>
+        </el-dialog>
     </div>
 </template>
 
@@ -102,7 +118,9 @@
             return {
                 showDialog: false,
                 showReportDialog: false,
+                showArqueoDialog: false,
                 selectedReportType: 'all',
+                selectedArqueoType: 'complete',
                 selectedCashId: null,
                 open_cash: true,
                 resource: 'cash',
@@ -131,6 +149,14 @@
             generateReport() {
                 window.open(`/${this.resource}/report/${this.selectedCashId}/${this.selectedReportType}`, '_blank');
                 this.showReportDialog = false;
+            },
+            showArqueoModal(id) {
+                this.selectedCashId = id;
+                this.showArqueoDialog = true;
+            },
+            generateArqueo() {
+                window.open(`/${this.resource}/report-ticket/${this.selectedCashId}/${this.selectedArqueoType}`, '_blank');
+                this.showArqueoDialog = false;
             },
             clickDownload(id, only_head = '') {
                 window.open(`/${this.resource}/report/${id}/${only_head}`, '_blank');

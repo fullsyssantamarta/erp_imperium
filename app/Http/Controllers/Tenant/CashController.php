@@ -269,10 +269,10 @@ class CashController extends Controller
         return $pdf->stream($filename . '.pdf');
     }
 
-    public function report_ticket($cashId) {
+    public function report_ticket($cashId, $type = 'complete') {
         $cash = Cash::findOrFail($cashId);
         $company = Company::first();
-        $only_head = null;
+        $only_head = $type === 'simple' ? 'resumido' : null;
 
         // Se Calcula $cashEgress, similar al de la funcion que estaba.
         $cashEgress = $cash->cash_documents->sum(function ($cashDocument) {

@@ -258,7 +258,7 @@
             </tr>
         </table>
 
-        @if ($cash_documents->count())
+        @if($cash_documents->count())
             <div>
                 <h3>Totales por medio de pago</h3>
                 <table>
@@ -266,8 +266,11 @@
                         <tr>
                             <th>#</th>
                             <th>Medio de Pago</th>
-                            {{-- <th>Valor Transacción</th> --}}
-                            <th>Valor Escrito</th>
+                            @if($only_head !== 'resumido')
+                                <th>Valor Sistema</th>
+                            @else
+                            <th>Valor Manual</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -281,7 +284,11 @@
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
                                 <td>{{ $item->name }}</td>
-                                <td>${{ number_format($item->sum, 2, '.', ',') }}</td>
+                                @if($only_head !== 'resumido')
+                                    <td>${{ number_format($item->sum, 2, '.', ',') }}</td>
+                                @else
+                                <td style="border-bottom: 1px dotted #000;"></td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>
