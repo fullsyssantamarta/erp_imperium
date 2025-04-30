@@ -32,7 +32,7 @@
                             <td>{{row.date_of_payment}}</td>
                             <td>{{row.payment_method_type_description}}</td>
                             <td>{{row.reference}}</td>
-                            <td>{{row.total}}</td> 
+                            <td>{{formatNumber(row.total)}}</td> 
                         </tr>
                     </data-table>
 
@@ -59,8 +59,12 @@
         async created() {
         },
         methods: {
-
-
+            formatNumber(number) {
+                return number ? new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(number) : '0.00'
+            },
         }
     }
 </script>

@@ -111,7 +111,7 @@
                 }
             },
             create() {
-                this.titleDialog = (this.recordId)? 'Editar Caja chica':'Aperturar Caja chica'
+                this.titleDialog = (this.recordId)? 'Editar Caja':'Aperturar Caja'
                 if (this.recordId) {
                     this.$http.get(`/${this.resource}/record/${this.recordId}`)
                         .then(response => {
@@ -138,7 +138,7 @@
                     if(await this.openingCashCkeck())
                     {
                         this.$message({
-                            message: 'No puede crear caja chica, porfavor cierre caja chica para el usuario definido',
+                            message: 'No puede crear Caja, porfavor cierre Caja para el usuario definido',
                             type: 'warning',
                             duration: 5000
                         });

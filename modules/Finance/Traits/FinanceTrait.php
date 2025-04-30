@@ -59,7 +59,7 @@ trait FinanceTrait
             return [
                 'id' => 'cash',
                 'cash_id' => $cash->id,
-                'description' => ($cash->reference_number) ? "CAJA CHICA - {$cash->reference_number}" : "CAJA CHICA",
+                'description' => ($cash->reference_number) ? "Caja - {$cash->reference_number}" : "Caja",
             ];
 
         }else{
@@ -80,7 +80,7 @@ trait FinanceTrait
             return [
                 'id' => 'cash',
                 'cash_id' => $cash_create->id,
-                'description' => "CAJA CHICA"
+                'description' => "Caja"
             ];
 
         }
@@ -147,7 +147,7 @@ trait FinanceTrait
     public function getCollectionDestinationTypes(){
 
         return [
-            ['id'=> Cash::class, 'description' => 'CAJA CHICA'],
+            ['id'=> Cash::class, 'description' => 'Caja'],
             ['id'=> BankAccount::class, 'description' => 'CUENTA BANCARIA'],
         ];
     }
@@ -209,7 +209,7 @@ trait FinanceTrait
         return [
 
             'id' => 'cash',
-            'description' => "CAJA CHICA",
+            'description' => "Caja",
             'expense_payment' => number_format($expense_payment,2, ".", ""),
             // 'sale_note_payment' => number_format($sale_note_payment,2, ".", ""),
             'quotation_payment' => number_format($quotation_payment,2, ".", ""),

@@ -101,7 +101,7 @@
                                     <td class="celda">{{ $cost }}</td>
                                     <td class="celda">{{ $net_value }}</td>
                                     <td class="celda">{{ $utility }}</td>
-                                    <td class="celda">{{ $utility > 0 ? number_format(($utility * 100) / $net_value, 2) : 0 }}</td>
+                                    <td class="celda">{{ ($utility > 0 && $net_value > 0) ? number_format(($utility * 100) / $net_value, 2) : 0 }}</td>
                                     <td class="celda">{{ $total_tax_item }}</td>
                                     <td class="celda">{{ $discount }}</td>
                                     <td class="celda">{{ $total_item }}</td>
@@ -113,7 +113,7 @@
                                 <td class="celda">{{ number_format($total_cost, 2) }}</td>
                                 <td class="celda">{{ number_format($total_net_value, 2) }}</td>
                                 <td class="celda">{{ number_format($total_utility, 2) }}</td>
-                                <td class="celda">{{ $total_utility > 0 ? number_format(($total_utility * 100) / $total_net_value, 2) : 0 }}</td>
+                                <td class="celda">{{ ($total_utility > 0 && $total_net_value > 0) ? number_format(($total_utility * 100) / $total_net_value, 2) : 0 }}</td>
                                 <td class="celda">{{ number_format($total_tax, 2) }}</td>
                                 <td class="celda">{{ number_format($total_discount, 2) }}</td>
                                 <td class="celda">{{ number_format($total, 2) }}</td>

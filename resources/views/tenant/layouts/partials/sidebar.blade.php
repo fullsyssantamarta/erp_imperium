@@ -363,7 +363,7 @@
                                 </li>
                                 <li class="{{ ($path[0] === 'cash'  )?'nav-active':'' }}">
                                     <a class="nav-link" href="{{route('tenant.cash.index')}}">
-                                        Caja chica
+                                        Caja
                                     </a>
                                 </li>
                                 <li class="{{ ($path[0] === 'item-sets'  )?'nav-active':'' }}">

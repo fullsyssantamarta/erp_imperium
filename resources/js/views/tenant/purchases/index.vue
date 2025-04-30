@@ -91,8 +91,8 @@
 
                         <td class="text-center">{{ row.currency_type_id }}</td>
                         <!-- <td class="text-right">{{ row.total_exportation }}</td> -->
-                        <td v-if="columns.total_perception.visible" class="text-right">{{ row.total_perception ? row.total_perception : 0 }}</td>
-                        <td class="text-right">{{ row.total   }}</td>
+                        <td v-if="columns.total_perception.visible" class="text-right">{{ formatNumber(row.total_perception ? row.total_perception : 0) }}</td>
+                        <td class="text-right">{{ formatNumber(row.total) }}</td>
                         <td>
                             <a v-if="row.state_type_id != '11'" :href="`/${resource}/edit/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-info">Editar</a>
                             <a v-if="row.state_type_id != '11' && !['07', '08'].includes(String(row.document_type_id))" :href="`/${resource}/note/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-warning">Nota</a>
@@ -215,6 +215,12 @@
             },
              clickImport() {
                 this.showImportDialog = true
+            },
+            formatNumber(number) {
+                return number ? new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(number) : '0.00'
             },
         }
     }

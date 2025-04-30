@@ -659,7 +659,7 @@ class DocumentPosController extends Controller
                     ->first();
         $config =  $cash->resolution;
         if(!$config){
-            throw new Exception('Resolución no establecida en caja chica actual.');
+            throw new Exception('Resolución no establecida en Caja actual.');
         }
         $number = null;
         //verificar si existe un documento con el mismo número y serie

@@ -52,7 +52,8 @@ class ReportRemissionController extends Controller
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
         $records = $this->getRecords($request->all(), Remission::class)->get();
 
-        $pdf = PDF::loadView('report::co-remissions.report_pdf', compact("records", "company", "establishment"));
+        $pdf = PDF::loadView('report::co-remissions.report_pdf', compact("records", "company", "establishment"))
+                  ->setPaper('a4', 'landscape');
 
         $filename = 'Reporte_Remisiones_'.date('YmdHis');
 

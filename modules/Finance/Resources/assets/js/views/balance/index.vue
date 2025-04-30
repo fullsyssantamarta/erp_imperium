@@ -23,16 +23,16 @@
                         <tr slot-scope="{ index, row }">
                             <td>{{ index }}</td> 
                             <td>{{row.description}}</td>
-                            <td class="text-center">{{row.document_payment}}</td>
-                            <td class="text-center">{{row.remission_payment}}</td>
-                            <td class="text-center">{{row.document_pos_payment}}</td>
+                            <td class="text-center">{{formatNumber(row.document_payment)}}</td>
+                            <td class="text-center">{{formatNumber(row.remission_payment)}}</td>
+                            <td class="text-center">{{formatNumber(row.document_pos_payment)}}</td>
                             <!-- <td class="text-center">{{row.sale_note_payment}}</td> -->
-                            <td class="text-center">{{row.quotation_payment}}</td>
+                            <td class="text-center">{{formatNumber(row.quotation_payment)}}</td>
                             <!-- <td class="text-center">{{row.contract_payment}}</td> -->
-                            <td class="text-center">{{row.income_payment}}</td>
-                            <td class="text-center"> {{row.purchase_payment}}</td>
-                            <td class="text-center">{{row.expense_payment}}</td>
-                            <td class="text-center">{{row.balance}}</td> 
+                            <td class="text-center">{{formatNumber(row.income_payment)}}</td>
+                            <td class="text-center">{{formatNumber(row.purchase_payment)}}</td>
+                            <td class="text-center">{{formatNumber(row.expense_payment)}}</td>
+                            <td class="text-center">{{formatNumber(row.balance)}}</td> 
                         </tr>
                     </data-table>
                 </div>
@@ -57,8 +57,12 @@
         async created() {
         },
         methods: {
-
-
+            formatNumber(number) {
+                return number ? new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(number) : '0.00'
+            }
         }
     }
 </script>
