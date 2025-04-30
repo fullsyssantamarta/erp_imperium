@@ -170,17 +170,12 @@ class DocumentHelper
 //            \Log::debug(array_merge($item, $json_item));
 //\Log::debug($item);
 //\Log::debug($record_item);
-            $quantity = floatval((key_exists('quantity', $item)) ? $item['quantity'] : $item['invoiced_quantity']);
-        
-            // Si el documento viene de una remisión, la cantidad para el kardex será 0
-            $quantity_for_kardex = ($document->remission_id) ? 0 : $quantity;
-        
             $document->items()->create([
                 'document_id' => $document->id,
                 'item_id' => key_exists('item_id', $item) ? $item['item_id'] : $record_item->id,
                 'item' => array_merge($item, $json_item),
                 'unit_type_id' => (key_exists('item', $item)) ? $item['item']['unit_type_id'] : $record_item->unit_type_id,
-                'quantity' => $quantity_for_kardex, // Usamos la cantidad ajustada
+                'quantity' => floatval((key_exists('quantity', $item)) ? $item['quantity'] : $item['invoiced_quantity']),
                 'unit_price' => floatval(isset($item['price']) ? $item['price'] : $record_item->sale_unit_price),
                 'tax_id' => isset($item['tax_id']) ? $item['tax_id'] : $record_item->tax_id,
                 'tax' => Tax::find(isset($item['tax_id']) ? $item['tax_id'] : $record_item->tax_id),
@@ -190,7 +185,8 @@ class DocumentHelper
                 'total' => isset($item['total']) ? $item['total'] : (isset($item['subtotal']) ? $item['subtotal'] : $item['line_extension_amount']) + (isset($item['total_tax']) ? $item['total_tax'] : $item['price_amount'] - $item['line_extension_amount']),
                 'total_plastic_bag_taxes' => 0,
                 'warehouse_id' => null,
-                'from_remission' => (bool)$document->remission_id // Agregamos esta bandera
+                'from_remission' => $document->remission_id,// Agregamos esta bandera
+
             ]);
 //            \Log::debug("E");
 //\Log::debug("7");

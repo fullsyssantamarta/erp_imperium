@@ -10,7 +10,7 @@ use Modules\Factcolombia1\Models\Tenant\TypeUnit;
 
 class DocumentItem extends ModelTenant
 {
-    // protected $with = ['affectation_igv_type', 'system_isc_type', 'price_type'];
+    protected $appends = ['from_remission'];
     public $timestamps = false;
 
     protected $fillable = [
@@ -57,7 +57,7 @@ class DocumentItem extends ModelTenant
         'tax',
         'total_tax',
         'subtotal',
-        'discount',
+        'discount'
     ];
 
 
@@ -282,6 +282,11 @@ class DocumentItem extends ModelTenant
                             ->filterInvoiceDocument()
                             ->filterByEstablishment($establishment_id);
         });
+    }
+
+    public function getFromRemissionAttribute()
+    {
+        return !is_null($this->document) && !is_null($this->document->remission_id);
     }
 
 }

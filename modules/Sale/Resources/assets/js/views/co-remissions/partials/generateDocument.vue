@@ -110,7 +110,6 @@ export default {
         async assignDocument() {
             let q = this.record;
             this.document.remission_id = q.id,
-            // Agregar flag para items de remisión
             this.document.items = q.items.map(item => ({
                 ...item,
                 from_remission: true // Agregamos esta bandera

@@ -458,7 +458,7 @@ class Document extends ModelTenant
 
     public function remission()
     {
-        return $this->belongsTo(Remission::class);
+        return $this->belongsTo(Remission::class,'remission_id');
     }
 
     public function hotel()
