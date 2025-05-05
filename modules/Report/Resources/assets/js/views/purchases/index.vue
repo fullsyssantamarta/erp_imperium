@@ -34,7 +34,7 @@
                             <td class="text-center">{{ row.currency_type_id }}</td>
                             <!-- <td class="text-right">{{ (row.total_perception && row.state_type_id != '11') ? row.total_perception : '0.00' }}</td> -->
 
-                            <td>{{ row.state_type_id == '11' ? '0.00' : row.total}}</td>
+                            <td>{{ formatNumber(row.state_type_id == '11' ? '0.00' : row.total) }}</td>
 
                         </tr>
                     </data-table>
@@ -59,11 +59,10 @@
 
             }
         },
-        async created() {
-        },
         methods: {
-
-
+            formatNumber(number) {
+                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
+            }
         }
     }
 </script>

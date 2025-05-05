@@ -33,7 +33,7 @@
                         <td>{{row.state_type_description}}</td>
                         <td>{{ row.currency_type_id}}</td>
                         <td class="text-right">
-                            {{ row.total }}
+                            {{ formatNumber(row.total) }}
                             <!-- {{ (row.document_type_id == '07') ? ( (row.total == 0) ? '0.00': '-'+row.total) : ((row.document_type_id!='07' && (row.state_type_id =='11'||row.state_type_id =='09')) ? '0.00':row.total) }} -->
                         </td>
                     </tr>
@@ -54,6 +54,10 @@ export default {
         }
     },
     created() {},
-    methods: {}
+    methods: {
+        formatNumber(number) {
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
+        },
+    }
 }
 </script>

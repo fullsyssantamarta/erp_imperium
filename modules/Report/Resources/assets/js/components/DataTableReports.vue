@@ -211,7 +211,8 @@
         computed: {
             returnTotal()
             {
-                return _.sum(this.records.map(x=> parseFloat(x.total))).toFixed(3)
+                let total = _.sum(this.records.map(x=> parseFloat(x.total))).toFixed(3)
+                return this.formatNumber(total)
             }
         },
         created() {
@@ -241,6 +242,9 @@
 
         },
         methods: {
+            formatNumber(number) {
+                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
+            },
             changePersons(){
                 // this.form.type_person = this.resource === 'reports/sales' ? 'customers':'suppliers'
             },

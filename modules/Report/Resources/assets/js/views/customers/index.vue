@@ -20,7 +20,7 @@
                         <td>{{row.document_type_description}}</td>
                         <td>{{row.series}}</td>
                         <td>{{row.alone_number}}</td>
-                        <td>{{ (row.document_type_id == '07') ? ( (row.total == 0) ? '0.00': '-'+row.total) : ((row.document_type_id!='07' && (row.state_type_id =='11'||row.state_type_id =='09')) ? '0.00':row.total) }}</td>
+                        <td>{{ formatTotal(row) }}</td>
                     </tr>
                 </data-table>
             </div>
@@ -46,8 +46,22 @@
         },
 
         methods: {
-
-
+            formatNumber(number) {
+                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
+            },
+            formatTotal(row) {
+                let total;
+                
+                if (row.document_type_id == '07') {
+                    total = (row.total == 0) ? '0.00' : '-' + row.total;
+                } else if (row.document_type_id != '07' && (row.state_type_id == '11' || row.state_type_id == '09')) {
+                    total = '0.00';
+                } else {
+                    total = row.total;
+                }
+                
+                return this.formatNumber(total);
+            },
         }
     }
 </script>
