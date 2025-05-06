@@ -206,7 +206,7 @@
         },
         methods: {
             clickDownload(filename) {
-                window.open(`/${this.resource}/download/${filename}`, '_blank');
+                window.open(`/radian/public-download/${filename}`, '_blank');
             },
             clickRejected(record)
             {

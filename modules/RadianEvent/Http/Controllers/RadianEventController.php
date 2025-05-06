@@ -179,6 +179,11 @@ class RadianEventController extends Controller
         return Storage::disk('tenant')->download("radian_reception_documents".DIRECTORY_SEPARATOR.$filename);
     }
 
+    public function publicDownload($filename)
+    {
+        return Storage::disk('tenant')->download("radian_reception_documents".DIRECTORY_SEPARATOR.$filename);
+    }
+
 
     /**
      * 
