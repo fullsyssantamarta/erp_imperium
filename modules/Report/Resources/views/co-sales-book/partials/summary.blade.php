@@ -1,4 +1,3 @@
-
 @php
     use Modules\Factcolombia1\Helpers\DocumentHelper;
 @endphp
@@ -36,61 +35,65 @@
         @endphp
 
         @foreach($summary_records as $record)
-
             @php
                 $net_total = 0;
                 $total = 0;
                 $total_exempt = 0;
                 $first_document = $record['first_document'];
                 $ordered_documents = $record['ordered_documents'];
-                $row_first_document = $first_document->getDataReportSalesBook();
-
+               
                 foreach ($ordered_documents as $document)
                 {
-                    $totals = $document->getDataReportSummarySalesBook();
-                    $net_total += $totals['net_total'];
-                    $total += $totals['total'];
-                    $total_exempt += $totals['total_exempt'];
+                    $row = $document->getDataReportSalesBook();
+                    $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false || 
+                                    ($document instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11');
+                    
+                    $multiplier = $is_credit_note ? -1 : 1;
+                    
+                    $net_total += floatval(str_replace(',', '', $row['net_total'])) * $multiplier;
+                    $total += floatval(str_replace(',', '', $row['total'])) * $multiplier;
+                    $total_exempt += floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier;
                 }
 
                 $global_total_exempt += $total_exempt;
-
+                $first_row = $first_document->getDataReportSalesBook();
             @endphp
 
             <tr>
-                <td class="celda">{{$row_first_document['type_document_name']}} <br/> {{ $record['prefix'] }}-{{$record['first_document']->number}}</td>
-                <td class="celda">{{$row_first_document['type_document_name']}} <br/> {{ $record['prefix'] }}-{{$record['last_document']->number}}</td>
+                <td class="celda">{{ $first_row['type_document_name'] }} <br/> {{ $record['prefix'] }}-{{$record['first_document']->number}}</td>
+                <td class="celda">{{ $first_row['type_document_name'] }} <br/> {{ $record['prefix'] }}-{{$record['last_document']->number}}</td>
 
                 {{-- TOTALES --}}
-                <td class="celda text-right-td">{{ $first_document->generalApplyNumberFormat($net_total) }}</td>
-                <td class="celda text-right-td">{{ $first_document->generalApplyNumberFormat($total) }}</td>
-                <td class="celda text-right-td"> {{ $first_document->generalApplyNumberFormat($total_exempt) }} </td>
-                {{-- TOTALES --}}
+                <td class="celda text-right-td">{{ number_format($net_total, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ number_format($total, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ number_format($total_exempt, 2, '.', '') }}</td>
                 
                 {{-- IMPUESTOS --}}
                 @foreach($taxes as &$tax)
-
                     @php
                         $sum_taxable_amount = 0;
                         $sum_tax_amount = 0;
 
                         foreach ($ordered_documents as $document)
                         {
+                            $row = $document->getDataReportSalesBook();
                             $item_values = $document->getItemValuesByTax($tax->id);
-                            $sum_taxable_amount += $item_values['taxable_amount'];
-                            $sum_tax_amount += $item_values['tax_amount'];
+                            $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false || 
+                                            ($document instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11');
+                            
+                            $multiplier = $is_credit_note ? -1 : 1;
+                            
+                            $sum_taxable_amount += floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
+                            $sum_tax_amount += floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
                         }
 
                         $tax->global_taxable_amount += $sum_taxable_amount;
                         $tax->global_tax_amount += $sum_tax_amount;
                     @endphp
                     
-                    <td class="celda text-right-td">{{ $first_document->generalApplyNumberFormat($sum_taxable_amount) }}</td>
-                    <td class="celda text-right-td">{{ $first_document->generalApplyNumberFormat($sum_tax_amount) }}</td>
-
+                    <td class="celda text-right-td">{{ number_format($sum_taxable_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">{{ number_format($sum_tax_amount, 2, '.', '') }}</td>
                 @endforeach
-                {{-- IMPUESTOS --}}
-
             </tr>
         @endforeach
     </tbody>

@@ -3,16 +3,22 @@
     $establishment = $cash->user->establishment;
     $final_balance = 0;
     $cash_income = 0;
+
+    // Filtrar documentos anulados (state_type_id !== '11') al inicio
+    $cash_documents = $filtered_documents->filter(function($doc) {
+        return $doc->document_pos && $doc->document_pos->state_type_id !== '11';
+    });
+
     // Calcular el total de egresos (gastos)
     $cashEgress = $cash->cash_documents->sum(function ($cashDocument) {
         return $cashDocument->expense_payment ? $cashDocument->expense_payment->payment : 0;
     });
+    
     $cash_final_balance = 0;
     $document_count = 0;
     $cash_taxes = 0;
-    $cash_documents = $filtered_documents; // Usar los documentos filtrados en lugar de todos
     
-    $is_complete = !$is_resumido;  // Reemplazamos la referencia a only_head
+    $is_complete = !$is_resumido;
     
     $first_document = '';
     $last_document = '';
@@ -37,10 +43,7 @@
             $document_count = $cash_document->document_pos->count();
 
             if (count($cash_document->document_pos->payments) > 0) {
-                $pays =
-                    $cash_document->document_pos->state_type_id === '11'
-                        ? collect()
-                        : $cash_document->document_pos->payments;
+                $pays = $cash_document->document_pos->payments;
                 foreach ($methods_payment as $record) {
                     $record->sum = $record->sum + $pays->where('payment_method_type_id', $record->id)->sum('payment');
                 }
@@ -48,7 +51,7 @@
                 foreach ($cash_document->document_pos->payments as $payment) {
                     $paymentMethod = $methods_payment->firstWhere('id', $payment->payment_method_type_id);
                     if ($paymentMethod) {
-                        $paymentMethod->transaction_count++; // Se incrementa el contador de transacciones
+                        $paymentMethod->transaction_count++;
                     }
                 }
             }
