@@ -533,24 +533,49 @@ export default {
     },
 
     async created() {
-        this.electronic = this.configuration.configuration_pos.electronic
-        console.log(localStorage.getItem("plate_number"))
-        console.log(this.configuration.configuration_pos.plate_number)
-        console.log(this.electronic)
-        if(localStorage.getItem("plate_number") == this.configuration.configuration_pos.plate_number || this.electronic == false){
-            this.plate_number_valid = true
-            await this.initForm();
-            await this.getTables();
-            this.events();
-            await this.getFormPosLocalStorage()
-            // await this.initCurrencyType()
-            this.customer = await this.getLocalStorageIndex('customer')
-            // if (document.querySelector('.sidebar-toggle')) {
-            //     document.querySelector('.sidebar-toggle').click()
-            // }
+        try {
+            // Verificar y establecer plate_number inicial
+            const configPlateNumber = this.configuration?.configuration_pos?.plate_number;
+            let storedPlateNumber = localStorage.getItem("plate_number");
+
+            // Si no hay plate_number almacenado pero existe en la configuración
+            if (!storedPlateNumber && configPlateNumber) {
+                localStorage.setItem("plate_number", configPlateNumber);
+                storedPlateNumber = configPlateNumber;
+            }
+
+            this.electronic = this.configuration?.configuration_pos?.electronic || false;
+
+            // Validación mejorada
+            const isValidPlate = !this.electronic || 
+                (storedPlateNumber && configPlateNumber && 
+                 storedPlateNumber.toString().trim() === configPlateNumber.toString().trim());
+
+            if (isValidPlate) {
+                this.plate_number_valid = true;
+                await this.initForm();
+                await this.getTables();
+                this.events();
+                await this.getFormPosLocalStorage();
+                this.customer = await this.getLocalStorageIndex('customer');
+            } else {
+                console.warn('Validación de placa fallida:', {
+                    stored: storedPlateNumber,
+                    config: configPlateNumber,
+                    electronic: this.electronic
+                });
+                this.plate_number_valid = false;
+
+                // Si hay discrepancia entre los números de placa
+                if (configPlateNumber && storedPlateNumber !== configPlateNumber) {
+                    localStorage.setItem("plate_number", configPlateNumber);
+                    location.reload();
+                }
+            }
+        } catch (error) {
+            console.error('Error en created():', error);
+            this.plate_number_valid = false;
         }
-        else
-            this.plate_number_valid = false
     },
 
     computed: {
