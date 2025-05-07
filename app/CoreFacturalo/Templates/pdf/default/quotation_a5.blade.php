@@ -130,6 +130,7 @@
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr class="bg-grey">
+        <th class="border-top-bottom text-center py-2" width="8%">#</th>
         <th class="border-top-bottom text-center py-2" width="8%">CANT.</th>
         <th class="border-top-bottom text-center py-2" width="8%">UNIDAD</th>
         <th class="border-top-bottom text-left py-2">DESCRIPCIÓN</th>
@@ -141,6 +142,7 @@
     <tbody>
     @foreach($document->items as $row)
         <tr>
+            <td class="text-center align-top">{{ $row->item->internal_id }}</td>
             <td class="text-center align-top">
                 @if(((int)$row->quantity != $row->quantity))
                     {{ $row->quantity }}
@@ -169,24 +171,24 @@
             <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
         </tr>
         <tr>
-            <td colspan="6" class="border-bottom"></td>
+            <td colspan="7" class="border-bottom"></td>
         </tr>
     @endforeach
 
 
         <tr>
-            <td colspan="5" class="text-right font-bold">TOTAL VENTA: {{ $document->currency->symbol }}</td>
+            <td colspan="6" class="text-right font-bold">TOTAL VENTA: {{ $document->currency->symbol }}</td>
             <td class="text-right font-bold">{{ $document->sale }}</td>
         </tr>
         <tr >
-            <td colspan="5" class="text-right font-bold">TOTAL DESCUENTO (-): {{ $document->currency->symbol }}</td>
+            <td colspan="6" class="text-right font-bold">TOTAL DESCUENTO (-): {{ $document->currency->symbol }}</td>
             <td class="text-right font-bold">{{ $document->total_discount }}</td>
         </tr>
 
         @foreach ($document->taxes as $tax)
             @if ((($tax->total > 0) && (!$tax->is_retention)))
                 <tr >
-                    <td colspan="5" class="text-right font-bold">
+                    <td colspan="6" class="text-right font-bold">
                         {{$tax->name}}(+): {{ $document->currency->symbol }}
                     </td>
                     <td class="text-right font-bold">{{number_format($tax->total, 2)}} </td>
@@ -195,12 +197,12 @@
         @endforeach
 
         <tr>
-            <td colspan="5" class="text-right font-bold">SUBTOTAL: {{ $document->currency->symbol }}</td>
+            <td colspan="6" class="text-right font-bold">SUBTOTAL: {{ $document->currency->symbol }}</td>
             <td class="text-right font-bold">{{ $document->subtotal }}</td>
         </tr>
 
         <tr>
-            <td colspan="5" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency->symbol }}</td>
+            <td colspan="6" class="text-right font-bold">TOTAL A PAGAR: {{ $document->currency->symbol }}</td>
             <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
         </tr>
     </tbody>
