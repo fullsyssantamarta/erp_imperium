@@ -90,7 +90,10 @@ class CoDocumentsImport implements ToCollection, WithMultipleSheets
 
     private function validateItem($row, $rowNumber)
     {
-        if (!empty($row[23]) && !Item::where('internal_id', $row[23])->exists()) {
+        if (!empty($row[23]) && 
+            !Item::where('internal_id', $row[23])
+                 ->orWhere('name', $row[23])
+                 ->exists()) {
             $this->throwException("No existe el item {$row[23]} en la base de datos", $rowNumber);
         }
     }
@@ -237,7 +240,10 @@ class CoDocumentsImport implements ToCollection, WithMultipleSheets
                 }
                 $invoice_lines = [];
             }
-            $item = Item::where('internal_id', $row[23])->firstOrFail();
+            $item = Item::where('internal_id', $row[23])
+                        ->orWhere('name', $row[23])
+                        ->firstOrFail();
+                        
             $invoice_line = [
                 'item_id' => $item->id,
                 'unit_type_id' => $item->unit_type_id,
@@ -252,7 +258,7 @@ class CoDocumentsImport implements ToCollection, WithMultipleSheets
                 'invoiced_quantity' => $row[21],
                 'line_extension_amount' => $row[22],
                 'free_of_charge_indicator' => false,
-                'description' => $item->description,
+                'description' => $item->description ?? $item->name ?? '',
                 'code' => strval($row[23]),
                 'type_item_identification_id' => 4,
                 'price_amount' => $row[24],
