@@ -166,12 +166,17 @@ class DocumentPayrollController extends Controller
                     ];
 
                     // Actualizar salario y cálculos relacionados para este trabajador específico
-                    $worker_request['accrued']['total_base_salary'] = (float)$worker_model->salary;
-                    $worker_request['accrued']['salary'] = (float)$worker_model->salary;
-                    
+                    $days_worked = $worker_request['accrued']['worked_days'] ?? 0;
+                    $daily_salary = $worker_model->salary / 30;
+                    $proportional_salary = round($daily_salary * $days_worked, 2);
+
+                    $worker_request['accrued']['total_base_salary'] = $proportional_salary;
+                    $worker_request['accrued']['salary'] = $proportional_salary;
+                                        
                     // Recalcular total de devengados basado en el salario del trabajador actual
                     $transportation_allowance = $worker_request['accrued']['transportation_allowance'] ?? 0;
-                    $worker_request['accrued']['accrued_total'] = $worker_model->salary + $transportation_allowance;
+                    $worker_request['accrued']['accrued_total'] = $proportional_salary + $transportation_allowance;
+
 
                     // Crear nuevo request con los datos actualizados
                     $newRequest = new DocumentPayrollRequest();
