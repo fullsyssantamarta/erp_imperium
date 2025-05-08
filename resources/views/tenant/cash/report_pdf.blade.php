@@ -467,6 +467,21 @@
                 <br><br>
                 <h3 style="margin-top: -10px;"> Relación de Gastos</h3>
 
+                @php
+                    // Obtener los gastos correctamente
+                    $expenses = $cash->cash_documents()
+                        ->whereNotNull('expense_payment_id')
+                        ->with(['expense_payment'])
+                        ->get();
+                    
+                    $expensePayments = collect();
+                    foreach($expenses as $expense) {
+                        if($expense->expense_payment) {
+                            $expensePayments->push($expense->expense_payment);
+                        }
+                    }
+                @endphp
+
                 @if ($expensePayments->isNotEmpty())
                     <table style="margin-top: -10px;">
                         <thead>
@@ -672,9 +687,8 @@
                             foreach ($cash_document->document_pos->items as $item) {
                                 $ivaName = $item->tax->name ?? "";
                                 $ivaRate = $item->tax->rate ?? 0;
-                                $ivaTotal = $item->total_tax ?? 0;
                                 $subtotal = $item->subtotal ?? 0;
-
+                                
                                 if (!isset($totalsByIvaRate[$ivaName])) {
                                     $totalsByIvaRate[$ivaName] = [
                                         'rate' => $ivaRate,
@@ -683,17 +697,28 @@
                                         'total' => 0,
                                     ];
                                 }
+
                                 $subtotalSinIva = $subtotal / (1 + $ivaRate / 100);
                                 $ivaCalculado = $subtotalSinIva * ($ivaRate / 100);
-                                // Acumular los subtotales y el IVA por cada tarifa
-                                $totalsByIvaRate[$ivaName]['base_gravable'] += $subtotalSinIva;
-                                $totalsByIvaRate[$ivaName]['valor_iva'] += $ivaCalculado;
-                                $totalsByIvaRate[$ivaName]['total'] += $subtotal; // Total ya incluye IVA
 
-                                // Acumular totales
-                                $totalValorAntesIva += $subtotalSinIva;
-                                $totalValorIva += $ivaCalculado;
-                                $totalGeneral += $subtotal; // Total ya incluye IVA
+                                // Si es devolución (refund = 1) restar, si no (refund = 0) sumar
+                                if ($item->refund == 1) {
+                                    $totalsByIvaRate[$ivaName]['base_gravable'] -= $subtotalSinIva;
+                                    $totalsByIvaRate[$ivaName]['valor_iva'] -= $ivaCalculado;
+                                    $totalsByIvaRate[$ivaName]['total'] -= $subtotal;
+                                    
+                                    $totalValorAntesIva -= $subtotalSinIva;
+                                    $totalValorIva -= $ivaCalculado;
+                                    $totalGeneral -= $subtotal;
+                                } else {
+                                    $totalsByIvaRate[$ivaName]['base_gravable'] += $subtotalSinIva;
+                                    $totalsByIvaRate[$ivaName]['valor_iva'] += $ivaCalculado;
+                                    $totalsByIvaRate[$ivaName]['total'] += $subtotal;
+                                    
+                                    $totalValorAntesIva += $subtotalSinIva;
+                                    $totalValorIva += $ivaCalculado;
+                                    $totalGeneral += $subtotal;
+                                }
                             }
                         }
                     }
