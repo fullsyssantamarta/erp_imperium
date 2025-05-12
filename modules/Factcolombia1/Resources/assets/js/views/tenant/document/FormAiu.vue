@@ -252,8 +252,12 @@
                 :input_person="input_person" :type_document_id=form.type_document_id></person-form>
             <document-options :showDialog.sync="showDialogOptions" :recordId="documentNewId" :showDownload="true"
                 :showClose="false"></document-options>
-            <document-form-retention :showDialog.sync="showDialogAddRetention"
-                @add="addRowRetention"></document-form-retention>
+            <document-form-retention 
+                :showDialog.sync="showDialogAddRetention"
+                :total-aiu="getTotalBase" 
+                :detail-aiu="detailAiu"
+                @add="addRowRetention">
+            </document-form-retention>
             <detail-aiu @add="addDetailAiu" :showDialog.sync="showDialogDetailAiu" :total="getTotalBase"> </detail-aiu>
             <document-order-reference :showDialog.sync="showDialogOrderReference"
                 :order_reference="form.order_reference"
@@ -328,7 +332,12 @@ export default {
             loading_search: false,
             taxes: [],
             showDialogDetailAiu: false,
-            detailAiu: {},
+            detailAiu: {
+                value_administartion: 0,
+                value_sudden: 0, 
+                value_utility: 0,
+                note: null
+            },
             resolutions: []
         }
     },
@@ -394,14 +403,47 @@ export default {
             }
         },
         addDetailAiu(data) {
-            this.detailAiu = data
-            const items_aiu = this.$refs.documentFormItem.getItemsAiu(this.detailAiu)
-            const items_base = this.form.items.filter(row => row.item.internal_id != 'aiu00001' && row.item.internal_id != 'aiu00002' && row.item.internal_id != 'aiu00003')
-            const items_form = items_base.concat(items_aiu)
-            this.form.items = items_form
-            this.setDataTotals()
+            this.detailAiu = data;
+            const items_aiu = this.$refs.documentFormItem.getItemsAiu(this.detailAiu);
+            
+            // Filtrar solo los items AIU que tienen valor mayor a 0
+            const filteredItemsAiu = items_aiu.filter(item => {
+                switch(item.item.internal_id) {
+                    case 'aiu00001':
+                        return this.detailAiu.value_administartion > 0;
+                    case 'aiu00002':
+                        return this.detailAiu.value_sudden > 0;
+                    case 'aiu00003':
+                        return this.detailAiu.value_utility > 0;
+                    default:
+                        return true;
+                }
+            });
+        
+            const items_base = this.form.items.filter(row => 
+                row.item.internal_id != 'aiu00001' && 
+                row.item.internal_id != 'aiu00002' && 
+                row.item.internal_id != 'aiu00003'
+            );
+        
+            this.form.items = items_base.concat(filteredItemsAiu);
+            this.setDataTotals();
         },
         clickOpenDeatailAiu() {
+            // Asegurarse de que los valores estén limpios antes de abrir el diálogo
+            if (!this.showDialogDetailAiu) {
+                this.$nextTick(() => {
+                    this.detailAiu = {
+                        value_administartion: 0,
+                        value_sudden: 0,
+                        value_utility: 0,
+                        percent_administartion: 0,
+                        percent_sudden: 0,
+                        percent_utility: 0,
+                        note: null
+                    }
+                })
+            }
             this.showDialogDetailAiu = true
         },
         ratePrefix(tax = null) {
@@ -549,12 +591,36 @@ export default {
             this.calculateTotal();
         },
         async addRowRetention(row) {
-            await this.taxes.forEach(tax => {
-                if (tax.id == row.tax_id) {
-                    tax.apply = true
+            const tax = this.taxes.find(t => t.id === row.tax_id);
+            if (tax) {
+                const taxData = {
+                    ...tax,
+                    apply: true,
+                    retention: row.calculatedRetention,
+                    rate: row.rate,
+                    base: row.baseAiu,
+                    total: row.calculatedRetention, 
+                    type_tax_id: row.type_tax_id,
+                    conversion: row.conversion,
+                    name: row.name
+                };
+
+                // Actualizar o agregar el impuesto en form.taxes
+                const formTaxIndex = this.form.taxes.findIndex(t => t.id === tax.id);
+                if (formTaxIndex >= 0) {
+                    this.form.taxes.splice(formTaxIndex, 1, taxData);
+                } else {
+                    this.form.taxes.push(taxData);
                 }
-            });
-            await this.calculateTotal()
+
+                // Actualizar también en el array principal de taxes
+                const taxIndex = this.taxes.findIndex(t => t.id === tax.id);
+                if (taxIndex >= 0) {
+                    this.taxes[taxIndex] = {...taxData};
+                }
+
+                await this.calculateTotal();
+            }
         },
         cleanTaxesRetention(tax_id) {
             this.taxes.forEach(tax => {
@@ -588,8 +654,11 @@ export default {
             this.setDataTotals()
         },
         setDataTotals() {
-            let val = this.form
-            val.taxes = JSON.parse(JSON.stringify(this.taxes));
+            let val = this.form;
+            const retentions = val.taxes.filter(t => t.is_retention && t.apply);
+            val.taxes = JSON.parse(JSON.stringify(this.taxes.filter(t => !t.is_retention)));
+            val.taxes.push(...retentions);
+
             val.items.forEach(item => {
                 item.tax = this.taxes.find(tax => tax.id == item.tax_id);
                 if (
@@ -709,8 +778,7 @@ export default {
                 return this.$message.error('Debe seleccionar un cliente')
             }
             this.form.service_invoice = await this.createInvoiceService();
-            // return
-            this.loading_submit = true // Usa loading_submit
+            this.loading_submit = true
             this.$http.post(`/${this.resource}/store_aiu`, this.form).then(response => {
                 if (response.data.success) {
                     this.resetForm();
@@ -906,16 +974,34 @@ export default {
             return { code, description }
         },
         getWithHolding() {
-            let total = this.form.sale
+            const context = this;
             let list = this.form.taxes.filter(function (x) {
                 return x.is_retention && x.apply;
             });
-            return list.map(x => {
+            
+            return list.map(tax => {
+                // Obtener la base según el tipo definido en el tax
+                let base = 0;
+                
+                // Si el tax tiene base_type definido, usarlo para determinar la base
+                if (tax.base_type === 'administration') {
+                    base = this.detailAiu.value_administartion;
+                } else if (tax.base_type === 'sudden') {
+                    base = this.detailAiu.value_sudden;
+                } else if (tax.base_type === 'utility') {
+                    base = this.detailAiu.value_utility;
+                } else {
+                    // Si no tiene base_type o es 'total', usar la base definida en el tax
+                    base = tax.base || this.form.items.find(item => 
+                        item.item.internal_id === 'aiu00001'
+                    )?.price || 0;
+                }
+
                 return {
-                    tax_id: x.type_tax_id,
-                    tax_amount: this.cadenaDecimales(x.retention),
-                    percent: this.cadenaDecimales(this.roundNumber(x.rate / (x.conversion / 100), 6)),
-                    taxable_amount: this.cadenaDecimales(total),
+                    tax_id: tax.type_tax_id,
+                    tax_amount: this.cadenaDecimales(tax.retention),
+                    percent: this.cadenaDecimales(this.roundNumber(tax.rate / (tax.conversion / 100), 6)),
+                    taxable_amount: this.cadenaDecimales(base)
                 };
             });
         },

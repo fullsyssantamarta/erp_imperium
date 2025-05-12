@@ -137,6 +137,13 @@
                     return this.$message.warning('Debe ingresar el campo nota.');
                 }
 
+                // Verificar si al menos un valor es mayor a 0
+                if (this.form.value_administartion === 0 && 
+                    this.form.value_sudden === 0 && 
+                    this.form.value_utility === 0) {
+                    return this.$message.warning('Debe ingresar al menos un valor mayor a 0.');
+                }
+
                 this.$emit('add', this.form);
                 this.close()
 
