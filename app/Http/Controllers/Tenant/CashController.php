@@ -204,20 +204,22 @@ class CashController extends Controller
         $cash = Cash::findOrFail($cashId);
         $company = Company::first();
 
-        // Si es resumido, ignorar el filtro de tipo electrónico
+        // Si es resumido, ignorar el filtro de tipo electrónico pero mantener filtro por fecha
         if ($electronic_type === 'resumido') {
-            $filtered_documents = $cash->cash_documents;
+            $filtered_documents = $cash->cash_documents()
+                ->whereHas('document_pos', function($query) use ($cash) {
+                    $query->whereDate('date_of_issue', $cash->date_opening);
+                })->get();
         } else {
-            // Filtrar los documentos según el tipo electrónico
-            $filtered_documents = $cash->cash_documents->filter(function ($document) use ($electronic_type) {
-                if (!$document->document_pos) return false;
-                
-                if ($electronic_type === 'all') return true;
-                
-                return $document->document_pos->electronic == $electronic_type;
-            });
+            // Filtrar por fecha y tipo electrónico
+            $filtered_documents = $cash->cash_documents()
+                ->whereHas('document_pos', function($query) use ($cash, $electronic_type) {
+                    $query->whereDate('date_of_issue', $cash->date_opening);
+                    if ($electronic_type !== 'all') {
+                        $query->where('electronic', $electronic_type);
+                    }
+                })->get();
         }
-
         // Calcular $cashEgress solo para documentos filtrados
         $cashEgress = $filtered_documents->sum(function ($cashDocument) {
             return $cashDocument->expense_payment ? $cashDocument->expense_payment->payment : 0;
