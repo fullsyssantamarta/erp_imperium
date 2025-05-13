@@ -45,14 +45,18 @@
                 foreach ($ordered_documents as $document)
                 {
                     $row = $document->getDataReportSalesBook();
-                    $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false || 
-                                    ($document instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11');
+                    $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false;
+                    $is_void_pos = $document instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11';
                     
-                    $multiplier = $is_credit_note ? -1 : 1;
+                    // Aplicar multiplicador según el caso
+                    $multiplier = $is_void_pos ? 0 : ($is_credit_note ? -1 : 1);
                     
-                    $net_total += floatval(str_replace(',', '', $row['net_total'])) * $multiplier;
-                    $total += floatval(str_replace(',', '', $row['total'])) * $multiplier;
-                    $total_exempt += floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier;
+                    // Solo sumar al total si no es un POS anulado
+                    if (!$is_void_pos) {
+                        $net_total += floatval(str_replace(',', '', $row['net_total'])) * $multiplier;
+                        $total += floatval(str_replace(',', '', $row['total'])) * $multiplier;
+                        $total_exempt += floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier;
+                    }
                 }
 
                 $global_total_exempt += $total_exempt;
@@ -78,13 +82,16 @@
                         {
                             $row = $document->getDataReportSalesBook();
                             $item_values = $document->getItemValuesByTax($tax->id);
-                            $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false || 
-                                            ($document instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11');
+                            $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false;
+                            $is_void_pos = $document instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11';
                             
-                            $multiplier = $is_credit_note ? -1 : 1;
+                            // Aplicar multiplicador según el caso
+                            $multiplier = $is_void_pos ? 0 : ($is_credit_note ? -1 : 1);
                             
-                            $sum_taxable_amount += floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
-                            $sum_tax_amount += floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
+                            if (!$is_void_pos) {
+                                $sum_taxable_amount += floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
+                                $sum_tax_amount += floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
+                            }
                         }
 
                         $tax->global_taxable_amount += $sum_taxable_amount;
