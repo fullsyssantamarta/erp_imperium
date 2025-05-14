@@ -84,28 +84,50 @@ class DocumentController extends Controller
         ];
     }
 
-    public function co_import(Request $request)
+    public function co_import(Request $request) 
     {
         if ($request->hasFile('file')) {
             try {
+                \DB::connection('tenant')->beginTransaction();
+                
                 $import = new CoDocumentsImport();
+                $preview = $request->input('preview', false);
+                $import->setPreviewMode($preview);
                 $import->import($request->file('file'), null, Excel::XLSX);
                 $data = $import->getData();
+                
+                if ($preview) {
+                    return [
+                        'success' => true,
+                        'preview' => true,
+                        'data' => $data['preview_data'],
+                        'message' => 'Vista previa generada correctamente'
+                    ];
+                }
+
+                \DB::connection('tenant')->commit();
                 return [
                     'success' => true,
-                    'message' =>  __('app.actions.upload.success'),
-                    'data' => $data
+                    'preview' => false,
+                    'message' => 'Documentos procesados correctamente',
+                    'data' => [
+                        'total' => $data['total'],
+                        'registered' => $data['registered']
+                    ]
                 ];
+
             } catch (Exception $e) {
+                \DB::connection('tenant')->rollBack();
+                \Log::error($e->getMessage());
                 return [
                     'success' => false,
-                    'message' =>  "Error al cargar el archivo... ".$e->getMessage()
+                    'message' => "Error al procesar el archivo: " . $e->getMessage()
                 ];
             }
         }
         return [
             'success' => false,
-            'message' =>  __('app.actions.upload.error'),
+            'message' => 'No se encontró ningún archivo para procesar',
         ];
     }
 
@@ -1564,42 +1586,65 @@ class DocumentController extends Controller
 
     public function getCorrelativeInvoice($type_service, $prefix = null, $ignore_state_document_id = false)
     {
+        try {
+            if ($prefix) {
+                $resolution = TypeDocument::where('prefix', $prefix)
+                    ->where('code', $type_service)
+                    ->orderBy('resolution_date', 'desc')
+                    ->first();
 
-        $company = ServiceTenantCompany::firstOrFail();
+                if ($resolution) {
+                    $next_number = $resolution->generated + 1;
+                    
+                    $document = Document::where('prefix', $prefix)
+                        ->where('number', $next_number)
+                        ->first();
 
-        // $base_url = config('tenant.service_fact');
-        // if($prefix)
-        //     $ch2 = curl_init("{$base_url}ubl2.1/invoice/current_number/{$type_service}/{$prefix}");
-        // else
-        //     $ch2 = curl_init("{$base_url}ubl2.1/invoice/current_number/{$type_service}");
+                    if ($document) {
+                        if ($document->state_document_id == 6) { 
+                            $document->delete();
+                            return $next_number;
+                        }
+                    } else {
+                        return $next_number;
+                    }
+                }
+            }
 
-        $url = $this->getBaseUrlCorrelativeInvoice($type_service, $prefix, $ignore_state_document_id);
-        $ch2 = curl_init($url);
-        // dd($url, $ch2);
+            $company = ServiceTenantCompany::firstOrFail();
+            
+            $url = $this->getBaseUrlCorrelativeInvoice($type_service, $prefix, $ignore_state_document_id);
+            $ch2 = curl_init($url);
 
-        curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET");
-        curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Accept: application/json',
-            "Authorization: Bearer {$company->api_token}"
-        ));
-        $response_data = curl_exec($ch2);
-        $err = curl_error($ch2);
-        curl_close($ch2);
-        $response_encode = json_decode($response_data);
-        if($err){
-            return null;
-        }
-        else {
-            // error del api y la respuesta es una excepcion
-            if(isset($response_encode->exception)) {
+            curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET"); 
+            curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
+                'Content-Type: application/json',
+                'Accept: application/json',
+                "Authorization: Bearer {$company->api_token}"
+            ));
+
+            $response_data = curl_exec($ch2);
+            $err = curl_error($ch2);
+            curl_close($ch2);
+
+            if ($err) {
+                return null;
+            }
+
+            $response_encode = json_decode($response_data);
+            
+            if (isset($response_encode->exception)) {
                 \Log::error($response_encode->trace);
                 throw new \Exception($response_encode->message);
             }
+
             return $response_encode->number;
+
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
