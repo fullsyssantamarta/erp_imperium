@@ -190,6 +190,7 @@
                 this.form = {
                     type: 'sale',
                     document_type_id:null,
+                    establishment_id: null,
                     period: 'month',
                     date_start: moment().format('YYYY-MM-DD'),
                     date_end: moment().format('YYYY-MM-DD'),
