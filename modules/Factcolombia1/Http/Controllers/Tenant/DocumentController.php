@@ -84,50 +84,28 @@ class DocumentController extends Controller
         ];
     }
 
-    public function co_import(Request $request) 
+    public function co_import(Request $request)
     {
         if ($request->hasFile('file')) {
             try {
-                \DB::connection('tenant')->beginTransaction();
-                
                 $import = new CoDocumentsImport();
-                $preview = $request->input('preview', false);
-                $import->setPreviewMode($preview);
                 $import->import($request->file('file'), null, Excel::XLSX);
                 $data = $import->getData();
-                
-                if ($preview) {
-                    return [
-                        'success' => true,
-                        'preview' => true,
-                        'data' => $data['preview_data'],
-                        'message' => 'Vista previa generada correctamente'
-                    ];
-                }
-
-                \DB::connection('tenant')->commit();
                 return [
                     'success' => true,
-                    'preview' => false,
-                    'message' => 'Documentos procesados correctamente',
-                    'data' => [
-                        'total' => $data['total'],
-                        'registered' => $data['registered']
-                    ]
+                    'message' =>  __('app.actions.upload.success'),
+                    'data' => $data
                 ];
-
             } catch (Exception $e) {
-                \DB::connection('tenant')->rollBack();
-                \Log::error($e->getMessage());
                 return [
                     'success' => false,
-                    'message' => "Error al procesar el archivo: " . $e->getMessage()
+                    'message' =>  "Error al cargar el archivo... ".$e->getMessage()
                 ];
             }
         }
         return [
             'success' => false,
-            'message' => 'No se encontró ningún archivo para procesar',
+            'message' =>  __('app.actions.upload.error'),
         ];
     }
 
