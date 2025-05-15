@@ -78,8 +78,8 @@ class DocumentController extends Controller
     public function columns()
     {
         return [
-            'number' => 'Número',
             'date_of_issue' => 'Fecha de emisión',
+            'number' => 'Número',
             'customer' => 'Cliente',
         ];
     }
@@ -111,7 +111,29 @@ class DocumentController extends Controller
 
     public function records(Request $request)
     {
-        $records =  Document::where($request->column, 'like', '%' . $request->value . '%')->whereTypeUser()->latest();
+        if ($request->column == 'date_of_issue') {
+            if (strlen($request->value) == 7) {
+                // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
+                $year_month = explode('-', $request->value);
+                $year = $year_month[0];
+                $month = $year_month[1];
+                
+                $records = Document::whereYear('date_of_issue', $year)
+                                 ->whereMonth('date_of_issue', $month)
+                                 ->whereTypeUser()
+                                 ->latest();
+            } else {
+                // Si es una fecha específica
+                $records = Document::where($request->column, 'like', '%' . $request->value . '%')
+                                 ->whereTypeUser()
+                                 ->latest();
+            }
+        } else {
+            $records = Document::where($request->column, 'like', '%' . $request->value . '%')
+                             ->whereTypeUser()
+                             ->latest();
+        }
+
         return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
     }
 

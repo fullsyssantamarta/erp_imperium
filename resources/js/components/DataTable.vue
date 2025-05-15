@@ -1,31 +1,32 @@
 <template>
     <div>
-        <div class="row ">
-            <div class="col-md-12 col-lg-12 col-xl-12 ">
+        <div class="row">
+            <div class="col-md-12 col-lg-12 col-xl-12">
                 <div class="row" v-if="applyFilter">
                     <div class="col-lg-4 col-md-4 col-sm-12 pb-2">
                         <div class="d-flex">
                             <div style="width:100px">
                                 Filtrar por:
                             </div>
-                            <el-select v-model="search.column"  placeholder="Select" @change="changeClearInput">
+                            <el-select v-model="search.column" placeholder="Select" @change="changeClearInput">
                                 <el-option v-for="(label, key) in columns" :key="key" :value="key" :label="label"></el-option>
                             </el-select>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-4 col-sm-12 pb-2">
-                        <template v-if="search.column=='date_of_issue' || search.column=='date_of_due' || search.column=='date_of_payment' || search.column=='delivery_date'">
+                        <template v-if="search.column=='date_of_issue'">
                             <el-date-picker
                                 v-model="search.value"
-                                type="date"
+                                type="month"
                                 style="width: 100%;"
-                                placeholder="Buscar"
-                                value-format="yyyy-MM-dd"
+                                placeholder="Seleccione mes"
+                                value-format="yyyy-MM"
                                 @change="getRecords">
                             </el-date-picker>
                         </template>
                         <template v-else>
-                            <el-input placeholder="Buscar"
+                            <el-input 
+                                placeholder="Buscar"
                                 v-model="search.value"
                                 style="width: 100%;"
                                 prefix-icon="el-icon-search"
@@ -71,7 +72,11 @@
             applyFilter:{
                 type: Boolean,
                 default: true,
-                required: false
+                required: false  
+            },
+            initSearch: {
+                type: Object,
+                default: null
             }
         },
         data () {
@@ -97,7 +102,11 @@
            // console.log(column_resource)
             await this.$http.get(`/${_.head(column_resource)}/columns`).then((response) => {
                 this.columns = response.data
-                this.search.column = _.head(Object.keys(this.columns))
+                if (this.initSearch) {
+                    this.search = this.initSearch
+                } else {
+                    this.search.column = _.head(Object.keys(this.columns))
+                }
             });
             await this.getRecords()
 

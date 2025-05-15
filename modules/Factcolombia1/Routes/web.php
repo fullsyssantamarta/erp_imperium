@@ -42,6 +42,7 @@ if($current_hostname) {
                 Route::post('sincronize', 'Tenant\DocumentController@sincronize');
                 Route::post('import', 'Tenant\DocumentController@co_import');
                 Route::get('downloadFileCoupon/{id}', 'Tenant\DocumentController@downloadFileCoupon');
+                Route::get('latest-date', 'Tenant\DocumentController@getLatestDate');
             });
 
             Route::prefix('co-documents-health')->group(function () {
