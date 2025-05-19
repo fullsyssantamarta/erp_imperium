@@ -593,61 +593,81 @@ export default {
     },
 
     getTaxTotal() {
-
         let tax = [];
+        let base_amount = 0;
+        
+        // Calcular monto base total
         this.document.items.forEach(element => {
+            base_amount += Number(element.unit_price) * Number(element.quantity);
+        });
+
+        // Aplicar impuestos sobre el monto base completo
+        this.document.items.forEach(element => {
+            let line_amount = Number(element.unit_price) * Number(element.quantity);
+            
             let find = tax.find(x => x.tax_id == element.tax.type_tax_id && x.percent == element.tax.rate);
-            if(find)
-            {
+            if (find) {
                 let indexobj = tax.findIndex(x => x.tax_id == element.tax.type_tax_id && x.percent == element.tax.rate);
                 tax.splice(indexobj, 1);
                 tax.push({
                     tax_id: find.tax_id,
-                    tax_amount: this.cadenaDecimales(Number(find.tax_amount) + Number(element.total_tax)),
+                    tax_amount: this.cadenaDecimales(Number(find.tax_amount) + (line_amount * (Number(element.tax.rate) / 100))),
                     percent: this.cadenaDecimales(find.percent),
-                    taxable_amount: this.cadenaDecimales(Number(find.taxable_amount) + Number(element.unit_price) * Number(element.quantity)) - Number(element.discount)
+                    taxable_amount: this.cadenaDecimales(Number(find.taxable_amount) + line_amount)
                 });
-            }
-            else {
+            } else {
                 tax.push({
                     tax_id: element.tax.type_tax_id,
-                    tax_amount: this.cadenaDecimales(Number(element.total_tax)),
+                    tax_amount: this.cadenaDecimales(line_amount * (Number(element.tax.rate) / 100)),
                     percent: this.cadenaDecimales(Number(element.tax.rate)),
-                    taxable_amount: this.cadenaDecimales((Number(element.unit_price) * Number(element.quantity)) - Number(element.discount))
+                    taxable_amount: this.cadenaDecimales(line_amount)
                 });
             }
         });
-    //      console.log(tax);
+
         this.tax_amount_calculate = tax;
         return tax;
     },
 
     getLegacyMonetaryTotal() {
-
+        // Base sin impuestos
         let line_ext_am = 0;
-        let tax_incl_am = 0;
-        let allowance_total_amount = 0;
         this.document.items.forEach(element => {
-            line_ext_am += (Number(element.unit_price) * Number(element.quantity)) - Number(element.discount);
-            allowance_total_amount += Number(element.discount);
+            line_ext_am += Number(element.unit_price) * Number(element.quantity);
         });
 
+        // Descuento global
+        let allowance_total_amount = Number(this.document.total_discount || 0);
+        
+        // Calcular impuestos sobre el monto base (antes del descuento)
         let total_tax_amount = 0;
         this.tax_amount_calculate.forEach(element => {
-            total_tax_amount += Number(element.tax_amount);
+            let tax_rate = Number(element.percent) / 100;
+            total_tax_amount += line_ext_am * tax_rate;
         });
 
-        tax_incl_am = line_ext_am + total_tax_amount;
+        // Total con impuestos
+        let tax_incl_am = line_ext_am + total_tax_amount;
+        
+        // Total final después de descuento
+        let final_amount = tax_incl_am - allowance_total_amount;
+
+        console.log('Cálculos monetarios:', {
+            line_ext_am,             // Base: 915,333.34
+            total_tax_amount,        // IVA: 45,766.66
+            tax_incl_am,            // Subtotal: 961,100.00
+            allowance_total_amount,  // Descuento: 61,100.00
+            final_amount            // Total a pagar: 900,000.00
+        });
 
         return {
             line_extension_amount: this.cadenaDecimales(line_ext_am),
-            tax_exclusive_amount: this.cadenaDecimales(line_ext_am),
+            tax_exclusive_amount: this.cadenaDecimales(line_ext_am), 
             tax_inclusive_amount: this.cadenaDecimales(tax_incl_am),
             allowance_total_amount: this.cadenaDecimales(allowance_total_amount),
             charge_total_amount: "0.00",
-            payable_amount: this.cadenaDecimales(tax_incl_am - allowance_total_amount)
+            payable_amount: this.cadenaDecimales(final_amount)
         };
-
     },
 
     getInvoiceLines() {
@@ -706,15 +726,18 @@ export default {
     },
 
     createAllowanceCharge(amount, base) {
-        return [
-            {
-                discount_id: 1,
-                charge_indicator: false,
-                allowance_charge_reason: "DESCUENTO GENERAL",
-                amount: this.cadenaDecimales(amount),
-                base_amount: this.cadenaDecimales(base)
-            }
-        ]
+        // Solo crear allowance_charges si hay descuento global
+        const total_descuento = Number(this.document.total_discount || 0);
+        
+        if (total_descuento === 0) return [];
+        
+        return [{
+            discount_id: 1,
+            charge_indicator: false,
+            allowance_charge_reason: "DESCUENTO GENERAL",
+            amount: this.cadenaDecimales(total_descuento),
+            base_amount: this.cadenaDecimales(base)
+        }];
     },
 
     cadenaDecimales(amount){

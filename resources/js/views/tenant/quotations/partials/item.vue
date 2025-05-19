@@ -179,12 +179,14 @@
         created() {
             this.initForm()
             this.$http.get(`/${this.resource}/item/tables`).then(response => {
-
                 this.items = response.data.items
                 this.taxes = response.data.taxes;
 
+                // Si hay un item para editar, inicializamos el formulario con sus datos
+                if (this.recordItem) {
+                    this.initFormEdit()
+                }
             })
-
             this.$eventHub.$on('reloadDataItems', (item_id) => {
                 this.reloadDataItems(item_id)
             })
@@ -233,9 +235,34 @@
                 this.item_unit_types = [];
                 this.tax_included_in_price = true;
             },
-            // initializeFields() {
-            //     this.form.affectation_igv_type_id = this.affectation_igv_types[0].id
-            // },
+            initFormEdit() {
+                if (!this.recordItem) return
+
+                this.form = {
+                    item_id: this.recordItem.item.id,
+                    item: this.recordItem.item,
+                    quantity: this.recordItem.quantity,
+                    unit_price: this.recordItem.unit_price,
+                    item_unit_type_id: this.recordItem.item_unit_type_id,
+                    item_unit_types: this.recordItem.item.item_unit_types || [],
+                    is_set: this.recordItem.is_set || false,
+                    subtotal: this.recordItem.subtotal,
+                    tax: this.recordItem.tax,
+                    tax_id: this.recordItem.tax.id,
+                    total: this.recordItem.total,
+                    total_tax: this.recordItem.total_tax,
+                    unit_type: this.recordItem.unit_type,
+                    discount: this.recordItem.discount,
+                    unit_type_id: this.recordItem.unit_type_id,
+                }
+
+                this.item_unit_types = this.recordItem.item.item_unit_types || []
+                this.tax_included_in_price = this.recordItem.tax_included_in_price || false
+                
+                if (this.recordItem.item.presentation) {
+                    this.item_unit_type = this.recordItem.item.presentation
+                }
+            },
             create() {
             //     this.initializeFields()
             },
