@@ -1210,6 +1210,12 @@ export default {
                 if (!this.form.health_fields.invoice_period_start_date || !this.form.health_fields.invoice_period_end_date)
                     return this.$message.error('Para facturas del sector salud debe incluir los datos del periodo de facturacion')
             }
+
+            // Agregar flag is_edit cuando es edición
+            if (this.is_edit) {
+                this.form.is_edit = true;
+            }
+
             this.form.service_invoice = await this.createInvoiceService();
             // return
             this.loading_submit = true

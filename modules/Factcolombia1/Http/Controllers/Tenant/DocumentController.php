@@ -586,10 +586,29 @@ class DocumentController extends Controller
 
             $ignore_state_document_id = ($company->type_environment_id === 2 || $invoice_json !== NULL);
             $ignore_state_document_id = true;
-            if($invoice_json !== NULL)
-                $correlative_api = $invoice_json_decoded['number'];
-            else
-                $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
+
+            // Modificar la lógica para manejar edición
+            if ($request->is_edit) {
+                // Buscar el documento original
+                $originalDocument = Document::where('number', $request->number)
+                                         ->where('prefix', $request->prefix)
+                                         ->first();
+
+                if ($originalDocument) {
+                    // Modificar el prefijo del documento original agregando "B"
+                    $originalDocument->prefix = 'B' . $originalDocument->prefix;
+                    $originalDocument->save();
+
+                    // Mantener el prefijo original para el nuevo documento
+                    $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
+                }
+            } else {
+                if($invoice_json !== NULL) {
+                    $correlative_api = $invoice_json_decoded['number'];
+                } else {
+                    $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
+                }
+            }
 
             // \Log::debug($correlative_api);
             if(isset($request->number))
@@ -2179,6 +2198,7 @@ class DocumentController extends Controller
             'customer_number' => $purchaseCoupon->customer_number,
             'customer_phone' => $purchaseCoupon->customer_phone,
             'customer_email' => $purchaseCoupon->customer_email,
+            'document_amount' => $purchaseCoupon->document_amount,
         ];
 
         $html = View::make('factcolombia1::coupon.coupon', $data)->render();
