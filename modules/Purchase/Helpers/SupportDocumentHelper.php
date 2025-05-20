@@ -306,7 +306,7 @@ class SupportDocumentHelper
         }
         
         foreach($items as $item) {
-            if(isset($item['item']['description']) && $item['item']['description'] === $line['description']) {
+            if(isset($item['item']['name']) && $item['item']['name'] === $line['description']) {
                 return $item;
             }
         }
