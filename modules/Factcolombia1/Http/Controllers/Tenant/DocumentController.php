@@ -919,7 +919,16 @@ class DocumentController extends Controller
                 }
                 $request->items = $service_invoice['invoice_lines'];
             }
-            $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
+
+            if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
+                $state_document_id = self::ACCEPTED;
+            } else {
+                $state_document_id = self::REJECTED;
+            }
+            
+            $request->merge(['state_document_id' => $state_document_id]);
+            
+            $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);    
             $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
             // Registrar cupón
             $this->registerCustomerCoupon($this->document);

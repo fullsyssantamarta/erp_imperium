@@ -58,21 +58,23 @@ class InventoryKardexServiceProvider extends ServiceProvider
         DocumentItem::created(function($document_item) {
 
             if(!$document_item->item->is_set){
-
-                $presentationQuantity = (!empty($document_item->item->presentation)) ? $document_item->item->presentation->quantity_unit : 1;
-    
                 $document = $document_item->document;
-                $factor = ($document->document_type_id === 3) ? 1 : -1;
-    
-                $warehouse = ($document_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($document_item->warehouse_id)->establishment_id) : $this->findWarehouse();
-    
-                // Crear kardex con cantidad 0 si viene de remisión, sino con la cantidad normal
-                $quantity = $document_item->from_remission ? 0 : ($factor * ($document_item->quantity * $presentationQuantity));
-                $this->createInventoryKardex($document_item->document, $document_item->item_id, $quantity, $warehouse->id);
+                if($document->state_document_id != 06){
+                    $presentationQuantity = (!empty($document_item->item->presentation)) ? $document_item->item->presentation->quantity_unit : 1;
+        
+                    $document = $document_item->document;
+                    $factor = ($document->document_type_id === 3) ? 1 : -1;
+        
+                    $warehouse = ($document_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($document_item->warehouse_id)->establishment_id) : $this->findWarehouse();
+        
+                    // Crear kardex con cantidad 0 si viene de remisión, sino con la cantidad normal
+                    $quantity = $document_item->from_remission ? 0 : ($factor * ($document_item->quantity * $presentationQuantity));
+                    $this->createInventoryKardex($document_item->document, $document_item->item_id, $quantity, $warehouse->id);
 
-                // Actualizar stock solo si no viene de remisión y no tiene sale_note_id ni order_note_id
-                if(!$document_item->from_remission && !$document->sale_note_id && !$document->order_note_id) {
-                    $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+                    // Actualizar stock solo si no viene de remisión y no tiene sale_note_id ni order_note_id
+                    if(!$document_item->from_remission && !$document->sale_note_id && !$document->order_note_id) {
+                        $this->updateStock($document_item->item_id, ($factor * ($document_item->quantity * $presentationQuantity)), $warehouse->id);
+                    }
                 }
             }
             else{

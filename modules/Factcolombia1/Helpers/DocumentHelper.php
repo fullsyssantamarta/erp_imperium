@@ -67,6 +67,7 @@ class DocumentHelper
         $document->time_days_credit = $request->time_days_credit;
         $document->response_api = $response;
         $document->response_api_status = $response_status;
+        $document->state_document_id = $request->state_document_id;
         $document->correlative_api = $correlative_api;
         $document->sale_note_id = $request->sale_note_id;
         $document->remission_id = $request->remission_id;
