@@ -71,7 +71,25 @@ class SupportDocumentController extends Controller
      */
     public function records(Request $request)
     {
-        $records = SupportDocument::with(['type_document'])->where($request->column, 'like', "%{$request->value}%");
+        if ($request->column == 'date_of_issue') {
+            if (strlen($request->value) == 7) {
+                // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
+                $year_month = explode('-', $request->value);
+                $year = $year_month[0];
+                $month = $year_month[1];
+                
+                $records = SupportDocument::with(['type_document'])
+                            ->whereYear('date_of_issue', $year)
+                            ->whereMonth('date_of_issue', $month);
+            } else {
+                // Si es una fecha específica (YYYY-MM-DD)
+                $records = SupportDocument::with(['type_document'])
+                            ->whereDate('date_of_issue', $request->value);
+            }
+        } else {
+            $records = SupportDocument::with(['type_document'])
+                        ->where($request->column, 'like', "%{$request->value}%");
+        }
 
         return new SupportDocumentCollection($records->latest()->paginate(config('tenant.items_per_page')));
     }

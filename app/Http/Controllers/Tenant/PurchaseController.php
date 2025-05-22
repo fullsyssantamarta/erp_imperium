@@ -86,7 +86,25 @@ class PurchaseController extends Controller
                             })
                             ->whereTypeUser()
                             ->latest();
+                break;
 
+            case 'date_of_issue':
+                if (strlen($request->value) == 7) {
+                    // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
+                    $year_month = explode('-', $request->value);
+                    $year = $year_month[0];
+                    $month = $year_month[1];
+                    
+                    $records = Purchase::whereYear('date_of_issue', $year)
+                                     ->whereMonth('date_of_issue', $month)
+                                     ->whereTypeUser()
+                                     ->latest();
+                } else {
+                    // Si es una fecha específica (YYYY-MM-DD)
+                    $records = Purchase::whereDate('date_of_issue', $request->value)
+                                     ->whereTypeUser()
+                                     ->latest();
+                }
                 break;
 
             case 'date_of_payment':

@@ -15,14 +15,38 @@
                     </div>
                     <div class="col-lg-3 col-md-4 col-sm-12 pb-2">
                         <template v-if="search.column=='date_of_issue'">
-                            <el-date-picker
-                                v-model="search.value"
-                                type="month"
-                                style="width: 100%;"
-                                placeholder="Seleccione mes"
-                                value-format="yyyy-MM"
-                                @change="getRecords">
-                            </el-date-picker>
+                            <div class="d-flex">
+                                <el-select 
+                                    v-model="filterType" 
+                                    placeholder="Tipo de filtro" 
+                                    style="width: 120px; margin-right: 8px;">
+                                    <el-option label="Por mes" value="month"></el-option>
+                                    <el-option label="Por fecha" value="date"></el-option>
+                                </el-select>
+                                
+                                <template v-if="filterType === 'month'">
+                                    <el-date-picker
+                                        v-model="search.value"
+                                        type="month"
+                                        style="width: calc(100% - 130px)"
+                                        placeholder="Seleccione mes"
+                                        value-format="yyyy-MM"
+                                        @change="getRecords">
+                                    </el-date-picker>
+                                </template>
+                                <template v-else>
+                                    <el-date-picker
+                                        v-model="search.value"
+                                        type="date"
+                                        style="width: calc(100% - 130px)"
+                                        placeholder="Seleccione fecha"
+                                        value-format="yyyy-MM-dd"
+                                        :clearable="true"
+                                        :editable="false"
+                                        @change="onDateChange">
+                                    </el-date-picker>
+                                </template>
+                            </div>
                         </template>
                         <template v-else>
                             <el-input 
@@ -81,6 +105,7 @@
         },
         data () {
             return {
+                filterType: 'month',
                 search: {
                     column: null,
                     value: null
@@ -132,7 +157,32 @@
             changeClearInput(){
                 this.search.value = ''
                 this.getRecords()
+            },
+            onDateChange(date) {
+                this.search.value = date;
+                this.getRecords();
+            }
+        },
+        watch: {
+            filterType(newValue) {
+                this.search.value = '';
+                if (newValue === 'month') {
+                    // Establecer la fecha actual en formato mes
+                    const date = new Date();
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    this.search.value = `${year}-${month}`;
+                }
+                this.getRecords();
             }
         }
     }
 </script>
+
+<style scoped>
+.d-flex {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+</style>

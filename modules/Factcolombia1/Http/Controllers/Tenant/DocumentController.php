@@ -123,8 +123,8 @@ class DocumentController extends Controller
                                  ->whereTypeUser()
                                  ->latest();
             } else {
-                // Si es una fecha específica
-                $records = Document::where($request->column, 'like', '%' . $request->value . '%')
+                // Si es una fecha específica (YYYY-MM-DD)
+                $records = Document::whereDate('date_of_issue', $request->value)
                                  ->whereTypeUser()
                                  ->latest();
             }

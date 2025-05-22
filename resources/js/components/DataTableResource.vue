@@ -15,7 +15,41 @@
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-4 col-sm-12 pb-2">
-                        <template v-if="search.column=='date_of_issue' || search.column=='date_of_due' || search.column=='date_of_payment' || search.column=='delivery_date'">
+                        <template v-if="search.column=='date_of_issue'">
+                            <div class="d-flex">
+                                <el-select 
+                                    v-model="filterType" 
+                                    placeholder="Tipo de filtro" 
+                                    style="width: 120px; margin-right: 8px;">
+                                    <el-option label="Por mes" value="month"></el-option>
+                                    <el-option label="Por fecha" value="date"></el-option>
+                                </el-select>
+                                
+                                <template v-if="filterType === 'month'">
+                                    <el-date-picker
+                                        v-model="search.value"
+                                        type="month"
+                                        style="width: calc(100% - 130px)"
+                                        placeholder="Seleccione mes"
+                                        value-format="yyyy-MM"
+                                        @change="getRecords">
+                                    </el-date-picker>
+                                </template>
+                                <template v-else>
+                                    <el-date-picker
+                                        v-model="search.value"
+                                        type="date"
+                                        style="width: calc(100% - 130px)"
+                                        placeholder="Seleccione fecha"
+                                        value-format="yyyy-MM-dd"
+                                        :clearable="true"
+                                        :editable="false"
+                                        @change="onDateChange">
+                                    </el-date-picker>
+                                </template>
+                            </div>
+                        </template>
+                        <template v-else-if="search.column=='date_of_due' || search.column=='date_of_payment' || search.column=='delivery_date'">
                             <el-date-picker
                                 v-model="search.value"
                                 type="date"
@@ -78,10 +112,15 @@
                 type: Boolean,
                 default: true,
                 required: false
+            },
+            initSearch: {
+                type: Object,
+                default: null
             }
         },
         data () {
             return {
+                filterType: 'month',
                 search: {
                     column: null,
                     value: null
@@ -99,11 +138,13 @@
             })
         },
         async mounted () {
-            // let column_resource = _.split(this.resource, '/')
-           // console.log(column_resource)
             await this.$http.get(`/${this.resource}/columns`).then((response) => {
                 this.columns = response.data
-                this.search.column = _.head(Object.keys(this.columns))
+                if (this.initSearch) {
+                    this.search = this.initSearch;
+                } else {
+                    this.search.column = _.head(Object.keys(this.columns))
+                }
             });
             await this.getRecords()
 
@@ -129,7 +170,34 @@
             changeClearInput(){
                 this.search.value = ''
                 this.getRecords()
+            },
+            onDateChange(date) {
+                this.search.value = date;
+                this.getRecords();
+            },
+            getCurrentMonth() {
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return `${year}-${month}`;
+            }
+        },
+        watch: {
+            filterType(newValue) {
+                this.search.value = '';
+                if (newValue === 'month') {
+                    this.search.value = this.getCurrentMonth();
+                }
+                this.getRecords();
             }
         }
     }
 </script>
+
+<style scoped>
+.d-flex {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+</style>

@@ -14,7 +14,7 @@
                 <h3 class="my-0">Listado de Nóminas</h3>
             </div>
             <div class="card-body">
-                <data-table :resource="resource">
+                <data-table :resource="resource" :init-search="initSearch">
                     <tr slot="heading" width="100%">
                         <th>#</th>
                         <th>Fecha</th>
@@ -114,6 +114,10 @@
                 showDialogDocumentPayrollOptions:false,
                 showDialogDocumentPayrollElimination:false,
                 loading: false,
+                initSearch: {
+                    column: 'date_of_issue',
+                    value: this.getCurrentMonth()
+                }
             }
         },
         created() { 
@@ -163,6 +167,12 @@
                 this.recordId = recordId
                 this.showDialogDocumentPayrollOptions = true
             },  
+            getCurrentMonth() {
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return `${year}-${month}`;
+            }
         }
     }
 </script>

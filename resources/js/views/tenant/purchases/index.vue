@@ -25,7 +25,7 @@
                 </el-dropdown>
             </div>
             <div class="card-body">
-                <data-table :resource="resource">
+                <data-table :resource="resource" :init-search="initSearch">
                     <tr slot="heading">
                         <th>#</th>
                         <th class="text-center">F. Emisión</th>
@@ -146,6 +146,10 @@
                 showDialogOptions: false,
                 showDialogPurchasePayments: false,
                 showImportDialog: false,
+                initSearch: {
+                    column: 'date_of_issue',
+                    value: this.getCurrentMonth()
+                },
                 columns: {
                     date_of_due: {
                         title: 'F. Vencimiento',
@@ -222,6 +226,12 @@
                     maximumFractionDigits: 2
                 }).format(number) : '0.00'
             },
+            getCurrentMonth() {
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return `${year}-${month}`;
+            }
         }
     }
 </script>
