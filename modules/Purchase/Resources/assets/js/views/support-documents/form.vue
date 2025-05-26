@@ -129,9 +129,9 @@
 
                                                 <td class="text-right">{{ratePrefix()}} {{getFormatUnitPriceRow(row.price)}}</td>
 
-                                                <td class="text-right">{{ratePrefix()}} {{row.subtotal}}</td>
-                                                <td class="text-right">{{ratePrefix()}} {{ row.discount }}</td>
-                                                <td class="text-right">{{ratePrefix()}} {{row.total}}</td>
+                                                <td class="text-right">{{ratePrefix()}} {{formatNumber(row.subtotal)}}</td>
+                                                <td class="text-right">{{ratePrefix()}} {{formatNumber(row.discount)}}</td>
+                                                <td class="text-right">{{ratePrefix()}} {{formatNumber(row.total)}}</td>
                                                 <td class="text-right">
                                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickRemoveItem(index)">x</button>
                                                     <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click="ediItem(row, index)" ><span style='font-size:10px;'>&#9998;</span> </button> -->
@@ -155,20 +155,18 @@
                                     <tr>
                                         <td>TOTAL VENTA</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.sale }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{formatNumber(form.sale)}}</td>
                                     </tr>
-                                    <tr >
+                                    <tr>
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.total_discount }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{formatNumber(form.total_discount)}}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
-                                            <td >
-                                                {{tax.name}}(+)
-                                            </td>
+                                            <td>{{tax.name}}(+)</td>
                                             <td>:</td>
-                                            <td class="text-right">{{ratePrefix()}} {{Number(tax.total).toFixed(2)}}</td>
+                                            <td class="text-right">{{ratePrefix()}} {{formatNumber(tax.total)}}</td>
                                         </tr>
                                     </template>
                                     <tr>
@@ -183,9 +181,10 @@
                                             <td>{{tax.name}}(-)</td>
                                             <td>:</td>
                                             <td class="text-right" width=35%>
-                                                <el-input v-model="tax.retention" readonly >
-                                                    <span slot="prefix" class="c-m-top">{{ ratePrefix() }}</span>
-                                                    <i slot="suffix" class="el-input__icon el-icon-delete pointer"  @click="clickRemoveRetention(index)"></i>
+                                                <el-input v-model="tax.retention" readonly>
+                                                    <span slot="prefix" class="c-m-top">{{ratePrefix()}}</span>
+                                                    <span slot="suffix">{{formatNumber(tax.retention)}}</span>
+                                                    <i slot="suffix" class="el-input__icon el-icon-delete pointer" @click="clickRemoveRetention(index)"></i>
                                                 </el-input>
                                             </td>
                                         </tr>
@@ -194,7 +193,7 @@
                                 </table>
 
                                 <template>
-                                    <h3 class="text-right"><b>TOTAL: </b>{{ratePrefix()}} {{ form.total }}</h3>
+                                    <h3 class="text-right"><b>TOTAL: </b>{{ratePrefix()}} {{formatNumber(form.total)}}</h3>
                                 </template>
                             </div>
 
@@ -341,9 +340,14 @@
             clickAddRetention(){
                 this.showDialogAddRetention = true
             },
+            formatNumber(number) {
+                return Number(number).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            },
             getFormatUnitPriceRow(unit_price){
-                return _.round(unit_price, 6)
-                // return unit_price.toFixed(6)
+                return this.formatNumber(_.round(unit_price, 6))
             },
             ediItem(row, index)
             {
