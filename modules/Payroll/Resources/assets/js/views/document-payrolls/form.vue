@@ -83,17 +83,20 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.admision_date']}">
                                             <label class="control-label">Fecha de admisión<span class="text-danger"> *</span>
-                                                <el-tooltip class="item" effect="dark" content="Fecha de inicio de labores del empleado" placement="top-start">
+                                                <el-tooltip class="item" effect="dark" content="Fecha de ingreso del trabajador a la empresa" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                            <el-date-picker v-model="form.period.admision_date" type="date" value-format="yyyy-MM-dd" :clearable="false" :disabled="form_disabled.admision_date"></el-date-picker>
+                                            <el-date-picker v-model="form.period.admision_date" type="date" value-format="yyyy-MM-dd" :clearable="false" :disabled="form_disabled.admision_date" @change="calculateWorkedTime"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.admision_date']" v-text="errors['period.admision_date'][0]"></small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.settlement_start_date']}">
                                             <label class="control-label">F. Inicio de periodo de liquidación<span class="text-danger"> *</span></label>
+                                                <el-tooltip class="item" effect="dark" content="Fecha de inicio del período de liquidación del documento" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
                                             <el-date-picker v-model="form.period.settlement_start_date" type="date" value-format="yyyy-MM-dd" :clearable="false" @change="changePeriodSettlement"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.settlement_start_date']" v-text="errors['period.settlement_start_date'][0]"></small>
                                         </div>
@@ -101,6 +104,9 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.settlement_end_date']}">
                                             <label class="control-label">F. Finalización de periodo de liquidación<span class="text-danger"> *</span></label>
+                                            <el-tooltip class="item" effect="dark" content="Fecha de fin del período de liquidación del documento" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
                                             <el-date-picker v-model="form.period.settlement_end_date" type="date" value-format="yyyy-MM-dd" :clearable="false" @change="changePeriodSettlement"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.settlement_end_date']" v-text="errors['period.settlement_end_date'][0]"></small>
                                         </div>
@@ -108,6 +114,9 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.issue_date']}">
                                             <label class="control-label">Fecha de emisión<span class="text-danger"> *</span></label>
+                                            <el-tooltip class="item" effect="dark" content="Fecha de emisión del documento" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
                                             <el-date-picker v-model="form.period.issue_date" type="date" value-format="yyyy-MM-dd" :clearable="false"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.issue_date']" v-text="errors['period.issue_date'][0]"></small>
                                         </div>
@@ -116,7 +125,10 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.worked_time']}">
                                             <label class="control-label">Tiempo trabajado<span class="text-danger"> *</span></label>
-                                            <el-input-number v-model="form.period.worked_time" :min="0" controls-position="right"></el-input-number>
+                                            <el-tooltip class="item" effect="dark" content="Tiempo que lleva laborando el trabajador en la empresa. Se calcula automáticamente." placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                            <el-input-number v-model="form.period.worked_time" :min="0" controls-position="right" disabled></el-input-number>
                                             <small class="form-control-feedback" v-if="errors['period.worked_time']" v-text="errors['period.worked_time'][0]"></small>
                                         </div>
                                     </div>
@@ -1869,13 +1881,21 @@
                 this.form.period.worked_time = moment(this.form.period.settlement_end_date).diff(moment(this.form.period.settlement_start_date), 'days', true)
 
             },
+            calculateWorkedTime() {
+        if (this.form.period.admision_date) {
+            // Calcular diferencia en días entre fecha actual y fecha de admisión
+            const admisionDate = moment(this.form.period.admision_date)
+            const today = moment()
+            this.form.period.worked_time = today.diff(admisionDate, 'days')
+        }
+    },
             setInitialDataPeriod(){
 
                 let last_month = moment().subtract(1, 'months')
 
                 this.form.period.settlement_start_date = last_month.startOf('month').format('YYYY-MM-DD')
                 this.form.period.settlement_end_date = last_month.endOf('month').format('YYYY-MM-DD')
-                this.form.period.worked_time = this.quantity_days_month
+                this.form.period.worked_time = this.calculateWorkedTime()
 
             },
             initForm() {
@@ -2395,6 +2415,7 @@
                     //autocompletar campos
                     await this.autocompleteDataFromWorker(this.form.select_worker)
 
+                    
                     //recalcular campos que utilizan el salario base del empleado para calculos, estos se ven afectados por el mismo
                     await this.recalculateData()
 
@@ -2440,6 +2461,8 @@
 
                 this.form.period.admision_date = worker.work_start_date
                 this.form_disabled.admision_date = worker.work_start_date ? true : false
+             
+                this.calculateWorkedTime()
 
                 this.autocompleteDataSalary(worker.salary)
 

@@ -11,7 +11,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.code}">
-                                    <label class="control-label">Código</label>
+                                    <label class="control-label">Código<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.code">
                                     </el-input>
                                     <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
@@ -20,7 +20,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.payroll_type_document_identification_id}">
-                                    <label class="control-label">Tipo de identificación</label>
+                                    <label class="control-label">Tipo de identificación<span class="text-danger"> *</span></label>
                                     <el-select v-model="form.payroll_type_document_identification_id"  filterable>
                                         <el-option v-for="option in payroll_type_document_identifications" :key="option.id" :value="option.id" :label="option.name"></el-option>
                                     </el-select>
@@ -30,7 +30,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.identification_number}">
-                                    <label class="control-label">N° Identificación  </label>
+                                    <label class="control-label">N° Identificación<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.identification_number">
                                         <!-- <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="changeNumberIdentification">
                                         </el-button> -->
@@ -41,7 +41,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.first_name}">
-                                    <label class="control-label">Nombre  </label>
+                                    <label class="control-label">Nombre<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.first_name" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.first_name" v-text="errors.first_name[0]"></small>
                                 </div>
@@ -49,7 +49,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.surname}">
-                                    <label class="control-label">Primer Apellido  </label>
+                                    <label class="control-label">Primer Apellido<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.surname" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.surname" v-text="errors.surname[0]"></small>
                                 </div>
@@ -57,7 +57,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.second_surname}">
-                                    <label class="control-label">Segundo Apellido  </label>
+                                    <label class="control-label">Segundo Apellido<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.second_surname" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.second_surname" v-text="errors.second_surname[0]"></small>
                                 </div>
@@ -91,7 +91,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.municipality_id}">
-                                    <label class="control-label">Municipalidad</label>
+                                    <label class="control-label">Municipalidad<span class="text-danger"> *</span></label>
                                     <el-select v-model="form.municipality_id" filterable>
                                         <el-option v-for="option in filtered_municipalities" :key="option.id" :value="option.id" :label="option.name"></el-option>
                                     </el-select>
@@ -101,7 +101,7 @@
 
                             <div class="col-md-6">
                                 <div class="form-group" :class="{'has-danger': errors.address}">
-                                    <label class="control-label">Dirección</label>
+                                    <label class="control-label">Dirección<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.address" dusk="address"></el-input>
                                     <small class="form-control-feedback" v-if="errors.address" v-text="errors.address[0]"></small>
                                 </div>
@@ -146,7 +146,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.salary}">
-                                    <label class="control-label">Salario</label>
+                                    <label class="control-label">Salario<span class="text-danger"> *</span></label>
                                     <el-input v-model="form.salary"></el-input>
                                     <small class="form-control-feedback" v-if="errors.salary" v-text="errors.salary[0]"></small>
                                 </div>
@@ -381,7 +381,10 @@
 
                 const payroll_month = _.find(this.payroll_periods, {id:5})
                 this.form.payroll_period_id = payroll_month ? payroll_month.id : null
-                 
+                
+                // Establecer método de pago por defecto (efectivo)
+                this.form.payment.payment_method_id = 10
+                this.changePaymentMethod()
             },
             submit() {
                 this.loading_submit = true

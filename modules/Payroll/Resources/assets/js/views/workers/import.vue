@@ -4,7 +4,10 @@
             <div class="form-body">
                 <div class="row">
                     <div class="col-md-12">
-                        <a href="/formats/co-workers.xlsx" target="_new" class="grey lighten-2 btn btn-sm">Descargar formato</a>
+                        <a href="/formats/co-workers.xlsx" target="_new" class="btn btn-success btn-sm">
+                            <i class="fas fa-file-excel mr-1"></i>
+                            Descargar formato
+                        </a>
                     </div>
                     <div class="col-md-12 mt-4">
                         <div class="form-group text-center" :class="{'has-danger': errors.file}">
