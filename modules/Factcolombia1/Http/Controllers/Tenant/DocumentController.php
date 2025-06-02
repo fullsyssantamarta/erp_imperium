@@ -1376,6 +1376,14 @@ class DocumentController extends Controller
             if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
 
 
+            if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
+                $state_document_id = self::ACCEPTED;
+            } else {
+                $state_document_id = self::REJECTED;
+            }
+
+            $request->merge(['state_document_id' => $state_document_id]);
+
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $this->document->update([
                 'xml' => $this->getFileName(),
