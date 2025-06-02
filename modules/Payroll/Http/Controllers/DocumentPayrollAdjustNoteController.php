@@ -80,7 +80,14 @@ class DocumentPayrollAdjustNoteController extends Controller
      */
     public function record($id)
     {
-        return new DocumentPayrollAdjustNoteResource(DocumentPayroll::with(['accrued', 'deduction'])->findOrFail((int) $id));
+        $document = DocumentPayroll::with([
+            'accrued', 
+            'deduction',
+            'worker',
+            'payroll_period'
+        ])->findOrFail($id);
+
+        return new DocumentPayrollAdjustNoteResource($document);
     }
     
      
@@ -91,55 +98,55 @@ class DocumentPayrollAdjustNoteController extends Controller
      * @param  DocumentPayrollAdjustNoteRequest $request
      * @return array
      */
-    public function store(DocumentPayrollAdjustNoteRequest $request)
-    {
+public function store(DocumentPayrollAdjustNoteRequest $request)
+{
+    try {
+        // dd($request->all());
+        DB::connection('tenant')->beginTransaction();
+        
+        // Obtener y validar inputs
+        $helper = new DocumentPayrollHelper();
+        $inputs = $helper->getInputsAdjustNote($request);
+        
 
-        try {
+        // Crear documento base
+        $document = DocumentPayroll::create($inputs);
+        
+        // Crear nota de ajuste
+        $document->adjust_note()->create($inputs['adjust_note']);
 
-            $data = DB::connection('tenant')->transaction(function () use($request) {
-    
-                // inputs
-                $helper = new DocumentPayrollHelper();
-                $inputs = $helper->getInputsAdjustNote($request);
-                // dd($inputs);
-
-                // registrar nomina en bd
-                $document = DocumentPayroll::create($inputs);
-                $document->adjust_note()->create($inputs['adjust_note']);
-
-                // si es nómina reemplazo, registrar devengados y deducciones
-                if(!$document->adjust_note->is_adjust_note_elimination)
-                {
-                    $document->accrued()->create($inputs['accrued']);
-                    $document->deduction()->create($inputs['deduction']);
-                }
-    
-                // enviar nomina ajuste a la api
-                $send_to_api = $helper->sendToApi($document, $inputs);
-    
-                $document->update([
-                    'response_api' => $send_to_api
-                ]);
-    
-                return $document;
-            });
-
-            $message = $data->adjust_note->is_adjust_note_elimination ? "Nómina de eliminación {$data->number_full} registrada con éxito" : "Nómina de reemplazo {$data->number_full} registrada con éxito";
-    
-            return [
-                'success' => true,
-                'message' => $message,
-                'data' => [
-                    'id' => $data->id
-                ]
-            ];
-
-        } catch (Exception $e)
-        {
-            return $this->getErrorFromException($e->getMessage(), $e);
+        // Si es nómina de reemplazo
+        if(!$document->adjust_note->is_adjust_note_elimination) {
+            $document->accrued()->create($inputs['accrued']);
+            $document->deduction()->create($inputs['deduction']);
         }
 
+        // Enviar a API
+        $send_to_api = $helper->sendToApi($document, $inputs);
+        
+        // Actualizar respuesta
+        $document->update([
+            'response_api' => $send_to_api
+        ]);
+
+        DB::connection('tenant')->commit();
+        
+        return [
+            'success' => true,
+            'message' => $document->adjust_note->is_adjust_note_elimination ? 
+                        "Nómina de eliminación {$document->number_full} registrada con éxito" : 
+                        "Nómina de reemplazo {$document->number_full} registrada con éxito",
+            'data' => [
+                'id' => $document->id
+            ]
+        ];
+
+    } catch (\Exception $e) {
+        DB::connection('tenant')->rollBack();
+        \Log::error($e->getMessage());
+        return $this->getErrorFromException($e->getMessage(), $e);
     }
+}
  
         
 }

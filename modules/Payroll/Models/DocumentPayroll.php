@@ -186,6 +186,11 @@ class DocumentPayroll extends PayrollBaseModel
         return $this->belongsTo(Worker::class, 'worker_id');
     }
 
+    public function worker()
+    {
+        return $this->belongsTo(Worker::class, 'worker_id');
+    }
+
     public function accrued() 
     {
         return $this->hasOne(DocumentPayrollAccrued::class, 'co_document_payroll_id');

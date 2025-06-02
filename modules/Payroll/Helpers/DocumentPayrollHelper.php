@@ -113,7 +113,8 @@ class DocumentPayrollHelper
                 'establishment' => $establishment,
                 'date_of_issue' => $date_of_issue,
                 'time_of_issue' => $time_of_issue,
-                'state_document_id' => self::REGISTERED, //estado inicial
+                'state_document_id' => self::REGISTERED,
+                'type_document_id' => $inputs->type_document_id,
                 'payroll_type_environment_id' => $this->company->payroll_type_environment_id,
                 'period' => $document_payroll->period,
                 'payroll_period_id' => $document_payroll->payroll_period_id,
@@ -125,7 +126,7 @@ class DocumentPayrollHelper
 
 
         //nómina reemplazo
-        $worker = WorkerInput::set($inputs->worker_id);
+        $worker = WorkerInput::set($inputs->worker_id[0]); // Modificar esta línea para tomar el primer elemento del array
 
         return [
             'consecutive' => $consecutive,
@@ -136,8 +137,12 @@ class DocumentPayrollHelper
             'date_of_issue' => $date_of_issue,
             'time_of_issue' => $time_of_issue,
             'worker' => $worker,
+            'worker_id' => $inputs->worker_id[0], // Modificar esta línea para tomar el primer elemento del array
+            'type_document_id' => $inputs->type_document_id,
             'state_document_id' => self::REGISTERED, //estado inicial
             'payroll_type_environment_id' => $this->company->payroll_type_environment_id,
+            'period' => $inputs->period,
+            'payroll_period_id' => $inputs->payroll_period_id,
             'adjust_note' => $adjust_note,
         ];
         

@@ -1669,7 +1669,7 @@
 
                 this.form.period = data.period
                 this.form.payroll_period_id = data.payroll_period_id
-                this.form.worker_id = data.worker_id
+                this.form.worker_id = [data.worker_id]
                 this.form.payment = data.payment
                 this.form.payment_dates = data.payment_dates
                 this.form.number_full = data.number_full
