@@ -337,7 +337,40 @@ class SearchEmailController extends Controller
             'company_idnumber' => $company->identification_number,
         ];
 
-        return $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
+        $response = $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
+        
+        // Validar si es documento de crédito
+        if($response['success']) {
+            $data = $response['data'];
+            if (!$this->isValidCreditDocument($data)) {
+                return [
+                    'success' => false,
+                    'message' => 'Solo se permiten documentos de crédito'
+                ];
+            }
+        }
+        
+        return $response;
+    }
+
+    private function isValidCreditDocument($data)
+    {
+        if (!isset($data['payment_means'])) {
+            return false;
+        }
+
+        $payment_means = $data['payment_means'];
+
+        if (!isset($payment_means['id']) || $payment_means['id'] !== '2') {
+            return false;
+        }
+
+        // Validar PaymentDueDate
+        if (!isset($payment_means['payment_due_date'])) {
+            return false;
+        }
+
+        return true;
     }
 
 

@@ -240,7 +240,14 @@ class RadianEventController extends Controller
 
                 if(!$send_request_to_api['success']) throw new Exception($send_request_to_api['message']);
                 // enviar api
-
+                
+                // Validar si es documento de crédito
+                if (!$this->isValidCreditDocument($send_request_to_api['data'])) {
+                    return [
+                        'success' => false,
+                        'message' => 'Solo se permiten documentos de crédito'
+                    ];
+                }
 
                 //subir archivo 
                 Storage::disk('tenant')->put($folder.DIRECTORY_SEPARATOR.$filename, $file_content);
@@ -273,5 +280,22 @@ class RadianEventController extends Controller
             'message' =>  __('app.actions.upload.error'),
         ];
     }
+    private function isValidCreditDocument($data)
+    {
+        if (!isset($data['payment_means'])) {
+            return false;
+        }
 
+        $payment_means = $data['payment_means'];
+
+        if (!isset($payment_means['id']) || $payment_means['id'] !== '2') {
+            return false;
+        }
+
+        // Validar PaymentDueDate
+        if (!isset($payment_means['payment_due_date'])) {
+            return false;
+        }
+        return true;
+    }
 }
