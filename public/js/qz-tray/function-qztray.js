@@ -1,14 +1,18 @@
 function startConnection(config) {
-    console.log('Waiting, default');
+    console.log('Iniciando conexión con QZ Tray...');
     if (!qz.websocket.isActive()) {
-        console.log('Waiting, default');
+        console.log('No hay conexión activa, intentando conectar...');
 
         qz.websocket.connect(config).then(function() {
-            console.log('Active, success');
+            console.log('Conexión establecida exitosamente');
             findVersion();
             findDefaultPrinter(true);
-        }).catch(handleConnectionError);
+        }).catch(function(err) {
+            console.error('Error de conexión:', err);
+            handleConnectionError(err);
+        });
     } else {
+        console.log('Ya existe una conexión activa con QZ');
         displayError('An active connection with QZ already exists.', 'alert-warning');
     }
 }
@@ -41,19 +45,44 @@ function getUpdatedConfig() {
         cfg = qz.configs.create(null);
     }
 
-    setConfigW80();
-    return cfg
+    // Configuración específica para PDF
+    cfg.reconfigure({
+        altPrinting: false,
+        encoding: 'UTF-8',
+        perSpool: 1,
+        colorType: 'Color',
+        copies: 1,
+        density: 0,
+        duplex: false,
+        size: {
+            width: 80,
+            height: 'auto'
+        },
+        margins: {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+        },
+        orientation: 'portrait',
+        units: 'mm',
+        rasterize: false,
+        scaleContent: true
+    });
+
+    return cfg;
 }
 
 function setConfigW80(){
-    updateConfig(80, 100, 0, 0, 0, 0, 1, 'Default', 0, 'mm');
+    updateConfig(80, 50, 0, 0, 0, 0, 1, 'Default', 0, 'mm');
 }
 
 function updateConfig(pxlW, pxlH, top, right, bottom, left, copies, orientation, rotation, units) {
     var pxlSize = null;
     if(pxlH>0){
         pxlSize = {
-            width:  pxlW
+            width:  pxlW,
+            height: pxlH
         };
     }
 

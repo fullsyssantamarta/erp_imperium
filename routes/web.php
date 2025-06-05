@@ -556,6 +556,8 @@ if ($hostname) {
            Route::post('certificates-qztray/uploads', 'Tenant\CertificateQzTrayController@uploadFileQzTray');
            Route::delete('certificates-qztray', 'Tenant\CertificateQzTrayController@destroy');
            Route::post('certificates-qztray/change-status', 'Tenant\CertificateQzTrayController@changeStatus');
+           Route::get('certificates-qztray/digital', 'Tenant\CertificateQzTrayController@digital');
+            Route::get('certificates-qztray/private', 'Tenant\CertificateQzTrayController@private');
         //    Route::get('certificates-qztray/html/document/{id}', 'Tenant\CertificateQzTrayController@getHtmlDocument');
 
         });

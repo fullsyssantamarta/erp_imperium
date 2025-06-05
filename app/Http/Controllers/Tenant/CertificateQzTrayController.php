@@ -116,7 +116,7 @@ class CertificateQzTrayController extends Controller
         if (Storage::disk('local')->exists('certificates\\qztray\\'.$config->private_certificate_qztray)) {
             $content_private_certificate = Storage::disk('local')->get('certificates\\qztray\\'.$config->private_certificate_qztray);
         }
-        return $content_private_certificate ? $content_private_certificate : null;
+        return $content_private_certificate ? $content_private_certificate : '';
     }
 
     private function contentCertificaQzDigital()
@@ -126,8 +126,8 @@ class CertificateQzTrayController extends Controller
         if (Storage::disk('local')->exists('certificates\\qztray\\'.$config->digital_certificate_qztray)) {
             $content_digital_certificate = Storage::disk('local')->get('certificates\\qztray\\'.$config->digital_certificate_qztray);
         }
-
-        return $content_digital_certificate ? $content_digital_certificate : null;
+        
+        return $content_digital_certificate ? $content_digital_certificate : '';
     }
 
     public function changeStatus(Request $request)

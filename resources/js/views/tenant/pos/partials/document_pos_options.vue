@@ -100,32 +100,80 @@
                     startConnection()
                 }
             },
+            // async printTicket() {
+            //     let html_content = null
+            //     await this.$http.get(this.form.print_html)
+            //         .then(response => {
+            //             html_content = response.data
+            //         })
+            //         .catch(error => {
+            //             console.log(error)
+            //         })
+            //     if (html_content) {
+            //         console.log('imprimir')
+            //         const opts = getUpdatedConfig()
+            //         const printData = [
+            //             {
+            //                 type: 'html',
+            //                 format: 'plain',
+            //                 data: html_content,
+            //                 options: opts
+            //             }
+            //         ]
+            //         qz.print(opts, printData)
+            //             .then(() => {
+            //                 console.log('Impresión en proceso...')
+            //                 this.$message.success('Impresión en proceso...')
+            //             })
+            //             .catch(displayError)
+            //     }
+            // },
             async printTicket() {
-                let html_content = null
-                await this.$http.get(this.form.print_html)
-                    .then(response => {
-                        html_content = response.data
-                    })
-                    .catch(error => {
-                        console.log(error)
-                    })
-                if (html_content) {
-                    console.log('imprimir')
-                    const opts = getUpdatedConfig()
-                    const printData = [
-                        {
-                            type: 'html',
-                            format: 'plain',
-                            data: html_content,
-                            options: opts
+                try {
+                    // Obtener el PDF del ticket según la pestaña activa
+                    const pdfUrl = {
+                        first: this.form.print_a4,
+                        second: this.form.print_a5,
+                        third: this.form.print_ticket
+                    }[this.activeName] || this.form.print_ticket;
+
+                    if (!pdfUrl) {
+                        this.$message.error('No se encontró el documento para imprimir');
+                        return;
+                    }
+
+                    // Obtener el PDF como base64
+                    const response = await fetch(pdfUrl);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    
+                    const base64Data = await new Promise((resolve) => {
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(blob);
+                    });
+
+                    // Configurar impresora
+                    const config = getUpdatedConfig();
+                    
+                    // Preparar datos para impresión
+                    const printData = [{
+                        type: 'pdf',
+                        format: 'base64',
+                        data: base64Data,
+                        options: {
+                            sizing: 'fit',
+                            orientation: 'portrait',
+                            units: 'mm'
                         }
-                    ]
-                    qz.print(opts, printData)
-                        .then(() => {
-                            console.log('Impresión en proceso...')
-                            this.$message.success('Impresión en proceso...')
-                        })
-                        .catch(displayError)
+                    }];
+
+                    // Imprimir
+                    await qz.print(config, printData);
+                    this.$message.success('Documento enviado a la impresora');
+
+                } catch (error) {
+                    console.error('Error en la impresión:', error);
+                    this.$message.error('Error al imprimir: ' + error.message);
                 }
             },
             initForm() {
