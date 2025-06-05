@@ -72,33 +72,62 @@
                     search_end_date: moment().format('YYYY-MM-DD'),
                 }
             },
+            validateDates() {
+                const start = moment(this.form.search_start_date)
+                const end = moment(this.form.search_end_date)
+                
+                if(end.isBefore(start)) {
+                    this.$message({
+                        message: 'La fecha final no puede ser anterior a la fecha inicial',
+                        type: 'warning'
+                    })
+                    return false
+                }
+                return true
+            },
             async submit()
             {
+                if(!this.validateDates()) return
+                
                 this.loading_submit = true
                 
-                await this.$http.get(`/co-radian-events/search-imap-emails?${this.getQueryParameters()}`)
-                    .then(response => {
+                try {
+                    const response = await this.$http.get(`/co-radian-events/search-imap-emails?${this.getQueryParameters()}`)
+                    
+                    this.$eventHub.$emit('reloadData')
 
-                        this.$eventHub.$emit('reloadData')
+                    if(response.data.success)
+                    {
+                        const duration = response.data.data?.diff_in_seconds || 0
+                        this.$message({
+                            message: `${response.data.message} (Tiempo: ${duration} segundos)`,
+                            type: 'success',
+                            duration: 8000,
+                            showClose: true
+                        })
+                        this.close()
+                    }
+                    else
+                    {
+                        this.$message({
+                            message: response.data.message || 'Ocurrió un error al procesar los correos',
+                            type: 'error',
+                            duration: 5000,
+                            showClose: true
+                        })
+                    }
 
-                        if(response.data.success)
-                        {
-                            this.$message.success(response.data.message)
-                            this.close()
-                        }
-                        else
-                        {
-                            this.$message.error(response.data.message)
-                        }
-
+                } catch (error) {
+                    console.error(error)
+                    this.$message({
+                        message: error.response?.data?.message || 'Error al procesar la solicitud',
+                        type: 'error',
+                        duration: 5000,
+                        showClose: true
                     })
-                    .catch(error => {
-                        console.log(error)
-                        this.$message.error(error.response.data.message)
-                    })
-                    .then(() => {
-                        this.loading_submit = false
-                    })
+                } finally {
+                    this.loading_submit = false
+                }
             },
             getQueryParameters() {
                 return queryString.stringify({
