@@ -105,9 +105,37 @@
                 }
             },
 
-            errorUpload(response) {
-                console.log(response)
-            }
+            errorUpload(err) {
+                let errorMessage = '';
+                
+                if (err.response && err.response.data) {
+                    const response = err.response.data;
+                    
+                    if (response.errors) {
+                        const errors = response.errors;
+                        Object.keys(errors).forEach(key => {
+                            if (!key.includes('tax_totals') && 
+                                !key.includes('allowance_charges')) {
+                                errorMessage += `${errors[key][0]}\n`;
+                            }
+                        });
+                    } else if (response.message) {
+                        errorMessage = response.message;
+                    }
+                }
+
+                if (errorMessage) {
+                    this.$message({
+                        message: errorMessage,
+                        type: 'error',
+                        duration: 5000,
+                        showClose: true
+                    });
+                }
+
+                console.log('Error completo:', err);
+                this.loading_submit = false;
+            },
         }
     }
 </script>
