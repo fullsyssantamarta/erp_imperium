@@ -239,7 +239,7 @@
         <!-- Nueva sección configuración API -->
         <div class="card mb-0 pt-2 pt-md-0 mt-4">
             <div class="card-header bg-info">
-                <h3 class="my-0">Configuración API</h3>
+                <h3 class="my-0">Configuración API WhatsApp</h3>
             </div>
             <div class="card-body">
                 <form autocomplete="off">
