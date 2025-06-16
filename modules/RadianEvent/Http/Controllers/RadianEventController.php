@@ -280,22 +280,34 @@ class RadianEventController extends Controller
             'message' =>  __('app.actions.upload.error'),
         ];
     }
+
     private function isValidCreditDocument($data)
     {
+        // Validar que exista payment_means
         if (!isset($data['payment_means'])) {
             return false;
         }
 
         $payment_means = $data['payment_means'];
 
+        // Validar que sea crédito (id = 2)
         if (!isset($payment_means['id']) || $payment_means['id'] !== '2') {
-            return false;
+            return false; 
         }
 
-        // Validar PaymentDueDate
+        // Validar que tenga fecha de vencimiento
         if (!isset($payment_means['payment_due_date'])) {
             return false;
         }
+
+        // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
+        $due_date = Carbon::parse($payment_means['payment_due_date']);
+        $issue_date = isset($data['issue_date']) ? Carbon::parse($data['issue_date']) : null;
+
+        if ($issue_date && $due_date->lessThanOrEqualTo($issue_date)) {
+            return false;
+        }
+
         return true;
     }
 }

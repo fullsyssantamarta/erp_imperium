@@ -127,6 +127,12 @@ class SearchEmailController extends Controller
                                         // registrar en bd
                                         $email_reading_detail = $this->saveEmailReadingDetail($email_reading, $mail);
 
+                                        // Si no es documento a crédito, actualizamos el detalle y continuamos con el siguiente
+                                        if(isset($send_request_to_api['skip_document'])) {
+                                            $this->updateEmailReadingDetail($email_reading_detail, $send_request_to_api);
+                                            continue;
+                                        }
+
                                         if($send_request_to_api['success'])
                                         {
                                             $data = $send_request_to_api['data'];
@@ -278,7 +284,13 @@ class SearchEmailController extends Controller
      */
     private function updateEmailReadingDetail(&$email_reading_detail, $data)
     {
-        $email_reading_detail->api_validation_response = $data;
+        if (isset($data['skip_document'])) {
+            $email_reading_detail->success = false;
+            $email_reading_detail->message_api = 'Documento omitido: No es un documento de crédito';
+        } else {
+            $email_reading_detail->success = $data['success'];
+            $email_reading_detail->api_validation_response = $data;
+        }
         $email_reading_detail->save();
     }
 
@@ -339,34 +351,46 @@ class SearchEmailController extends Controller
 
         $response = $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
         
-        // Validar si es documento de crédito
+        // Validar si es documento de crédito 
         if($response['success']) {
             $data = $response['data'];
+            // Si no es documento de crédito, retornamos respuesta indicando que se debe omitir
             if (!$this->isValidCreditDocument($data)) {
                 return [
                     'success' => false,
-                    'message' => 'Solo se permiten documentos de crédito'
+                    'message' => 'Documento omitido: No es un documento de crédito',
+                    'skip_document' => true
                 ];
             }
         }
-        
+
         return $response;
     }
 
     private function isValidCreditDocument($data)
     {
+        // Validar que exista payment_means
         if (!isset($data['payment_means'])) {
             return false;
         }
 
         $payment_means = $data['payment_means'];
 
+        // Validar que sea crédito (id = 2)
         if (!isset($payment_means['id']) || $payment_means['id'] !== '2') {
+            return false; 
+        }
+
+        // Validar que tenga fecha de vencimiento
+        if (!isset($payment_means['payment_due_date'])) {
             return false;
         }
 
-        // Validar PaymentDueDate
-        if (!isset($payment_means['payment_due_date'])) {
+        // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
+        $due_date = Carbon::parse($payment_means['payment_due_date']);
+        $issue_date = isset($data['issue_date']) ? Carbon::parse($data['issue_date']) : null;
+
+        if ($issue_date && $due_date->lessThanOrEqualTo($issue_date)) {
             return false;
         }
 
