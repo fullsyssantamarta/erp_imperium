@@ -285,10 +285,11 @@ class SearchEmailController extends Controller
     private function updateEmailReadingDetail(&$email_reading_detail, $data)
     {
         if (isset($data['skip_document'])) {
-            $email_reading_detail->success = false;
-            $email_reading_detail->message_api = 'Documento omitido: No es un documento de crédito';
+            $email_reading_detail->api_validation_response = [
+                'success' => false,
+                'message' => 'Documento omitido: No es un documento de crédito'
+            ];
         } else {
-            $email_reading_detail->success = $data['success'];
             $email_reading_detail->api_validation_response = $data;
         }
         $email_reading_detail->save();
