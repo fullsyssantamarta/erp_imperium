@@ -51,7 +51,7 @@
             <td>{{ row.unit_type_id }}</td>
             <td>{{ row.name }}</td>
             <td>{{ row.description }}</td>
-            <td class="text-center">{{ row.sale_unit_price }}</td>
+            <td class="text-center">{{ formatNumber(row.sale_unit_price) }}</td>
             <td class="text-center">
               <a @click="viewImages(row)" href="#">
                 <img :src="row.image_url_small" alt width="150" height="150" />
@@ -155,6 +155,9 @@ export default {
   },
   created() {},
   methods: {
+    formatNumber(number) {
+      return Number(number).toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    },
     viewImages(row) {
       this.recordImages.image_url = row.image_url;
       this.recordImages.image_url_medium = row.image_url_medium;
