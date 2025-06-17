@@ -32,7 +32,7 @@ if($hostname) {
                     Route::get('{id}', 'DocumentPayrollAdjustNoteController@create');
                     Route::post('', 'DocumentPayrollAdjustNoteController@store');
                     Route::get('record/{record}', 'DocumentPayrollAdjustNoteController@record');
-
+                    Route::post('preeliminar-view', 'DocumentPayrollAdjustNoteController@preeliminarview');
                 });
 
 

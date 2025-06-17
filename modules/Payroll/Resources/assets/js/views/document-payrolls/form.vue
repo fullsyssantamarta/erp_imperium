@@ -1520,7 +1520,7 @@
 
 
                     <div class="form-actions text-right mt-4">
-                        <el-button type="primary" @click.prevent="preeliminarView" :loading="loading_preview">Vista Preliminar</el-button>
+                        <el-button v-if="!isAdjustNote" type="primary" @click.prevent="preeliminarView" :loading="loading_preview">Vista Preliminar</el-button>
                         <el-button @click.prevent="close()">Cancelar</el-button>
                         <el-button class="submit" type="primary" native-type="submit" :loading="loading_submit">Generar</el-button>
                     </div>
