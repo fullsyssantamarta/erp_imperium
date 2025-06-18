@@ -151,6 +151,55 @@ class DocumentPayrollAdjustNoteController extends Controller
             return $this->getErrorFromException($e->getMessage(), $e);
         }
     }
- 
+    protected function processAccruedData($accrued)
+        {
+            $total_accrued = floatval($accrued['total_base_salary']);
+
+            $direct_fields = [
+                'transportation_allowance',
+                'total_extra_hours',
+                'total_license'
+            ];
+
+            $array_fields = [
+                'other_concepts' => ['salary_concept', 'non_salary_concept'],
+                'work_disabilities' => ['value'],
+                'service_bonus' => ['value'],
+                'severance' => ['value'],
+                'common_vacation' => ['value'],
+                'paid_vacation' => ['value'],
+                'bonuses' => ['value'],
+                'aid' => ['value'],
+                'commissions' => ['value'],
+                'third_party_payments' => ['value'],
+                'advances' => ['value'],
+                'compensations' => ['value'],
+                'epctv_bonuses' => ['value']
+            ];
+
+            foreach ($direct_fields as $field) {
+                if (isset($accrued[$field]) && !empty($accrued[$field])) {
+                    $total_accrued += floatval($accrued[$field]);
+                }
+            }
+
+            foreach ($array_fields as $field => $value_keys) {
+                if (isset($accrued[$field]) && !empty($accrued[$field])) {
+                    foreach ($accrued[$field] as $item) {
+                        foreach ($value_keys as $value_key) {
+                            if (isset($item[$value_key])) {
+                                $total_accrued += floatval($item[$value_key]);
+                            }
+                        }
+                    }
+                } else {
+                    unset($accrued[$field]);
+                }
+            }
+
+            $accrued['accrued_total'] = $total_accrued;
+
+            return $accrued;
+        }
         
 }
