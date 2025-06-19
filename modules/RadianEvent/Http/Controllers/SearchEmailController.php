@@ -287,7 +287,10 @@ class SearchEmailController extends Controller
         if (isset($data['skip_document'])) {
             $email_reading_detail->api_validation_response = [
                 'success' => false,
-                'message' => 'Documento omitido: No es un documento de crédito'
+                'response_api' => [
+                    'success' => false,
+                    'message' => 'Documento omitido: No es un documento de crédito',
+                ]
             ];
         } else {
             $email_reading_detail->api_validation_response = $data;
