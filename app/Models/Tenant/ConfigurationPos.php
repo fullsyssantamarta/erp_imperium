@@ -18,10 +18,13 @@ class ConfigurationPos extends ModelTenant
         'generated',
         'plate_number',
         'cash_type',
+        'show_in_establishments',
+        'establishment_ids',
     ];
 
     protected $casts = [
         'resolution_date' => 'date',
         'electronic' => 'boolean',
+        'establishment_ids' => 'array',
     ];
 }

@@ -1426,6 +1426,7 @@ class DocumentPosController extends Controller
 
             // Proceder con la anulación en base de datos independientemente si es electrónico o no
             $obj->state_type_id = 11;
+            $obj->date_of_issue = now()->format('Y-m-d');
             $obj->save();
 
             $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();

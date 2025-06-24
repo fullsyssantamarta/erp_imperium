@@ -72,7 +72,17 @@ class CashController extends Controller
                 break;
         }
 
-        $resolutions = ConfigurationPos::select('id', 'prefix', 'resolution_number')->get();
+        $establishment_id = $user->establishment_id;
+
+        $resolutions = ConfigurationPos::select('id', 'prefix', 'resolution_number')
+            ->where(function($query) use ($establishment_id) {
+                $query->where('show_in_establishments', 'all')
+                    ->orWhere(function($q) use ($establishment_id) {
+                        $q->where('show_in_establishments', 'custom')
+                            ->whereJsonContains('establishment_ids', $establishment_id);
+                    });
+            })
+            ->get();
 
         return compact('users', 'user', 'resolutions');
     }

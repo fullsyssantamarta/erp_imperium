@@ -222,6 +222,39 @@
                                 </div>
                             </div>
 
+                            <div class="row mt-4 align-items-end">
+                                <div class="col-lg-6">
+                                    <div class="form-group mb-0" :class="{'has-danger': errors.show_in_establishments}">
+                                        <label class="control-label">¿Dónde mostrar esta resolución?</label>
+                                        <el-select v-model="resolution.show_in_establishments" placeholder="Seleccione una opción">
+                                            <el-option label="Todos los establecimientos" value="all"></el-option>
+                                            <el-option label="Ninguno" value="none"></el-option>
+                                            <el-option label="Seleccionar" value="custom"></el-option>
+                                        </el-select>
+                                        <small class="form-control-feedback" v-if="errors.show_in_establishments" v-text="errors.show_in_establishments[0]"></small>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6" v-if="resolution.show_in_establishments === 'custom'">
+                                    <div class="form-group mb-0" :class="{'has-danger': errors.establishment_ids}">
+                                        <label class="control-label">Establecimientos</label>
+                                        <el-select
+                                            v-model="resolution.establishment_ids"
+                                            multiple
+                                            filterable
+                                            placeholder="Seleccione los establecimientos"
+                                            style="width: 100%;">
+                                            <el-option
+                                                v-for="est in establishments"
+                                                :key="est.id"
+                                                :label="est.description"
+                                                :value="est.id">
+                                            </el-option>
+                                        </el-select>
+                                        <small class="form-control-feedback" v-if="errors.establishment_ids" v-text="errors.establishment_ids[0]"></small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-actions text-right mt-4">
                                 <el-button type="default " @click="clearFields()">Limpiar campos</el-button>
                                 <el-button
@@ -298,6 +331,19 @@
             },
 
             resolution: {
+                prefix : '',
+                resolution_number: '',
+                resolution_date: '',
+                date_from: '',
+                date_end: '',
+                from: '',
+                to: '',
+                electronic: true,
+                generated: '',
+                plate_number: '',
+                cash_type: '',
+                show_in_establishments: 'all',
+                establishment_ids: [],
             },
 
             loadingResolution: false,
@@ -306,7 +352,8 @@
                 api_url: '',
                 api_token: ''
             },
-            loadingApiConfig: false
+            loadingApiConfig: false,
+            establishments: [],
         }),
 
         mounted() {
@@ -332,6 +379,7 @@
             this.getRecords()
             this.loadApiConfig()
             this.getWhatsappConfig();
+            this.getEstablishments();
         },
 
         methods: {
@@ -349,6 +397,13 @@
                     })
             },
 
+            getEstablishments() {
+                this.$http.get('/establishments/records')
+                    .then(response => {
+                        this.establishments = response.data.data;
+                    });
+            },
+
             initForm() {
                 this.resolution = {
                     prefix : '',
@@ -362,6 +417,8 @@
                     generated: '',
                     plate_number: '',
                     cash_type: '',
+                    show_in_establishments: 'all',
+                    establishment_ids: [],
                 }
             },
 
@@ -404,7 +461,9 @@
                     electronic: row.electronic,
                     generated: row.generated,
                     plate_number: row.plate_number,
-                    cash_type: row.cash_type
+                    cash_type: row.cash_type,
+                    show_in_establishments: row.show_in_establishments ?? 'all',
+                    establishment_ids: row.establishment_ids ?? [],
                 }
             },
 

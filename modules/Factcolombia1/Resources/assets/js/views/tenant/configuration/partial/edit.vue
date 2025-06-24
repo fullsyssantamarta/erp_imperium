@@ -95,6 +95,37 @@
                             <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
                         </div>
                     </div>
+
+                    <div class="col-md-12">
+                        <div class="form-group" :class="{'has-danger': errors.show_in_establishments}">
+                            <label class="control-label">¿Dónde mostrar esta resolución?</label>
+                            <el-select v-model="form.show_in_establishments" placeholder="Seleccione una opción">
+                                <el-option label="Mostrar en todos los establecimientos" value="all"></el-option>
+                                <el-option label="No mostrar en ningún establecimiento" value="none"></el-option>
+                                <el-option label="Seleccionar establecimientos" value="custom"></el-option>
+                            </el-select>
+                            <small class="form-control-feedback" v-if="errors.show_in_establishments" v-text="errors.show_in_establishments[0]"></small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12" v-if="form.show_in_establishments === 'custom'">
+                        <div class="form-group" :class="{'has-danger': errors.establishment_ids}">
+                            <label class="control-label">Establecimientos</label>
+                            <el-select
+                                v-model="form.establishment_ids"
+                                multiple
+                                filterable
+                                placeholder="Seleccione los establecimientos">
+                                <el-option
+                                    v-for="est in establishments"
+                                    :key="est.id"
+                                    :label="est.description"
+                                    :value="est.id">
+                                </el-option>
+                            </el-select>
+                            <small class="form-control-feedback" v-if="errors.establishment_ids" v-text="errors.establishment_ids[0]"></small>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -134,7 +165,22 @@
                 resource: 'configuration',
                 errors: {},
                 headers: headers_token,
-                form: {},
+                establishments: [],
+                form: {
+                    id: null,
+                    resolution_number: null,
+                    resolution_date: null,
+                    resolution_date_end: null,
+                    technical_key: null,
+                    name: null,
+                    prefix: null,
+                    from: null,
+                    to: null,
+                    generated: null,
+                    description: null,
+                    show_in_establishments: 'all',
+                    establishment_ids: [],
+                },
                 form_clone: {},
                 configuration: {},
                 unit_types: [],
@@ -159,6 +205,7 @@
             })*/
 
             // await this.setDefaultConfiguration()
+            this.loadEstablishments();
         },
 
         methods: {
@@ -289,6 +336,12 @@
                 this.form.system_isc_type_id = null
                 this.form.percentage_isc = 0
                 this.form.suggested_price = 0
+            },
+            loadEstablishments() {
+                this.$http.get('/establishments/records')
+                    .then(response => {
+                        this.establishments = response.data.data;
+                    });
             },
         }
     }

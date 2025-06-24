@@ -28,7 +28,8 @@ class TypeDocument extends Model
     protected $casts = [
         'from' => 'integer',
         'to' => 'integer',
-        'generated' => 'integer'
+        'generated' => 'integer',
+        'establishment_ids' => 'array'
     ];
 
     /**
@@ -36,7 +37,7 @@ class TypeDocument extends Model
      *
      * @var array
      */
-    protected $fillable = ['name', 'code', 'template', 'resolution_number', 'resolution_date', 'resolution_date_end', 'technical_key', 'prefix', 'from', 'to', 'generated', 'description'];
+    protected $fillable = ['name', 'code', 'template', 'resolution_number', 'resolution_date', 'resolution_date_end', 'technical_key', 'prefix', 'from', 'to', 'generated', 'description','show_in_establishments','establishment_ids'];
 
     /**
      * The attributes that should be mutated to dates.

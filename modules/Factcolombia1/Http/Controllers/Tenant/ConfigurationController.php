@@ -209,7 +209,9 @@ class ConfigurationController extends Controller
             'from' => $request->from,
             'to' => $request->to,
             'generated' => $request->generated,
-            'desctiption' => $request->description
+            'description' => $request->description,
+            'show_in_establishments' => $request->show_in_establishments,
+            'establishment_ids' => $request->establishment_ids,
         ]);
 
         $ch = curl_init("{$base_url}ubl2.1/config/generateddocuments");

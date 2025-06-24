@@ -1773,22 +1773,36 @@ class DocumentController extends Controller
     public function tables()
     {
         $customers = $this->table('customers');
-        // $customers = Client::all();
         $type_documents = TypeDocument::query()
-                            ->get()
-                            ->each(function($typeDocument) {
-                                $typeDocument->alert_range = (($typeDocument->to - 100) < (Document::query()
-                                    ->hasPrefix($typeDocument->prefix)
-                                    ->whereBetween('number', [$typeDocument->from, $typeDocument->to])
-                                    ->max('number') ?? $typeDocument->from));
-                                $typeDocument->alert_date = ($typeDocument->resolution_date_end == null) ? false : Carbon::parse($typeDocument->resolution_date_end)->subMonth(1)->lt(Carbon::now());
-                            });
+            ->get()
+            ->each(function($typeDocument) {
+                $typeDocument->alert_range = (($typeDocument->to - 100) < (Document::query()
+                    ->hasPrefix($typeDocument->prefix)
+                    ->whereBetween('number', [$typeDocument->from, $typeDocument->to])
+                    ->max('number') ?? $typeDocument->from));
+                $typeDocument->alert_date = ($typeDocument->resolution_date_end == null) ? false : Carbon::parse($typeDocument->resolution_date_end)->subMonth(1)->lt(Carbon::now());
+            });
         $payment_methods = PaymentMethod::all();
         $payment_forms = PaymentForm::all();
         $type_invoices = TypeInvoice::all();
         $currencies = Currency::all();
         $taxes = $this->table('taxes');
-        $resolutions = TypeDocument::select('id','prefix', 'resolution_number', 'from', 'to', 'description', 'resolution_date_end')->whereNotNull('resolution_number')->whereIn('code', [1,2,3])->where('resolution_date_end', '>', Carbon::now())->get();
+
+        $establishment_id = auth()->user()->establishment_id;
+
+        $resolutions = TypeDocument::select('id','prefix', 'resolution_number', 'from', 'to', 'description', 'resolution_date_end', 'show_in_establishments', 'establishment_ids')
+            ->whereNotNull('resolution_number')
+            ->whereIn('code', [1,2,3])
+            ->where('resolution_date_end', '>', Carbon::now())
+            ->where(function($query) use ($establishment_id) {
+                $query->where('show_in_establishments', 'all')
+                    ->orWhere(function($q) use ($establishment_id) {
+                        $q->where('show_in_establishments', 'custom')
+                            ->whereJsonContains('establishment_ids', $establishment_id);
+                    });
+            })
+            ->get();
+
         return compact('customers','payment_methods','payment_forms','type_invoices','currencies', 'taxes', 'type_documents', 'resolutions');
     }
 
