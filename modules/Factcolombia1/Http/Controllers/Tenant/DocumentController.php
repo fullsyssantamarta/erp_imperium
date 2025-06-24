@@ -245,14 +245,51 @@ class DocumentController extends Controller
         }
     }
 
-    public function sincronize()
+    public function sincronize(Request $request)
     {
         try {
+            $company = ServiceTenantCompany::firstOrFail();
+            $this->sincronize_resolutions($company->identification_number);
+            $base_url = config('tenant.service_fact');
+            $i = 0;
+
+            // Si viene tipo y fechas, sincroniza por fechas
+            if ($request->type === 'fecha' && $request->filled(['desde', 'hasta'])) {
+                $ch2 = curl_init("{$base_url}information/{$company->identification_number}/{$request->desde}/{$request->hasta}");
+                curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET");
+                curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
+                curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
+                curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    "Authorization: Bearer {$company->api_token}"
+                ));
+                $response_status = curl_exec($ch2);
+                curl_close($ch2);
+
+                $response_status_decoded = json_decode($response_status);
+                if (isset($response_status_decoded->data[0]->documents)) {
+                    $documents = $response_status_decoded->data[0]->documents;
+                    foreach($documents as $document){
+                        if($document->cufe != 'cufe-initial-number' && in_array($document->type_document_id, [1, 2, 4, 5])){
+                            $d = Document::where('prefix', $document->prefix)->where('number', $document->number)->get();
+                            if(count($d) == 0){
+                                $this->store_sincronize($document);
+                                $i++;
+                            }
+                        }
+                    }
+                }
+                return [
+                    "success" => true,
+                    "message" => "Se sincronizaron satisfactoriamente, {$i} registros por rango de fechas.",
+                ];
+            }
+
+            // Si viene tipo y página, sincroniza por página (comportamiento original)
             $advanced_configuration = AdvancedConfiguration::where('lastsync', '!=', 0)->get();
             if(count($advanced_configuration) > 0){
-//                $lastsync_date = new DateTime($advanced_configuration[0]->lastsync);
-//                $lastsync = $lastsync_date->modify('-1 day')->format('Y-m-d');
-//                $lastsync = $advanced_configuration[0]->lastsync;
                 $lastsync = 0;
             }
             else{
@@ -270,10 +307,11 @@ class DocumentController extends Controller
                     $lastsync = 0;
             }
 
-            $company = ServiceTenantCompany::firstOrFail();
-            $this->sincronize_resolutions($company->identification_number);
-            $base_url = config('tenant.service_fact');
-            $i = 0;
+            // Si el usuario seleccionó página específica
+            if ($request->type === 'pagina' && $request->filled('page')) {
+                $lastsync = $request->page;
+            }
+
             do{
                 $ch2 = curl_init("{$base_url}information/{$company->identification_number}/page/{$lastsync}/page");
                 curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
@@ -301,7 +339,7 @@ class DocumentController extends Controller
                     }
                 }
                 $lastsync++;
-            }while($response_status_decoded->data[0]->count != 0);
+            }while($response_status_decoded->data[0]->count != 0 && $request->type !== 'pagina');
             $advanced_configuration[0]->lastsync = $lastsync;
             $advanced_configuration[0]->save();
             return [
@@ -400,6 +438,7 @@ class DocumentController extends Controller
             }
             $response = json_encode(['cufe' => $request->cufe]);
             $response_status = NULL;
+            $request->state_document_id = 5; // Estado aceptado
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
 //        } catch (\Exception $e) {
 //            DB::connection('tenant')->rollBack();
