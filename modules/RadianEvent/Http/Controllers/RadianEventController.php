@@ -242,12 +242,12 @@ class RadianEventController extends Controller
                 // enviar api
                 
                 // Validar si es documento de crédito
-                if (!$this->isValidCreditDocument($send_request_to_api['data'])) {
-                    return [
-                        'success' => false,
-                        'message' => 'Solo se permiten documentos de crédito'
-                    ];
-                }
+                // if (!$this->isValidCreditDocument($send_request_to_api['data'])) {
+                //     return [
+                //         'success' => false,
+                //         'message' => 'Solo se permiten documentos de crédito'
+                //     ];
+                // }
 
                 //subir archivo 
                 Storage::disk('tenant')->put($folder.DIRECTORY_SEPARATOR.$filename, $file_content);
