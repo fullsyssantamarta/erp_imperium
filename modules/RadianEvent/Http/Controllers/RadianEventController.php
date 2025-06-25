@@ -17,7 +17,7 @@ use Modules\RadianEvent\Models\{
 use Modules\RadianEvent\Http\Resources\{
     ReceivedDocumentCollection
 };
-
+use SimpleXMLElement;
 
 class RadianEventController extends Controller
 {
@@ -240,14 +240,14 @@ class RadianEventController extends Controller
 
                 if(!$send_request_to_api['success']) throw new Exception($send_request_to_api['message']);
                 // enviar api
-                
+
                 // Validar si es documento de crédito
-                // if (!$this->isValidCreditDocument($send_request_to_api['data'])) {
-                //     return [
-                //         'success' => false,
-                //         'message' => 'Solo se permiten documentos de crédito'
-                //     ];
-                // }
+                if(!$this->isCreditFromXml($file_content)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Solo se permiten comprobantes a crédito.'
+                    ];
+                }
 
                 //subir archivo 
                 Storage::disk('tenant')->put($folder.DIRECTORY_SEPARATOR.$filename, $file_content);
@@ -281,33 +281,25 @@ class RadianEventController extends Controller
         ];
     }
 
-    private function isValidCreditDocument($data)
+    private function isCreditFromXml($xmlContent)
     {
-        // Validar que exista payment_means
-        if (!isset($data['payment_means'])) {
-            return false;
+        // Extraer el XML de la factura desde el CDATA
+        $matches = [];
+        preg_match('/<Invoice[\s\S]*<\/Invoice>/', $xmlContent, $matches);
+        if (!$matches) return false;
+
+        $invoiceXml = $matches[0];
+        $invoice = new \SimpleXMLElement($invoiceXml);
+        $namespaces = $invoice->getNamespaces(true);
+
+        // Buscar PaymentMeans
+        foreach ($invoice->children($namespaces['cac'])->PaymentMeans as $paymentMeans) {
+            $id = (string)$paymentMeans->children($namespaces['cbc'])->ID;
+            // Solo verifica el ID: 1 = contado, 2 = crédito
+            if ($id === '2') {
+                return true;
+            }
         }
-
-        $payment_means = $data['payment_means'];
-
-        // Validar que sea crédito (id = 2)
-        if (!isset($payment_means['id']) || $payment_means['id'] !== '2') {
-            return false; 
-        }
-
-        // Validar que tenga fecha de vencimiento
-        if (!isset($payment_means['payment_due_date'])) {
-            return false;
-        }
-
-        // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
-        $due_date = Carbon::parse($payment_means['payment_due_date']);
-        $issue_date = isset($data['issue_date']) ? Carbon::parse($data['issue_date']) : null;
-
-        if ($issue_date && $due_date->lessThanOrEqualTo($issue_date)) {
-            return false;
-        }
-
-        return true;
+        return false;
     }
 }
