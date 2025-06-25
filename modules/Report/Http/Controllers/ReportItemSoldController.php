@@ -14,7 +14,7 @@ use App\Models\Tenant\{
     DocumentPosItem
 };
 use DB;
-
+use Modules\Sale\Models\RemissionItem;
 
 class ReportItemSoldController extends Controller
 {
@@ -45,12 +45,18 @@ class ReportItemSoldController extends Controller
                 $records = DocumentPosItem::filterReportSoldItems($request)->get();
                 break;
 
+            case 'remissions':
+                $records = RemissionItem::filterReportSoldItems($request)->get();
+                break;
+            
             default:
                 $document_items = DocumentItem::filterReportSoldItems($request)->get();
                 $document_items_pos = DocumentPosItem::filterReportSoldItems($request)->get();
-                $records = $document_items->concat($document_items_pos);
-
-                break;
+                $remission_items = RemissionItem::filterReportSoldItems($request)->get();
+                $records = $document_items
+                    ->concat($document_items_pos)
+                    ->concat($remission_items);
+            break;
         }
 
         return $records;
