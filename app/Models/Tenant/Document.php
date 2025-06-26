@@ -717,7 +717,8 @@ class Document extends ModelTenant
                         'sale',
                         'total_tax',
                         'subtotal',
-                        'total_discount' 
+                        'total_discount',
+                        'taxes' // <-- Agrega esta línea
                     ]);
     }
 
@@ -815,8 +816,8 @@ class Document extends ModelTenant
                 'consolidated_taxes' => [
                     'total_base' => '0.00',
                     'total_tax' => '0.00'
-                ],
-            ];
+                    ],
+                ];
         }
     }
 
@@ -885,11 +886,12 @@ class Document extends ModelTenant
     public function getTotalExempt()
     {
         return $this->items
-                    ->filter(function($row){
-                        $tax_code = $row->tax->code ?? null;
-                        return $tax_code === self::EXEMPT_TAX_CODE;
-                    })
-                    ->sum('total');
+            ->filter(function($row){
+                $tax = is_array($row->tax) ? (object)$row->tax : $row->tax;
+                $tax_code = $tax->code ?? null;
+                return $tax_code === self::EXEMPT_TAX_CODE;
+            })
+            ->sum('subtotal');
     }
 
     public function scopeFilterByEstablishment($query, $establishment_id)
@@ -920,5 +922,16 @@ class Document extends ModelTenant
             'total_base' => $this->generalApplyNumberFormat($totals['total_base']),
             'total_tax' => $this->generalApplyNumberFormat($totals['total_tax'])
         ];
+    }
+
+    /**
+     * Obtener el campo taxes sin formateo ni filtro
+     *
+     * @return mixed
+     */
+    public function getRawTaxes()
+    {
+        // Devuelve el string JSON tal cual está en la base de datos
+        return $this->attributes['taxes'] ?? null;
     }
 }

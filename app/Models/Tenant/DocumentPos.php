@@ -563,4 +563,15 @@ class DocumentPos extends ModelTenant
 
         return $query;
     }
+
+    /**
+     * Obtener el campo taxes sin formateo ni filtro
+     *
+     * @return mixed
+     */
+    public function getRawTaxes()
+    {
+        // Devuelve el string JSON tal cual está en la base de datos
+        return $this->attributes['taxes'] ?? null;
+    }
 }
