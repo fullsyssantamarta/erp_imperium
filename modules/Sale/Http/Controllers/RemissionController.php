@@ -34,6 +34,8 @@ use App\Http\Controllers\Tenant\{
     ItemController,
 };
 use Modules\Factcolombia1\Helpers\DocumentHelper;
+use App\Models\Tenant\ItemWarehouse;
+use Carbon\Carbon;
 
 
 class RemissionController extends Controller
@@ -298,6 +300,46 @@ class RemissionController extends Controller
         if (!$remission) throw new Exception("El código {$external_id} es inválido, no se encontro el documento relacionado");
 
         return $this->downloadStorage($remission->filename, 'remission');
+    }
+
+    public function voided($id)
+    {
+        $remission = Remission::with('items')->findOrFail($id);
+
+        if ($remission->state_type_id == '11') {
+            return [
+                'success' => false,
+                'message' => 'La remisión ya está anulada.'
+            ];
+        }
+
+        DB::connection('tenant')->transaction(function () use ($remission) {
+            // Cambiar estado a anulado
+            $remission->state_type_id = '11'; // 11 = Anulado
+            $remission->date_voided = Carbon::now();
+            $remission->user_voided = auth()->user()->id;
+            $remission->save();
+
+            // Actualizar stock de los items
+            foreach ($remission->items as $item) {
+                // Buscar el stock en el almacén correspondiente
+                $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)
+                    ->where('warehouse_id', $remission->establishment_id)
+                    ->first();
+
+                if ($itemWarehouse) {
+                    $itemWarehouse->stock += $item->quantity;
+                    $itemWarehouse->save();
+                }
+            }
+
+
+        });
+
+        return [
+            'success' => true,
+            'message' => 'Remisión anulada correctamente.'
+        ];
     }
 
 }

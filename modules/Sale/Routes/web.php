@@ -21,6 +21,7 @@ if($current_hostname) {
                 Route::get('item/tables', 'RemissionController@item_tables');
                 Route::get('download/{external_id}/{format?}', 'RemissionController@download');
                 Route::get('print/{external_id}/{format?}', 'RemissionController@toPrint');
+                Route::get('voided/{id}', 'RemissionController@voided'); // <-- Añadido
 
             });
 
