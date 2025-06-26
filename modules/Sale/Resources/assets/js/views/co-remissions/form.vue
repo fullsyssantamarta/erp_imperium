@@ -170,6 +170,24 @@
                                         <td class="text-right">{{ ratePrefix() }} {{ form.sale }}</td>
                                     </tr>
                                     <tr>
+                                        <td>
+                                            DESCUENTO
+                                            <el-switch v-model="global_discount_is_amount" :active-text="ratePrefix()"
+                                                inactive-text="%" @change="calculateTotal">
+                                            </el-switch>
+                                        </td>
+                                        <td>:</td>
+                                        <td class="text-right" id="input-with-select">
+                                            <el-input v-model="total_global_discount" :min="0" class="input-discount"
+                                                @input="calculateTotal">
+                                                <template slot="prefix">
+                                                    <span v-if="global_discount_is_amount">{{ ratePrefix() }}</span>
+                                                    <span v-else>%</span>
+                                                </template>
+                                            </el-input>
+                                        </td>
+                                    </tr>
+                                    <tr>
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
                                         <td class="text-right">{{ ratePrefix() }} {{ form.total_discount }}</td>
@@ -290,6 +308,7 @@ export default {
             currency_type: {},
             documentNewId: null,
             total_global_discount: 0,
+            global_discount_is_amount: true,
             loading_search: false,
             taxes: [],
             prefixes: [
@@ -426,8 +445,6 @@ export default {
             this.setDataTotals()
         },
         setDataTotals() {
-            // crear mixins porque esta duplicado en varios componentes
-            // console.log(val)
             let val = this.form
             val.taxes = JSON.parse(JSON.stringify(this.taxes));
             val.items.forEach(item => {
@@ -464,11 +481,19 @@ export default {
             });
             val.total_tax = val.items.reduce((p, c) => Number(p) + Number(c.total_tax), 0).toFixed(2);
             let total = val.items.reduce((p, c) => Number(p) + Number(c.total), 0).toFixed(2);
+
+            // DESCUENTO GLOBAL
+            let amount_total_dicount_global = this.total_global_discount;
+            if (!this.global_discount_is_amount && amount_total_dicount_global > 0) {
+                amount_total_dicount_global = ((total - val.total_tax) * amount_total_dicount_global) / 100;
+            }
+
             val.subtotal = val.items.reduce((p, c) => Number(p) + (Number(c.subtotal) - Number(c.total_discount)), 0).toFixed(2);
             val.sale = val.items.reduce((p, c) => Number(p) + Number(c.price * c.quantity) - Number(c.total_discount), 0).toFixed(2);
-            val.total_discount = val.items.reduce((p, c) => Number(p) + Number(c.total_discount), 0).toFixed(2);
+            val.total_discount = (val.items.reduce((p, c) => Number(p) + Number(c.total_discount), 0) + Number(amount_total_dicount_global)).toFixed(2);
+            total = (Number(total) - Number(amount_total_dicount_global)).toFixed(2);
+
             let totalRetentionBase = Number(0);
-            // this.taxes.forEach(tax => {
             val.taxes.forEach(tax => {
                 if (tax.is_retention && tax.in_base && tax.apply) {
                     tax.retention = (

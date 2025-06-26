@@ -126,6 +126,8 @@ export default {
             this.document.sale = q.sale
             this.document.taxes = q.taxes
             this.document.payments = q.payments;
+            this.document.total_global_discount = q.total_discount || 0;
+            this.document.global_discount_is_amount = q.global_discount_is_amount || true;
             this.document.time_days_credit = 0,
             this.document.payment_form_id = 1,
             this.document.payment_method_id = 1,
@@ -205,6 +207,9 @@ export default {
                 line_ext_am += (Number(element.unit_price) * Number(element.quantity)) - Number(element.discount);
                 allowance_total_amount += Number(element.discount);
             });
+            // SUMA EL DESCUENTO GLOBAL AQUÍ
+            allowance_total_amount += Number(this.document.total_discount || 0);
+
             let total_tax_amount = 0;
             this.tax_amount_calculate.forEach(element => {
                 total_tax_amount += Number(element.tax_amount);
