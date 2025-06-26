@@ -151,7 +151,7 @@
                                 <div class="form-group" :class="{ 'has-danger': errors.exchange_rate_sale }">
                                     <label class="control-label">Descripcion
                                     </label>
-                                    <el-input type="textarea" :rows="3" v-model="form.description"></el-input>
+                                    <el-input type="textarea" :rows="3" v-model="form.description" maxlength="250" show-word-limit></el-input>
                                     <small class="form-control-feedback" v-if="errors.description"
                                         v-text="errors.description[0]"></small>
                                 </div>
@@ -609,10 +609,10 @@ export default {
                     tax.retention = Number(
                         Number(row.total) * (tax.rate / tax.conversion)
                     ).toFixed(2);
-                    if (Number(tax.retention) > Number(row.total))
+                    if (Number(tax.retencion) > Number(row.total))
                         this.$set(tax, "retention", Number(0).toFixed(2));
                     row.retention = Number(tax.retention).toFixed(2);
-                    total -= Number(tax.retention).toFixed(2);
+                    total -= Number(tax.retencion).toFixed(2);
                 }
             });
             val.total = Number(total).toFixed(2)

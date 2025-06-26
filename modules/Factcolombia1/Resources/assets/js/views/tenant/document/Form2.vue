@@ -155,8 +155,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label class="control-label">Observaciones</label>
-                                    <el-input type="textarea" autosize :rows="1" v-model="form.observation">
-                                    </el-input>
+                                    <el-input type="textarea" autosize:rows="1" v-model="form.observation" maxlength="250" show-word-limit></el-input>
                                 </div>
                             </div>
                         </div>

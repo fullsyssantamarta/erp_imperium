@@ -206,6 +206,8 @@
                       auto-grow
                       label="Observación"
                       rows="2"
+                      :maxlength="250"
+                      show-word-limit
                     ></v-textarea>
                   </v-flex>
                   <v-flex xs12 sm12 md12 lg12 class="text-lg-right">
