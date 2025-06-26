@@ -27,21 +27,21 @@
             </div>
             <div class="card-body">
                 <el-tree
-                :data="treeData"
-                :props="defaultProps"
-                node-key="id"
-                default-expand-all
-                draggable
-                @node-drop="handleDrop"
-                class="tree-border el-tree--compact custom-tree"
-                >
-                <span slot-scope="{ node, data }" class="tree-node-label d-flex justify-content-between align-items-center w-100">
-                    <span>{{ data.code }} - {{ data.label }}</span>
-                    <span v-if="data.level >= 4" class="ml-auto">
-                        <el-button size="mini" type="primary" icon="el-icon-edit" @click="openForm(data.id)">Editar</el-button>
-                        <el-button size="mini" type="danger" icon="el-icon-delete" @click="deleteRecord(data.id)">Eliminar</el-button>
+                    :data="treeData"
+                    :props="defaultProps"
+                    node-key="id"
+                    default-expand-all
+                    draggable
+                    @node-drop="handleDrop"
+                    class="tree-border el-tree--compact custom-tree"
+                    >
+                    <span slot-scope="{ node, data }" class="tree-node-label d-flex justify-content-between align-items-center w-100">
+                        <span>{{ data.code }} - {{ data.label }}</span>
+                        <span v-if="data.level >= 4" class="ml-auto">
+                            <el-button size="mini" type="primary" icon="el-icon-edit" @click="openForm(data.id)">Editar</el-button>
+                            <el-button size="mini" type="danger" icon="el-icon-delete" @click="deleteRecord(data.id)">Eliminar</el-button>
+                        </span>
                     </span>
-                </span>
                 </el-tree>
             </div>
         </div>
