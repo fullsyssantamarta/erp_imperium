@@ -34,8 +34,7 @@ class TaxUpdateRequest extends FormRequest
         return [
             'name' => [
                 'required',
-                'max:30',
-                Rule::unique('tenant.co_taxes', 'name')->ignore($this->route('tax')->id)
+                'max:30'
             ],
             'code' => 'nullable|max:2',
             'rate' => 'nullable|numeric|between:0.00,9999999999.99',

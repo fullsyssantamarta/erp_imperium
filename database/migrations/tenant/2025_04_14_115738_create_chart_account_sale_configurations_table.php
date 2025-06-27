@@ -22,7 +22,11 @@ class CreateChartAccountSaleConfigurationsTable extends Migration
         });
 
         DB::table('chart_account_sale_configurations')->insert([
-            ['income_account' => '143005', 'sales_returns_account' => '143005', 'accounting_clasification' => 'Comercialización de productos']
+            [
+                'income_account' => '413595',
+                'sales_returns_account' => '417505',
+                'accounting_clasification' => 'Comercialización de productos'
+            ]
         ]);
 
 

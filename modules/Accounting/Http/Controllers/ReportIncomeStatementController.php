@@ -20,19 +20,34 @@ class ReportIncomeStatementController extends Controller
 
     public function records(Request $request)
     {
-        // ganancia / gastos
-        $accounts = ChartOfAccount::whereIn('type', ['Revenue', 'Expense'])
-            ->with(['journalEntryDetails' => function ($query) {
+        $dateStart = $request->date_start;
+        $dateEnd = $request->date_end;
+
+        //                                            ganancia / gastos / costos
+        $accounts = ChartOfAccount::whereIn('type', ['Revenue', 'Expense', 'Cost'])
+            ->with(['journalEntryDetails' => function ($query) use ($dateStart, $dateEnd) {
+                // Filtrar los detalles por rango de fechas
+                $query->whereHas('journalEntry', function ($subQuery) use ($dateStart, $dateEnd) {
+                    if ($dateStart && $dateEnd) {
+                        $subQuery->whereBetween('date', [$dateStart, $dateEnd]);
+                    }
+                });
                 $query->selectRaw('chart_of_account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-                      ->groupBy('chart_of_account_id');
+                    ->groupBy('chart_of_account_id');
             }])
             ->get()
             ->map(function ($account) {
                 $debit = $account->journalEntryDetails->sum('total_debit');
                 $credit = $account->journalEntryDetails->sum('total_credit');
-                $saldo = $account->type === 'Revenue'
-                    ? $credit - $debit
-                    : $debit - $credit;
+
+                // Calculamos el saldo según el tipo de cuenta
+                if ($account->type === 'Revenue') {
+                    $saldo = $credit - $debit;
+                } elseif ($account->type === 'Cost' || $account->type === 'Expense') {
+                    $saldo = $debit - $credit;
+                } else {
+                    $saldo = 0;
+                }
 
                 return [
                     'code' => $account->code,
@@ -42,13 +57,26 @@ class ReportIncomeStatementController extends Controller
                 ];
             });
 
+        // Ahora agrupamos por tipo:
         $totalRevenue = $accounts->where('type', 'Revenue')->sum('saldo');
+        $totalCost    = $accounts->where('type', 'Cost')->sum('saldo');
         $totalExpense = $accounts->where('type', 'Expense')->sum('saldo');
-        $netResult = $totalRevenue - $totalExpense;
+
+        // ✅ Utilidades:
+        $grossProfit     = $totalRevenue - $totalCost;         // Utilidad Bruta
+        $operatingProfit = $grossProfit - $totalExpense;       // Utilidad Operativa
+        $netProfit       = $operatingProfit;                   // Por ahora igual a operativa
 
         return response()->json([
             'accounts' => $accounts,
-            'net_result' => $netResult,
+            'totals' => [
+                'revenue' => $totalRevenue,
+                'cost' => $totalCost,
+                'expense' => $totalExpense,
+            ],
+            'gross_profit' => $grossProfit,
+            'operating_profit' => $operatingProfit,
+            'net_profit' => $netProfit,
         ]);
     }
 }

@@ -25,7 +25,7 @@
                               <el-input v-model="form.accounting_clasification"/>
                           </div>
                       </div>
-                    
+
                 </div>
             </div>
             <div class="form-actions text-right pt-2">
@@ -89,7 +89,7 @@
                         this.chart_accounts_sales = response.data.chart_accounts_sales
                         this.chart_accounts_purchases = response.data.chart_accounts_purchases
                     })
-                    
+
                 if (this.recordId) {
                     this.$http.get(`/${this.resource}/record/${this.recordId}`)
                         .then(response => {

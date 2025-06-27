@@ -31,16 +31,16 @@ class CreateAccountingChartAccountConfigurationsTable extends Migration
         });
 
         DB::table('accounting_chart_account_configurations')->insert([
-            'inventory_account' => null,
+            'inventory_account' => '143505',
             'inventory_adjustment_account' => '618005',
-            'sale_cost_account' => null, //'61359501',
+            'sale_cost_account' => '613595',
             'customer_receivable_account' => '130505',
             'customer_returns_account' => '238090',
-            'supplier_payable_account' => '133005', //'22050501',
+            'supplier_payable_account' => '220505', //'22050501',
             'supplier_returns_account' => '138035',
-            'retained_earning_account' => null,
-            'profit_period_account' => null,
-            'lost_period_account' => null,
+            'retained_earning_account' => '370505',
+            'profit_period_account' => '360505',
+            'lost_period_account' => '361005',
             'adjustment_opening_balance_banks_account' => null,
             'adjustment_opening_balance_banks_inventory' => null,
             'created_at' => now(),

@@ -12,9 +12,50 @@
                 </li>
             </ol>
         </div>
-        <data-table :data="accounts" :columns="columns" />
-        <div class="net-result">
-            <h3>Resultado Neto: {{ netResult | currency }}</h3>
+        <div class="card mb-0">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="filter-container">
+                            <el-date-picker
+                                v-model="dateRange"
+                                type="daterange"
+                                range-separator="a"
+                                start-placeholder="Fecha inicio"
+                                end-placeholder="Fecha fin"
+                                @change="onDateChange"
+                                format="yyyy-MM-dd"
+                                value-format="yyyy-MM-dd"
+                                class="date-picker"
+                            />
+                        </div>
+                    </div>
+                    <div class="col-6 text-right">
+                        <el-button type="primary" @click="ReportDownload('pdf')">Pdf</el-button>
+                        <el-button type="success" @click="ReportDownload('excel')">Excel</el-button>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <h4>Ingresos</h4>
+                    <h4 class="text-right">{{ totals.revenue || 0.00 }}</h4>
+                </div>
+                <data-table :data="revenueAccounts" :columns="columns" />
+                <div class="d-flex justify-content-between">
+                    <h4>Gastos</h4>
+                    <h4 class="text-right">{{ totals.expense || 0.00 }}</h4>
+                </div>
+                <data-table :data="expenseAccounts" :columns="columns" />
+                <div class="d-flex justify-content-between">
+                    <h4>Costos</h4>
+                    <h4 class="text-right">{{ totals.cost || 0.00 }}</h4>
+                </div>
+                <data-table :data="costAccounts" :columns="columns" />
+                <div class="net-result">
+                    <h3>Utilidad Bruta: {{ gross_profit }}</h3>
+                    <h3>Utilidad Operativa: {{ operating_profit }}</h3>
+                    <h3>Resultado Neto: {{ net_profit }}</h3>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -27,24 +68,57 @@ export default {
     data() {
         return {
             accounts: [],
-            netResult: 0,
+            totals: 0,
+            gross_profit: 0,
+            operating_profit: 0,
+            net_profit: 0,
             columns: [
                 { label: 'Código', field: 'code' },
                 { label: 'Nombre', field: 'name' },
-                { label: 'Tipo', field: 'type' },
                 { label: 'Saldo', field: 'saldo', type: 'currency' },
             ],
+            dateRange: [],
         };
+    },
+    computed: {
+        revenueAccounts() {
+            return this.accounts.filter(a => a.type === 'Revenue');
+        },
+        costAccounts() {
+            return this.accounts.filter(a => a.type === 'Cost');
+        },
+        expenseAccounts() {
+            return this.accounts.filter(a => a.type === 'Expense');
+        }
     },
     mounted() {
         this.fetchData();
     },
     methods: {
-        async fetchData() {
-            const response = await this.$http.get('/accounting/income-statement/records');
+        async fetchData(params = {}) {
+            const response = await this.$http.get('/accounting/income-statement/records', { params });
             this.accounts = response.data.accounts;
-            this.netResult = response.data.net_result;
+            this.totals = response.data.totals;
+            this.gross_profit = response.data.gross_profit;
+            this.operating_profit = response.data.operating_profit;
+            this.net_profit = response.data.net_profit;
         },
+        onDateChange() {
+            let params = {
+                date_start: this.dateRange[0],
+                date_end: this.dateRange[1],
+            };
+            this.fetchData(params);
+        },
+        ReportDownload(type = 'pdf') {
+            let params = {
+                date_start: this.dateRange[0],
+                date_end: this.dateRange[1],
+                format: type,
+            };
+
+            window.open(`/accounting/income-statement/export?${queryString.stringify(params)}`, '_blank');
+        }
     },
 };
 </script>

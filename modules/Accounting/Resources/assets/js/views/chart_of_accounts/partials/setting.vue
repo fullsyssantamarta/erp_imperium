@@ -41,8 +41,8 @@
                       </div>
                       <div class="col-md-1 d-flex align-items-end">
                         <div class="form-group">
-                            <button type="button" 
-                                    class="btn btn-xs btn-warning waves-effect waves-light w-100" 
+                            <button type="button"
+                                    class="btn btn-xs btn-warning waves-effect waves-light w-100"
                                     @click.prevent="openForm(row.id)">
                             Editar
                             </button>
@@ -204,7 +204,7 @@
     <chart-form-sale :showDialog.sync="showDialogForm" :recordId="recordId"></chart-form-sale>
     </div>
   </template>
-  
+
   <script>
   import ChartFormSale from "./formSale.vue";
 
@@ -248,7 +248,7 @@
             adjustment_opening_balance_banks_account: null,
             adjustment_opening_balance_banks_inventory: null
           };
-          
+
         },
         openForm(recordId = null) {
             this.recordId = recordId;
@@ -290,4 +290,3 @@
 
   }
   </script>
-  

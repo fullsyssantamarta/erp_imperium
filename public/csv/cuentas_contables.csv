@@ -32,9 +32,9 @@
 1299,Provisiones,Asset,3,12
 13,Deudores,Asset,2,1
 1305,Clientes,Asset,3,13
-130505,Nacionales,Asset,4,1305
-130510,Del exterior,Asset,4,1305
-130515,Deudores del sistema,Asset,4,1305
+130505,Clientes Nacionales,Asset,4,1305
+130510,Clientes Del exterior,Asset,4,1305
+130515,Clientes Deudores del sistema,Asset,4,1305
 1310,Cuentas corrientes comerciales,Asset,3,13
 131005,Casa matriz,Asset,4,1310
 131010,Compañías vinculadas,Asset,4,1310
@@ -136,7 +136,8 @@
 1430,Productos terminados,Asset,3,14
 143005,Productos manufacturados,Asset,4,1430
 143010,Productos extraídos y/o procesados,Asset,4,1430
-1435,Mercancías no fabricadas por la empresa,Asset,3,14
+1435,Mercancías no fabricadas,Asset,3,14
+143505,Mercancías no fabricadas por la empresa,Asset,4,1435
 1455,"Materiales, repuestos y accesorios",Asset,3,14
 15,"Propiedades, planta y equipo",Asset,2,1
 1504,Terrenos,Asset,3,15
@@ -282,6 +283,7 @@
 2195,Otras obligaciones,Liability,3,21
 22,Proveedores,Liability,2,2
 2205,Nacionales,Liability,3,22
+220505,Proveedores Nacionales,Liability,4,2205
 2210,Del exterior,Liability,3,22
 2215,Cuentas corrientes comerciales,Liability,3,22
 2220,Casa matriz,Liability,3,22
@@ -424,11 +426,15 @@
 3505,Dividendos decretados en acciones,Equity,3,35
 3510,Participaciones decretadas en cuotas o partes de interés social,Equity,3,35
 36,Resultados del ejercicio,Equity,2,3
-3605,Utilidad del ejercicio,Equity,3,36
-3610,Pérdida del ejercicio,Equity,3,36
+3605,Utilidad,Equity,3,36
+360505,Utilidad del ejercicio,Equity,4,3605
+3610,Pérdida,Equity,3,36
+361005,Pérdida del ejercicio,Equity,4,3610
 37,Resultados de ejercicios anteriores,Equity,2,3
-3705,Utilidades acumuladas,Equity,3,37
-3710,Pérdidas acumuladas,Equity,3,37
+3705,Utilidades,Equity,3,37
+370505,Utilidades acumuladas,Equity,4,3705
+3710,Pérdidas,Equity,3,37
+371005,Pérdidas acumuladas,Equity,4,3710
 38,Superávit por valorizaciones,Equity,2,3
 3805,De inversiones,Equity,3,38
 380505,Acciones,Equity,4,3805
@@ -442,7 +448,10 @@
 4,INGRESOS,Revenue,1,
 41,Ingresos de actividades ordinarias,Revenue,2,4
 4101,Ingresos por ventas,Revenue,3,41
+4135,Ingresos por ventas de bienes,Revenue,3,41
+413595,Venta de otros productos,Revenue,4,4135
 4175,Devoluciones en ventas,Revenue,3,41
+417505,Devoluciones en ventas,Revenue,4,4175
 42,Otros ingresos,Revenue,2,4
 4205,Otras ventas,Revenue,3,42
 4210,Financieros,Revenue,3,42
@@ -659,6 +668,7 @@
 61,Costo de ventas y de prestación de servicios,Cost,2,6
 6101,Costos de ventas,Cost,3,61
 6135,Comercio al por mayor y al por menor,Cost,3,61
+613595,Costos de comercialización,Cost,4,6135
 6180,Ajustes,Cost,3,61
 618005,Ajustes de inventario,Cost,4,6180
 618010,Descuentos financieros,Cost,4,6180
