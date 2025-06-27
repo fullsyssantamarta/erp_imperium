@@ -211,25 +211,23 @@ class CashController extends Controller
 
     //Se modifica la funcion report()
     public function report($cashId, $electronic_type = 'all') {
-        $cash = Cash::findOrFail($cashId);
+        $cash = Cash::with('cash_documents')->findOrFail($cashId);
         $company = Company::first();
 
-        // Si es resumido, ignorar el filtro de tipo electrónico pero mantener filtro por fecha
-        if ($electronic_type === 'resumido') {
-            $filtered_documents = $cash->cash_documents()
-                ->whereHas('document_pos', function($query) use ($cash) {
-                    $query->whereDate('date_of_issue', $cash->date_opening);
-                })->get();
-        } else {
-            // Filtrar por fecha y tipo electrónico
-            $filtered_documents = $cash->cash_documents()
-                ->whereHas('document_pos', function($query) use ($cash, $electronic_type) {
-                    $query->whereDate('date_of_issue', $cash->date_opening);
-                    if ($electronic_type !== 'all') {
-                        $query->where('electronic', $electronic_type);
-                    }
-                })->get();
-        }
+        // Unir fecha y hora para mayor precisión
+        $start = $cash->date_opening . ' ' . $cash->time_opening;
+        $end = $cash->date_closed
+            ? $cash->date_closed . ' ' . $cash->time_closed
+            : $cash->date_opening . ' 23:59:59';
+
+        $filtered_documents = $cash->cash_documents()
+            ->whereHas('document_pos', function($query) use ($start, $end, $electronic_type) {
+                $query->whereRaw("created_at >= ?", [$start])
+                    ->whereRaw("created_at <= ?", [$end]);
+                if ($electronic_type !== 'all' && $electronic_type !== 'resumido') {
+                    $query->where('electronic', $electronic_type);
+                }
+            })->get();
         // Calcular $cashEgress solo para documentos filtrados
         $cashEgress = $filtered_documents->sum(function ($cashDocument) {
             return $cashDocument->expense_payment ? $cashDocument->expense_payment->payment : 0;
