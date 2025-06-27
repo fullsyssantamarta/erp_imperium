@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Modules\Accounting\Models\ChartOfAccount;
+use Mpdf\Mpdf;
 
 /**
  * Class ReportIncomeStatementController
@@ -57,6 +58,12 @@ class ReportIncomeStatementController extends Controller
                 ];
             });
 
+
+        // Separar las cuentas por tipo
+        $revenues = $accounts->where('type', 'Revenue');
+        $costs = $accounts->where('type', 'Cost');
+        $expenses = $accounts->where('type', 'Expense');
+
         // Ahora agrupamos por tipo:
         $totalRevenue = $accounts->where('type', 'Revenue')->sum('saldo');
         $totalCost    = $accounts->where('type', 'Cost')->sum('saldo');
@@ -69,6 +76,9 @@ class ReportIncomeStatementController extends Controller
 
         return response()->json([
             'accounts' => $accounts,
+            'revenues' => $revenues,
+            'costs' => $costs,
+            'expenses' => $expenses,
             'totals' => [
                 'revenue' => $totalRevenue,
                 'cost' => $totalCost,
@@ -78,5 +88,48 @@ class ReportIncomeStatementController extends Controller
             'operating_profit' => $operatingProfit,
             'net_profit' => $netProfit,
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        $format = $request->input('format', 'pdf');
+
+        if ($format === 'pdf') {
+            return $this->exportPdf($request);
+        // } elseif ($format === 'excel') {
+        //     return $this->exportExcel($request);
+        } else {
+            return response()->json(['error' => 'Formato no soportado'], 400);
+        }
+    }
+
+    private function exportPdf(Request $request)
+    {
+        // Reutilizar la lógica de records para obtener los datos
+        $dateStart = $request->date_start;
+        $dateEnd = $request->date_end;
+        $data = $this->records($request)->getData(true);
+
+        // Renderizar la vista como HTML
+        $html = view('accounting::pdf.income_statement', [
+            'revenues' => $data['revenues'],
+            'costs' => $data['costs'],
+            'expenses' => $data['expenses'],
+            'gross_profit' => $data['gross_profit'],
+            'operating_profit' => $data['operating_profit'],
+            'net_profit' => $data['net_profit'],
+            'totals' => $data['totals'],
+            'dateStart' => $dateStart,
+            'dateEnd' => $dateEnd,
+        ])->render();
+
+        // Configurar mPDF
+        $mpdf = new Mpdf();
+        $mpdf->SetHeader('Reporte de Estado de Resultados');
+        $mpdf->SetFooter('Generado el ' . now()->format('Y-m-d H:i:s'));
+        $mpdf->WriteHTML($html);
+
+        // Descargar el PDF
+        return $mpdf->Output('reporte_estado_resultado.pdf', 'I'); // 'I' para mostrar en el navegador
     }
 }

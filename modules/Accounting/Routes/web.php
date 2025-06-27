@@ -57,6 +57,7 @@ if($hostname) {
             // Reporte de Estado de Resultados
             Route::get('/income-statement', 'ReportIncomeStatementController@index')->name('tenant.accounting.report.income-statement');
             Route::get('/income-statement/records', 'ReportIncomeStatementController@records');
+            Route::get('/income-statement/export', 'ReportIncomeStatementController@export');
 
             Route::prefix('clasification-sale')->group(function () {
                 Route::get('records', 'ChartAccountSaleConfigurationController@records');

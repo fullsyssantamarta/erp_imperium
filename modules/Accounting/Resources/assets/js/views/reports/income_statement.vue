@@ -32,7 +32,7 @@
                     </div>
                     <div class="col-6 text-right">
                         <el-button type="primary" @click="ReportDownload('pdf')">Pdf</el-button>
-                        <el-button type="success" @click="ReportDownload('excel')">Excel</el-button>
+                        <!-- <el-button type="success" @click="ReportDownload('excel')">Excel</el-button> -->
                     </div>
                 </div>
                 <div class="d-flex justify-content-between">
@@ -62,6 +62,7 @@
 
 <script>
 import DataTable from '../components/DataTableReport.vue';
+import queryString from 'query-string';
 
 export default {
     components: { DataTable },
