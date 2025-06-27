@@ -71,11 +71,17 @@
         <!-- Modal para tipo de reporte -->
         <el-dialog title="Seleccionar Tipo de Reporte" :visible.sync="showReportDialog" append-to-body>
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <el-select v-model="selectedReportType" placeholder="Seleccione tipo de reporte">
                         <el-option label="Todos" value="all"></el-option>
                         <el-option label="Electrónico" value="1"></el-option>
                         <el-option label="No Electrónico" value="0"></el-option>
+                    </el-select>
+                </div>
+                <div class="col-md-6">
+                    <el-select v-model="selectedReportFormat" placeholder="Formato">
+                        <el-option label="A4" value="a4"></el-option>
+                        <el-option label="Tirilla" value="ticket"></el-option>
                     </el-select>
                 </div>
             </div>
@@ -120,6 +126,7 @@
                 showReportDialog: false,
                 showArqueoDialog: false,
                 selectedReportType: 'all',
+                selectedReportFormat: 'a4', // Nuevo: formato por defecto
                 selectedArqueoType: 'complete',
                 selectedCashId: null,
                 open_cash: true,
@@ -147,7 +154,13 @@
                 this.showReportDialog = true;
             },
             generateReport() {
-                window.open(`/${this.resource}/report/${this.selectedCashId}/${this.selectedReportType}`, '_blank');
+                let url = '';
+                if (this.selectedReportFormat === 'ticket') {
+                    url = `/${this.resource}/report-ticket/${this.selectedCashId}/${this.selectedReportType}?format=ticket&electronic_type=${this.selectedReportType}`;
+                } else {
+                    url = `/${this.resource}/report/${this.selectedCashId}/${this.selectedReportType}`;
+                }
+                window.open(url, '_blank');
                 this.showReportDialog = false;
             },
             showArqueoModal(id) {

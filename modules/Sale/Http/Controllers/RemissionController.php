@@ -316,8 +316,6 @@ class RemissionController extends Controller
         DB::connection('tenant')->transaction(function () use ($remission) {
             // Cambiar estado a anulado
             $remission->state_type_id = '11'; // 11 = Anulado
-            $remission->date_voided = Carbon::now();
-            $remission->user_voided = auth()->user()->id;
             $remission->save();
 
             // Actualizar stock de los items
