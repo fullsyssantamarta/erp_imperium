@@ -63,6 +63,13 @@ export default {
                 if (!this.form.resolution_id) {
                     throw new Error('Debe seleccionar una resolución POS');
                 }
+                // Validar si hay caja abierta para la resolución seleccionada
+                const validateResponse = await this.$http.get(`/document-pos/validate-cash/${this.form.resolution_id}`);
+                if (!validateResponse.data.success) {
+                    this.$message.error(validateResponse.data.message || 'No hay caja abierta para esta resolución POS');
+                    this.loading = false;
+                    return;
+                }
 
                 const resolution = this.resolutions.find(r => r.id === this.form.resolution_id);
                 const currentDateTime = this.getCurrentDateTime();
@@ -80,6 +87,7 @@ export default {
                     item_id: item.item_id,
                     item: {
                         ...item.item,
+                        is_set: typeof item.item.is_set !== 'undefined' ? item.item.is_set : false,
                         edit_sale_unit_price: item.unit_price,
                         description: item.item.description,
                         name: item.item.name,

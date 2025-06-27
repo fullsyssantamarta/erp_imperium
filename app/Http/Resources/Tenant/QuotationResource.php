@@ -19,6 +19,16 @@ class QuotationResource extends JsonResource
         $quotation->payments = self::getTransformPayments($quotation->payments);
         $has_document = (count($this->documents) > 0 || count($this->sale_notes) > 0)?true:false;
 
+        $quotation->items = $quotation->items->map(function($item) {
+            $itemArray = $item->toArray();
+            if (isset($item->item) && is_object($item->item) && property_exists($item->item, 'is_set')) {
+                $itemArray['is_set'] = (bool) $item->item->is_set;
+            } else {
+                $itemArray['is_set'] = isset($item->is_set) ? (bool) $item->is_set : false;
+            }
+            return $itemArray;
+        });
+
         return [
             'id' => $this->id,
             'external_id' => $this->external_id,  

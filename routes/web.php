@@ -425,6 +425,7 @@ if ($hostname) {
             Route::post('document-pos/email', 'Tenant\DocumentPosController@email');
             Route::get('document-pos/sincronize', 'Tenant\DocumentPosController@sincronize');
             Route::get('document-pos/downloadFileCoupon/{id}', 'Tenant\DocumentPosController@downloadFileCoupon');
+            Route::get('document-pos/validate-cash/{resolution_id}', 'Tenant\DocumentPosController@validateCash');
 
 
            Route::get('sale_note_payments/records/{sale_note}', 'Tenant\SaleNotePaymentController@records');
