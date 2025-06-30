@@ -516,6 +516,7 @@ export default {
             correlative_api: null, // Aquí almacenarás el siguiente número consecutivo
             currentPrefix: null,
             global_discount_is_amount: true,
+            bank_accounts: [], // <-- nuevo array para cuentas bancarias
         }
     },
     //filtro de separadores de mil
@@ -571,7 +572,11 @@ export default {
         })
         //            console.log(this.customers)
         await this.generatedFromExternalDocument()
-    },
+            await this.$http.get('/bank_accounts/records')
+                .then(response => {
+                    this.bank_accounts = response.data.data
+                })
+        },
     computed: {
         generatedFromPos() {
             const form_exceed_uvt = this.$getStorage('form_exceed_uvt')
@@ -1214,6 +1219,9 @@ export default {
             if (this.is_edit) {
                 this.form.is_edit = true;
             }
+
+            // Agregar las cuentas bancarias al form antes de enviar
+            this.form.bank_accounts = this.bank_accounts;
 
             this.form.service_invoice = await this.createInvoiceService();
             // return

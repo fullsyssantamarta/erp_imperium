@@ -666,6 +666,11 @@ class DocumentController extends Controller
             else
                 $service_invoice = $request->service_invoice;
 
+            // Agregar cuentas bancarias si vienen en el request
+            if ($request->has('bank_accounts')) {
+                $service_invoice['bank_accounts'] = $request->bank_accounts;
+            }
+
             if($invoice_json === NULL){
                 $service_invoice['number'] = $correlative_api;
                 $service_invoice['prefix'] = $request->prefix;
