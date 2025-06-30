@@ -211,25 +211,23 @@ class CashController extends Controller
 
     //Se modifica la funcion report()
     public function report($cashId, $electronic_type = 'all') {
-        $cash = Cash::findOrFail($cashId);
+        $cash = Cash::with('cash_documents')->findOrFail($cashId);
         $company = Company::first();
 
-        // Si es resumido, ignorar el filtro de tipo electrónico pero mantener filtro por fecha
-        if ($electronic_type === 'resumido') {
-            $filtered_documents = $cash->cash_documents()
-                ->whereHas('document_pos', function($query) use ($cash) {
-                    $query->whereDate('date_of_issue', $cash->date_opening);
-                })->get();
-        } else {
-            // Filtrar por fecha y tipo electrónico
-            $filtered_documents = $cash->cash_documents()
-                ->whereHas('document_pos', function($query) use ($cash, $electronic_type) {
-                    $query->whereDate('date_of_issue', $cash->date_opening);
-                    if ($electronic_type !== 'all') {
-                        $query->where('electronic', $electronic_type);
-                    }
-                })->get();
-        }
+        // Unir fecha y hora para mayor precisión
+        $start = $cash->date_opening . ' ' . $cash->time_opening;
+        $end = $cash->date_closed
+            ? $cash->date_closed . ' ' . $cash->time_closed
+            : $cash->date_opening . ' 23:59:59';
+
+        $filtered_documents = $cash->cash_documents()
+            ->whereHas('document_pos', function($query) use ($start, $end, $electronic_type) {
+                $query->whereRaw("created_at >= ?", [$start])
+                    ->whereRaw("created_at <= ?", [$end]);
+                if ($electronic_type !== 'all' && $electronic_type !== 'resumido') {
+                    $query->where('electronic', $electronic_type);
+                }
+            })->get();
         // Calcular $cashEgress solo para documentos filtrados
         $cashEgress = $filtered_documents->sum(function ($cashDocument) {
             return $cashDocument->expense_payment ? $cashDocument->expense_payment->payment : 0;
@@ -281,22 +279,34 @@ class CashController extends Controller
         return $pdf->stream($filename . '.pdf');
     }
 
-    public function report_ticket($cashId, $type = 'complete') {
+    public function report_ticket($cashId, $type = 'complete', $electronic_type = 'all') {
+        
+        $electronic_type = request()->get('electronic_type', $electronic_type);
+
         $cash = Cash::findOrFail($cashId);
         $company = Company::first();
         $only_head = $type === 'simple' ? 'resumido' : null;
 
-        // Se Calcula $cashEgress, similar al de la funcion que estaba.
-        $cashEgress = $cash->cash_documents->sum(function ($cashDocument) {
+        // FILTRO igual que en report()
+        if ($electronic_type === 'resumido') {
+            $filtered_documents = $cash->cash_documents()
+                ->whereHas('document_pos', function($query) use ($cash) {
+                    $query->whereDate('date_of_issue', $cash->date_opening);
+                })->get();
+        } else {
+            $filtered_documents = $cash->cash_documents()
+                ->whereHas('document_pos', function($query) use ($cash, $electronic_type) {
+                    $query->whereDate('date_of_issue', $cash->date_opening);
+                    if ($electronic_type !== 'all') {
+                        $query->where('electronic', $electronic_type);
+                    }
+                })->get();
+        }
+
+        $cashEgress = $filtered_documents->sum(function ($cashDocument) {
             return $cashDocument->expense_payment ? $cashDocument->expense_payment->payment : 0;
         });
 
-        // Se Recupera $expensePayments, similar como estaba.
-        $expensePayments = $cash->cash_documents->filter(function ($doc) {
-            return !is_null($doc->expense_payment_id);
-        })->map->expense_payment;
-
-        // Inicialización de $methods_payment.
         $methods_payment = PaymentMethodType::all()->map(function($row) {
             return (object)[
                 'id' => $row->id,
@@ -305,16 +315,31 @@ class CashController extends Controller
             ];
         });
 
-        // Se recuperan las categorías
         $categories = Category::all()->pluck('name', 'id');
+        $query = ConfigurationPos::select('cash_type', 'plate_number', 'electronic');
+        if ($electronic_type !== 'all' && $electronic_type !== 'resumido') {
+            $query->where('electronic', $electronic_type);
+        }
+        $resolutions_maquinas = $query->get();
 
-        // Se Recupera la Resolución
-        $resolutions_maquinas = ConfigurationPos::select('cash_type', 'plate_number', 'electronic')->get();
+        $is_resumido = $electronic_type === 'resumido';
 
-        set_time_limit(0); // Aumentar el tiempo de ejecución si los reportes son grandes.
+        $view = request()->get('format') === 'ticket'
+            ? 'tenant.cash.report_ticket_pdf'
+            : 'tenant.cash.report_ticket';
 
-        // Se Pasan todas las variables necesarias a la vista.
-        $pdf = PDF::loadView('tenant.cash.report_ticket', compact("cash", "company", "methods_payment", "cashEgress", "categories", "resolutions_maquinas", "expensePayments", "only_head"))->setPaper(array(0,0,227,380));
+        $pdf = PDF::loadView($view, compact(
+            "cash",
+            "company",
+            "methods_payment",
+            "cashEgress",
+            "categories",
+            "resolutions_maquinas",
+            "only_head",
+            "is_resumido",
+            "filtered_documents",
+            "electronic_type"
+        ))->setPaper(array(0,0,227,1000));
         $filename = "Reporte_POS - {$cash->user->name} - {$cash->date_opening} {$cash->time_opening}";
 
         return $pdf->stream($filename . '.pdf');

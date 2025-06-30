@@ -202,10 +202,8 @@ class ConfigurationController extends Controller
 
     public function getPosResolution()
     {
-        $pos_configs = ConfigurationPos::where('electronic', true)
-                        ->where('generated', '<', 'to') // Solo mostrar las que aún tienen números disponibles
-                        ->get();
-                        
+        $pos_configs = ConfigurationPos::get();
+
         return $pos_configs;
     }
 

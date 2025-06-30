@@ -69,6 +69,11 @@
                             </el-tooltip>
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
                                     @click.prevent="clickOptions(row.id)">Opciones</button>
+                            <button v-if="row.state_type_id !== '11'" type="button"
+                                class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
+                                @click.prevent="voidRemission(row, index)">
+                                Anular
+                            </button>
                         </td>
                     </tr>
                 </data-table>
@@ -131,6 +136,23 @@
             clickDialogDocument(document) {
                 this.recordToDocument = document
                 this.showDialogDocument = true
+            },
+            voidRemission(row, index) {
+                this.$confirm('¿Está seguro de anular esta remisión?', 'Confirmar', {
+                    confirmButtonText: 'Sí',
+                    cancelButtonText: 'No',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http.get(`/co-remissions/voided/${row.id}`).then(res => {
+                        if (res.data.success) {
+                            this.$message.success(res.data.message)
+                            // Solución directa y reactiva:
+                            row.state_type_id = '11'
+                        } else {
+                            this.$message.error(res.data.message)
+                        }
+                    })
+                }).catch(() => {});
             },
         }
     }

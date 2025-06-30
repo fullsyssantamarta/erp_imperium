@@ -41,7 +41,29 @@ class ReportSalesBookController extends Controller
         $records = $data['records'];
         $taxes = $this->getTaxesDocuments($records);
         $summary_records = $request->summary_sales_book ? $this->getSummaryRecords($data, $request) : [];
-        $report_data = compact('records', 'company', 'establishment', 'filters', 'taxes', 'summary_records');
+
+        // NUEVO: Obtener tipos de retención únicos de todos los documentos
+        $retention_types = collect();
+        foreach ($records as $record) {
+            $taxes_raw = json_decode($record->getRawTaxes(), true) ?? [];
+            foreach ($taxes_raw as $tax) {
+                if (isset($tax['is_retention']) && $tax['is_retention']) {
+                    $retention_types->push([
+                        'id' => $tax['id'],
+                        'name' => $tax['name'],
+                    ]);
+                }
+            }
+        }
+        $retention_types = $retention_types->unique('id')->values();
+
+        $report_data = compact('records', 'company', 'establishment', 'filters', 'taxes', 'summary_records', 'retention_types');
+
+        // Mostrar el campo taxes sin formateo ni filtro del primer documento (si existe)
+        // if ($records->count() > 0) {
+        //     $raw_taxes = $records->first()->getRawTaxes();
+        //     dd($raw_taxes);
+        // }
 
         switch ($type) {
             case 'excel':

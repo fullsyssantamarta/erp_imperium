@@ -2,7 +2,11 @@
     <thead>
         <tr>
             <th colspan="6">Información Básica</th>
-            <th colspan="{{ 6 + ($taxes->count() * 2) }}">Detalles Financieros</th>
+            <th colspan="{{ 5 + ($taxes->count() * 2) }}">Detalles Financieros</th>
+            @if($retention_types->count())
+                <th colspan="2">Retenciones</th>
+            @endif
+            <th>Total</th>
         </tr>
         <tr>
             <th>FECHA</th>
@@ -22,6 +26,10 @@
             @endforeach
             <th>IVA Total</th>
             <th>Base + Impuesto</th>
+            @if($retention_types->count())
+                <th>Tipo</th>
+                <th>Total.R</th>
+            @endif
             <th>Total pagar</th>
         </tr>
     </thead>
@@ -33,11 +41,19 @@
             $total_discount = 0;
             $total_tax_base = 0;
             $total_tax_amount = 0;
+            $total_retention_by_type = [];
             $tax_totals_by_type = [];
             $base_totals_by_type = [];
             foreach($taxes as $tax) {
                 $tax_totals_by_type[$tax->id] = 0; 
                 $base_totals_by_type[$tax->id] = 0;
+            }
+            foreach($retention_types as $ret) {
+                $total_retention_by_type[$ret['id']] = 0;
+            }
+            $retention_totals = [];
+            foreach($retention_types as $ret) {
+                $retention_totals[$ret['id']] = 0;
             }
         @endphp
 
@@ -45,15 +61,10 @@
             @php
                 $row = $value->getDataReportSalesBook();
                 $customer = $value->person;
-                
-                // Identificar notas de crédito y documentos POS anulados
                 $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false;
                 $is_void_pos = $value instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11';
-                
-                // Aplicar multiplicador según el caso
                 $multiplier = $is_void_pos ? 0 : ($is_credit_note ? -1 : 1);
-                
-                // Solo sumar al total si no es un POS anulado
+
                 if (!$is_void_pos) {
                     $total += floatval(str_replace(',', '', $row['total'])) * $multiplier;
                     $net_total += floatval(str_replace(',', '', $row['net_total'])) * $multiplier;
@@ -61,13 +72,11 @@
                     $total_discount += floatval(str_replace(',', '', ($row['total_discount'] ?? 0))) * $multiplier;
                 }
 
-                // Obtener nombres de impuestos
                 $tax_names = collect($value->items)
                     ->pluck('tax.name')
                     ->unique()
                     ->implode(', ');
 
-                // Calcular totales de impuestos por documento
                 $tax_totals = [
                     'base' => 0,
                     'tax' => 0
@@ -79,10 +88,39 @@
                         $base_totals_by_type[$tax->id] += floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
                         $tax_totals['tax'] += floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
                     }
-                    
                     $total_tax_base += $tax_totals['base'];
                     $total_tax_amount += $tax_totals['tax'];
                 }
+
+                // Procesar retenciones por tipo
+                $taxes_raw = json_decode($value->getRawTaxes(), true) ?? [];
+                $retentions_by_type = [];
+                foreach($retention_types as $ret) {
+                    $retentions_by_type[$ret['id']] = 0;
+                }
+                $retention_names = [];
+                $retention_sum = 0;
+                foreach($taxes_raw as $tax) {
+                    if(isset($tax['is_retention']) && $tax['is_retention']) {
+                        $amount = 0;
+                        if (isset($tax['retention']) && floatval($tax['retention']) > 0) {
+                            $amount = floatval($tax['retention']);
+                        } elseif (isset($tax['total'])) {
+                            $amount = floatval($tax['total']);
+                        }
+                        if(isset($retentions_by_type[$tax['id']])) {
+                            $retentions_by_type[$tax['id']] += $amount * $multiplier;
+                            if (!$is_void_pos) {
+                                $retention_totals[$tax['id']] += $amount * $multiplier;
+                            }
+                            if($amount * $multiplier != 0) {
+                                $retention_names[] = $tax['name'];
+                                $retention_sum += $amount * $multiplier;
+                            }
+                        }
+                    }
+                }
+                $retention_names_str = implode(' / ', array_unique($retention_names));
             @endphp
             <tr class="{{ $is_void_pos ? 'anulado' : ($is_credit_note ? 'credit-note' : '') }}">
                 <td class="celda">{{ $row['date_of_issue'] }}</td>
@@ -110,7 +148,23 @@
                 @endforeach
                 <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format($tax_totals['tax'], 2, '.', '') }}</td>
                 <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format(floatval(str_replace(',', '', $row['net_total'])) * $multiplier + $tax_totals['tax'], 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ $is_void_pos ? 'ANULADO' : number_format(floatval(str_replace(',', '', $row['total'])) * $multiplier, 2, '.', '') }}</td>
+                @if($retention_types->count())
+                    <td class="celda text-right-td retencion-cell">
+                        @if($is_void_pos)
+                            -
+                        @else
+                            {{ $retention_names_str }}
+                        @endif
+                    </td>
+                    <td class="celda text-right-td">
+                        @if($is_void_pos)
+                            -
+                        @else
+                            {{ $retention_sum != 0 ? number_format($retention_sum, 2, '.', '') : '' }}
+                        @endif
+                    </td>
+                @endif
+                <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format(floatval(str_replace(',', '', $row['total'])) * $multiplier, 2, '.', '') }}</td>
             </tr>
         @endforeach
 
@@ -127,6 +181,26 @@
             @endforeach
             <th>{{ number_format($total_tax_amount, 2, '.', '') }}</th>
             <th>{{ number_format($total_tax_base + $total_tax_amount, 2, '.', '') }}</th>
+            @if($retention_types->count())
+                <th class="celda text-right-td retencion-cell">
+                    @php
+                        $all_names = [];
+                        foreach($retention_types as $ret) {
+                            if($retention_totals[$ret['id']] != 0) $all_names[] = $ret['name'];
+                        }
+                    @endphp
+                    {{ implode(' / ', $all_names) }}
+                </th>
+                <th class="celda text-right-td">
+                    @php
+                        $total_retention_sum = 0;
+                        foreach($retention_types as $ret) {
+                            $total_retention_sum += $retention_totals[$ret['id']];
+                        }
+                    @endphp
+                    {{ $total_retention_sum != 0 ? number_format($total_retention_sum, 2, '.', '') : '' }}
+                </th>
+            @endif
             <th>{{ number_format($total, 2, '.', '') }}</th>
         </tr>
     </tbody>

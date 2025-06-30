@@ -26,6 +26,7 @@ class SaleBookExport implements  FromView, ShouldAutoSize
             'filters' => $this->records['filters'],
             'taxes' => $this->records['taxes'],
             'summary_records' => $this->records['summary_records'],
+            'retention_types' => $this->records['retention_types'],
         ]);
     }
 }

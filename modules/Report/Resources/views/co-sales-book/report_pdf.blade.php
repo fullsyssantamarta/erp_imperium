@@ -16,9 +16,33 @@
 
             html {
                 font-family: sans-serif;
-                font-size: 10px;
+                font-size: 9px;
             }
 
+            table.combined-table {
+                width: 100%;
+                table-layout: fixed;
+                font-size: 8px;
+            }
+
+            table.combined-table th,
+            table.combined-table td {
+                padding: 2px 2px;
+                word-break: break-all;
+                overflow-wrap: break-word;
+                white-space: normal;
+                text-align: center;
+                font-size: 7px;
+                max-width: 60px; 
+            }
+
+            .retencion-cell {
+                font-size: 7px;
+                word-break: break-all;
+                overflow-wrap: break-word;
+                white-space: normal;
+                max-width: 60px;
+            }
         </style>
     </head>
     <body>

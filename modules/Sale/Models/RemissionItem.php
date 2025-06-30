@@ -106,6 +106,7 @@ class RemissionItem extends ModelTenant
         $establishment_id = $request->establishment_id ?? null;
 
         return $query->whereHas('remission', function($remission) use ($customer_id, $user_id, $start_date, $end_date, $start_time, $end_time, $establishment_id){
+            $remission->where('state_type_id', '01'); // Solo remisiones activas
             if($customer_id) $remission->where('customer_id', $customer_id);
             if($user_id) $remission->where('user_id', $user_id);
             if($start_date) $remission->whereDate('date_of_issue', '>=', $start_date);

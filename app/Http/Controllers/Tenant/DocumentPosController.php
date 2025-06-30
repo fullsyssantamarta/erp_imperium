@@ -1880,4 +1880,25 @@ class DocumentPosController extends Controller
             ]);
         }
     }
+    public function validateCash($resolution_id)
+{
+    // Busca una caja abierta para la resolución seleccionada
+    $user_id = auth()->id();
+    $cash = \App\Models\Tenant\Cash::where('user_id', $user_id)
+        ->where('state', true)
+        ->where('resolution_id', $resolution_id)
+        ->first();
+
+    if ($cash) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Caja abierta encontrada para esta resolución.'
+        ]);
+    } else {
+        return response()->json([
+            'success' => false,
+            'message' => 'No hay caja abierta para esta resolución POS.'
+        ]);
+    }
+}
 }

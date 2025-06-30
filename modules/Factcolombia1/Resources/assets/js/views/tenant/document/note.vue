@@ -84,7 +84,9 @@
                                             type="textarea"
                                             autosize
                                             :rows="1"
-                                            v-model="form.observation">
+                                            v-model="form.observation"
+                                            maxlength="250"
+                                            show-word-limit>
                                     </el-input>
                                 </div>
                             </div>
