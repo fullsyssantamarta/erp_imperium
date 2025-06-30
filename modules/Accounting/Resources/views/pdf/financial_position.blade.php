@@ -28,7 +28,9 @@
 </head>
 <body>
     <h1>Reporte de Situación Financiera</h1>
-    <p>Rango de fechas: {{ $dateStart }} a {{ $dateEnd }}</p>
+    @if ($dateStart || $dateEnd)
+        <p>Rango de fechas: {{ $dateStart }} a {{ $dateEnd }}</p>
+    @endif
 
     <h2>Activos</h2>
     <table>

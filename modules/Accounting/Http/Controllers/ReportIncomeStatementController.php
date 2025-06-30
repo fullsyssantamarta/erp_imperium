@@ -60,9 +60,9 @@ class ReportIncomeStatementController extends Controller
 
 
         // Separar las cuentas por tipo
-        $revenues = $accounts->where('type', 'Revenue');
-        $costs = $accounts->where('type', 'Cost');
-        $expenses = $accounts->where('type', 'Expense');
+        $revenues = $accounts->where('type', 'Revenue')->where('saldo', '>', 0);
+        $costs = $accounts->where('type', 'Cost')->where('saldo', '>', 0);
+        $expenses = $accounts->where('type', 'Expense')->where('saldo', '>', 0);
 
         // Ahora agrupamos por tipo:
         $totalRevenue = $accounts->where('type', 'Revenue')->sum('saldo');
@@ -75,10 +75,9 @@ class ReportIncomeStatementController extends Controller
         $netProfit       = $operatingProfit;                   // Por ahora igual a operativa
 
         return response()->json([
-            'accounts' => $accounts,
-            'revenues' => $revenues,
-            'costs' => $costs,
-            'expenses' => $expenses,
+            'revenues' => $revenues->values()->all(),
+            'costs' => $costs->values()->all(),
+            'expenses' => $expenses->values()->all(),
             'totals' => [
                 'revenue' => $totalRevenue,
                 'cost' => $totalCost,

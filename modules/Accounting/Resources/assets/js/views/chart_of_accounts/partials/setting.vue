@@ -11,44 +11,41 @@
                             </div>
                         </div>
                         <div class="col-md-2">
-                            <button type="button" class="btn btn-custom btn-sm mt-2 mr-2" @click.prevent="openForm()">
+                            <button type="button" class="btn btn-custom btn-sm mt-2 mr-2 mb-2" @click.prevent="openForm()">
                                 <i class="fa fa-plus-circle"></i> Nuevo
                             </button>
                         </div>
                     </div>
-                   <div class="row" v-for=" row in account_sale_configurations">
-                      <div class="col-md-4">
-                          <div class="form-group">
-                              <label class="control-label">Ingresos</label>
-                              <el-select v-model="row.income_account" filterable >
-                                  <el-option v-for="option in chart_accounts_sales" :key="option.code" :value="option.code" :label="`${option.code} - ${option.name}`"></el-option>
-                              </el-select>
-                          </div>
-                      </div>
-                      <div class="col-md-4">
-                          <div class="form-group">
-                              <label class="control-label">	Devoluciones en ventas</label>
-                              <el-select v-model="row.sales_returns_account" filterable >
-                                  <el-option v-for="option in chart_accounts_purchases" :key="option.code" :value="option.code" :label="`${option.code} - ${option.name}`"></el-option>
-                              </el-select>
-                          </div>
-                      </div>
-                      <div class="col-md-3">
-                          <div class="form-group">
-                              <label class="control-label">	Clasificación contable</label>
-                              <el-input v-model="row.accounting_clasification" :readonly="true"/>
-                          </div>
-                      </div>
-                      <div class="col-md-1 d-flex align-items-end">
-                        <div class="form-group">
-                            <button type="button"
-                                    class="btn btn-xs btn-warning waves-effect waves-light w-100"
-                                    @click.prevent="openForm(row.id)">
-                            Editar
-                            </button>
-                        </div>
-                      </div>
-                  </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Ingresos</th>
+                                    <th style="word-break: break-word;">Devoluciones en ventas</th>
+                                    <th>Clasificación contable</th>
+                                    <th>Invetario</th>
+                                    <th>Costo de ventas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="row in account_sale_configurations" :key="row.id">
+                                    <td style="word-break: break-word;">{{ row.income_account }}</td>
+                                    <td style="word-break: break-word;">{{ row.sales_returns_account }}</td>
+                                    <td style="word-break: break-word;">{{ row.inventory_account }}</td>
+                                    <td style="word-break: break-word;">{{ row.sale_cost_account }}</td>
+                                    <td style="word-break: break-word;">{{ row.accounting_clasification }}</td>
+                                    <td>
+                                        <button type="button"
+                                            class="btn btn-xs btn-warning waves-effect waves-light"
+                                            @click.prevent="openForm(row.id)">
+                                            Editar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </el-tab-pane>
                 <el-tab-pane label="Inventario" name="inventory">
                   <div class="row">

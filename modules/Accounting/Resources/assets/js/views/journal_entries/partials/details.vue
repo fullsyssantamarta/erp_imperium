@@ -11,32 +11,43 @@
                 <div class="col-md-6">
                     <p><b>Descripción:</b> {{ journal.description }}</p>
                 </div>
-                
+
                 <div class="col-md-12">
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table mb-0">
                             <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Fecha</th>
-                                <th>Código de cuenta</th>
-                                <th>Nombre de cuenta</th>
-                                <th>Debe</th>
-                                <th>Haber</th>
-                            </tr>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Fecha</th>
+                                    <th>Código de cuenta</th>
+                                    <th>Nombre de cuenta</th>
+                                    <th>Debe</th>
+                                    <th>Haber</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            <tr v-for="(row, index) in records" :key="index">
-                                <template v-if="row.id">
-                                    <td>{{ index + 1 }}</td>
-                                    <td>{{ row.date }}</td>
-                                    <td>{{ row.chart_account_code }}</td>
-                                    <td>{{ row.chart_account_name }}</td>
-                                    <td>{{ row.debit }}</td>
-                                    <td>{{ row.credit }}</td>
-                                </template>
-                            </tr>
+                                <tr v-for="(row, index) in records" :key="index">
+                                    <template v-if="row.id">
+                                        <td>{{ index + 1 }}</td>
+                                        <td>{{ row.date }}</td>
+                                        <td>{{ row.chart_account_code }}</td>
+                                        <td>{{ row.chart_account_name }}</td>
+                                        <td>{{ row.debit }}</td>
+                                        <td>{{ row.credit }}</td>
+                                    </template>
+                                </tr>
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-right"><b>Total</b></td>
+                                    <td>
+                                        <b>{{ records.reduce((sum, r) => sum + Number(r.debit || 0), 0) }}</b>
+                                    </td>
+                                    <td>
+                                        <b>{{ records.reduce((sum, r) => sum + Number(r.credit || 0), 0) }}</b>
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>

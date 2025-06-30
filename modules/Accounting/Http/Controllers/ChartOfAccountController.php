@@ -260,11 +260,26 @@ class ChartOfAccountController extends Controller
     }
 
     public function tables() {
+        $account_sale_configurations = ChartAccountSaleConfiguration::get()->map(function ($item) {
+            $accountName = ChartOfAccount::where('code', $item->income_account)->value('name');
+            $salesReturnsAccountName = ChartOfAccount::where('code', $item->sales_returns_account)->value('name');
+            $inventoryAccountName = ChartOfAccount::where('code', $item->inventory_account)->value('name');
+            $saleCostAccountName = ChartOfAccount::where('code', $item->sale_cost_account)->value('name');
+
+            return [
+                'id' => $item->id,
+                'income_account' => $item->income_account . ' - ' . ($accountName ?? ''),
+                'sales_returns_account' => $item->sales_returns_account . ' - ' . ($salesReturnsAccountName ?? ''),
+                'inventory_account' => $item->inventory_account . ' - ' . ($inventoryAccountName ?? ''),
+                'sale_cost_account' => $item->sale_cost_account . ' - ' . ($saleCostAccountName ?? ''),
+                'accounting_clasification' => $item->accounting_clasification,
+            ];
+        });
 
         return [
             'chart_accounts_sales'=> ChartOfAccount::where('level','>=',4)->get(),
             'chart_accounts_purchases' => ChartOfAccount::where('level','>=',4)->get(),
-            'account_sale_configurations' => ChartAccountSaleConfiguration::all(),
+            'account_sale_configurations' => $account_sale_configurations,
             'chart_account_configurations' => AccountingChartAccountConfiguration::first(),
         ];
     }

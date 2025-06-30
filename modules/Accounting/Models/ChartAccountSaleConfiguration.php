@@ -13,6 +13,8 @@ class ChartAccountSaleConfiguration extends ModelTenant
     protected $fillable = [
         'income_account',
         'sales_returns_account',
+        'inventory_account',
+        'sale_cost_account',
         'accounting_clasification'
     ];
 

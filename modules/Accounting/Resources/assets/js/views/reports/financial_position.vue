@@ -14,7 +14,7 @@
         </div>
         <div class="card mb-0">
             <div class="card-body">
-                <div class="row">
+                <div class="row mb-2">
                     <div class="col-6">
                         <div class="filter-container">
                             <el-date-picker
@@ -37,24 +37,23 @@
                 </div>
                 <div class="row">
                     <div class="col-lg-6">
-                        <div class="d-flex justify-content-between">
-                            <h4>Activos</h4>
-                            <h4 class="text-right">{{ accounts.totals.assets || 0.00 }}</h4>
-                        </div>
-                        <data-table :data="accounts.assets" :columns="columns" />
+                        <data-table
+                            title="Activos"
+                            :data="accounts.assets"
+                            :columns="columns"
+                            :total="accounts.totals.assets" />
                     </div>
                     <div class="col-lg-6">
-                        <div class="d-flex justify-content-between">
-                            <h4>Pasivos</h4>
-                            <h4 class="text-right">{{ accounts.totals.liabilities || 0.00 }}</h4>
-                        </div>
-                        <data-table :data="accounts.liabilities" :columns="columns" />
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <h4>Patrimonio</h4>
-                            <h4 class="text-right">{{ accounts.totals.equity || 0.00 }}</h4>
-                        </div>
-                        <data-table :data="accounts.equity" :columns="columns" />
+                        <data-table
+                            title="Pasivos"
+                            :data="accounts.liabilities"
+                            :columns="columns"
+                            :total="accounts.totals.liabilities" />
+                        <data-table
+                            title="Patrimonio"
+                            :data="accounts.equity"
+                            :columns="columns"
+                            :total="accounts.totals.equity"/>
                     </div>
                 </div>
                 <div class="row">

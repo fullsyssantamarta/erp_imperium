@@ -17,16 +17,24 @@ class ChartAccountSaleConfigurationController extends Controller
             'account_sale_configurations' => ChartAccountSaleConfiguration::all(),
         ];
     }
-    
+
     public function store(Request $request)
     {
         $request->validate([
             'income_account' => 'required|string|max:10',
             'sales_returns_account' => 'required|max:10',
+            'inventory_account' => 'required|max:10',
+            'sale_cost_account' => 'required|max:10',
             'accounting_clasification' => 'required'
         ]);
 
-        $account = ChartAccountSaleConfiguration::create($request->only(['income_account', 'sales_returns_account', 'accounting_clasification']));
+        $account = ChartAccountSaleConfiguration::create($request->only([
+            'income_account',
+            'sales_returns_account',
+            'inventory_account',
+            'sale_cost_account',
+            'accounting_clasification'
+        ]));
 
         return response()->json([
             'success' => true,
@@ -50,6 +58,8 @@ class ChartAccountSaleConfigurationController extends Controller
         $request->validate([
             'income_account' => 'required|string|max:10',
             'sales_returns_account' => 'required|max:10',
+            'inventory_account' => 'required|max:10',
+            'sale_cost_account' => 'required|max:10',
             'accounting_clasification' => 'required'
         ]);
 
@@ -68,7 +78,7 @@ class ChartAccountSaleConfigurationController extends Controller
 
         return response()->json(['message' => 'Clasificación contable eliminado exitosamente']);
     }
-    
+
     public function tables() {
 
         return [
@@ -77,7 +87,4 @@ class ChartAccountSaleConfigurationController extends Controller
         ];
 
     }
-
-
-
 }

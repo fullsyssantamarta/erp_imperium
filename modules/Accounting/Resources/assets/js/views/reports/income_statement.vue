@@ -14,7 +14,7 @@
         </div>
         <div class="card mb-0">
             <div class="card-body">
-                <div class="row">
+                <div class="row mb-2">
                     <div class="col-6">
                         <div class="filter-container">
                             <el-date-picker
@@ -35,25 +35,24 @@
                         <!-- <el-button type="success" @click="ReportDownload('excel')">Excel</el-button> -->
                     </div>
                 </div>
-                <div class="d-flex justify-content-between">
-                    <h4>Ingresos</h4>
-                    <h4 class="text-right">{{ totals.revenue || 0.00 }}</h4>
-                </div>
-                <data-table :data="revenueAccounts" :columns="columns" />
-                <div class="d-flex justify-content-between">
-                    <h4>Gastos</h4>
-                    <h4 class="text-right">{{ totals.expense || 0.00 }}</h4>
-                </div>
-                <data-table :data="expenseAccounts" :columns="columns" />
-                <div class="d-flex justify-content-between">
-                    <h4>Costos</h4>
-                    <h4 class="text-right">{{ totals.cost || 0.00 }}</h4>
-                </div>
-                <data-table :data="costAccounts" :columns="columns" />
-                <div class="net-result">
-                    <h3>Utilidad Bruta: {{ gross_profit }}</h3>
-                    <h3>Utilidad Operativa: {{ operating_profit }}</h3>
-                    <h3>Resultado Neto: {{ net_profit }}</h3>
+                <data-table-report title="Ingresos" :data="revenueAccounts" :columns="columns" :total="totals.revenue"/>
+                <data-table-report title="Gastos" :data="expenseAccounts" :columns="columns" :total="totals.expense"/>
+                <data-table-report title="Costos" :data="costAccounts" :columns="columns" :total="totals.cost"/>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <tr>
+                            <td class="text-bold">Utilidad Bruta</td>
+                            <td class="text-right">{{ gross_profit }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-bold">Utilidad Operativa</td>
+                            <td class="text-right">{{ operating_profit }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-bold">Resultado Neto</td>
+                            <td class="text-right">{{ net_profit }}</td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>
@@ -61,14 +60,16 @@
 </template>
 
 <script>
-import DataTable from '../components/DataTableReport.vue';
+import DataTableReport from '../components/DataTableReport.vue';
 import queryString from 'query-string';
 
 export default {
-    components: { DataTable },
+    components: { DataTableReport },
     data() {
         return {
-            accounts: [],
+            revenueAccounts: [],
+            costAccounts: [],
+            expenseAccounts: [],
             totals: 0,
             gross_profit: 0,
             operating_profit: 0,
@@ -81,24 +82,15 @@ export default {
             dateRange: [],
         };
     },
-    computed: {
-        revenueAccounts() {
-            return this.accounts.filter(a => a.type === 'Revenue');
-        },
-        costAccounts() {
-            return this.accounts.filter(a => a.type === 'Cost');
-        },
-        expenseAccounts() {
-            return this.accounts.filter(a => a.type === 'Expense');
-        }
-    },
     mounted() {
         this.fetchData();
     },
     methods: {
         async fetchData(params = {}) {
             const response = await this.$http.get('/accounting/income-statement/records', { params });
-            this.accounts = response.data.accounts;
+            this.revenueAccounts = response.data.revenues;
+            this.costAccounts = response.data.costs;
+            this.expenseAccounts = response.data.expenses;
             this.totals = response.data.totals;
             this.gross_profit = response.data.gross_profit;
             this.operating_profit = response.data.operating_profit;

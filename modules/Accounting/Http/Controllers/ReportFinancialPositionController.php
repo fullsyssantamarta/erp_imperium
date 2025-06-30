@@ -61,9 +61,9 @@ class ReportFinancialPositionController extends Controller
             });
 
         // Separar las cuentas por tipo
-        $assets = $accounts->where('type', 'Asset');
-        $liabilities = $accounts->where('type', 'Liability');
-        $equity = $accounts->where('type', 'Equity');
+        $assets = $accounts->where('type', 'Asset')->where('saldo', '>', 0);
+        $liabilities = $accounts->where('type', 'Liability')->where('saldo', '>', 0);
+        $equity = $accounts->where('type', 'Equity')->where('saldo', '>', 0);
 
         // Calcular los totales por grupo
         $totalAssets = $assets->sum('saldo');
@@ -71,9 +71,9 @@ class ReportFinancialPositionController extends Controller
         $totalEquity = $equity->sum('saldo');
 
         return response()->json([
-            'assets' => $assets->toArray(),
-            'liabilities' => $liabilities->toArray(),
-            'equity' => $equity->toArray(),
+            'assets' => $assets->values()->all(),
+            'liabilities' => $liabilities->values()->all(),
+            'equity' => $equity->values()->all(),
             'totals' => [
                 'assets' => $totalAssets,
                 'liabilities' => $totalLiabilities,

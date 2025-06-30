@@ -17,6 +17,8 @@ class CreateChartAccountSaleConfigurationsTable extends Migration
             $table->increments('id');
             $table->string('income_account', 10)->nullable();
             $table->string('sales_returns_account', 10)->nullable();
+            $table->string('inventory_account', 10)->nullable();
+            $table->string('sale_cost_account', 10)->nullable();
             $table->string('accounting_clasification')->nullable();
             $table->timestamps();
         });
@@ -25,12 +27,11 @@ class CreateChartAccountSaleConfigurationsTable extends Migration
             [
                 'income_account' => '413595',
                 'sales_returns_account' => '417505',
+                'inventory_account' => '143505',
+                'sale_cost_account' => '613595',
                 'accounting_clasification' => 'Comercialización de productos'
             ]
         ]);
-
-
-
     }
 
     /**
