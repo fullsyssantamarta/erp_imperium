@@ -134,12 +134,20 @@ class ReportKardexCollection extends ResourceCollection
                 ];
 
             case $models[5]:
+                $isVoided = false;
+                if (
+                    isset($row->inventory_kardexable->state_type_id) &&
+                    $row->inventory_kardexable->state_type_id == '11' &&
+                    $row->quantity > 0
+                ) {
+                    $isVoided = true;
+                }
                 return [
                     'id' => $row->id,
                     'item_name' => $row->item->description,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
-                    'type_transaction' => "Venta POS",
+                    'type_transaction' => $isVoided ? "Anulación Venta POS" : "Venta POS",
                     'number' => optional($row->inventory_kardexable)->prefix.'-'.optional($row->inventory_kardexable)->number,
                     'input' => ($row->quantity > 0) ?  $row->quantity:"-",
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",
