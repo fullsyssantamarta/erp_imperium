@@ -55,6 +55,11 @@ use Illuminate\Support\Facades\View;
 
 use Modules\Factcolombia1\Helpers\DocumentHelper;
 use Exception;
+use Modules\Accounting\Models\JournalEntry;
+use Modules\Accounting\Models\JournalPrefix;
+use Modules\Accounting\Models\ChartOfAccount;
+use Modules\Accounting\Models\ChartAccountSaleConfiguration;
+use Modules\Accounting\Models\AccountingChartAccountConfiguration;
 
 
 class DocumentController extends Controller
@@ -117,7 +122,7 @@ class DocumentController extends Controller
                 $year_month = explode('-', $request->value);
                 $year = $year_month[0];
                 $month = $year_month[1];
-                
+
                 $records = Document::whereYear('date_of_issue', $year)
                                  ->whereMonth('date_of_issue', $month)
                                  ->whereTypeUser()
@@ -584,6 +589,7 @@ class DocumentController extends Controller
     public function store(DocumentRequest $request, $invoice_json = NULL){
         // \Log::debug($invoice_json);
         // dd($request->all());
+        // ini_set('memory_limit', '-1');
         DB::connection('tenant')->beginTransaction();
         try {
             if($invoice_json !== NULL)
@@ -649,6 +655,7 @@ class DocumentController extends Controller
                 }
             }
 
+            // dd($correlative_api);
             // \Log::debug($correlative_api);
             if(isset($request->number))
                 $correlative_api = $request->number;
@@ -782,6 +789,7 @@ class DocumentController extends Controller
                 $ch = curl_init("{$base_url}ubl2.1/invoice");
 
             $data_document = json_encode($service_invoice);
+            // dd($data_document);
             //\Log::debug("{$base_url}ubl2.1/invoice");
             //\Log::debug($company->api_token);
             //\Log::debug($correlative_api);
@@ -838,7 +846,7 @@ class DocumentController extends Controller
                         }
                 }
 
-
+                // dd($response_model);
                 //declaro variuable response status en null
                 $response_status = null;
                 //compruebo zip_key para ejecutar servicio de status document
@@ -969,11 +977,14 @@ class DocumentController extends Controller
             } else {
                 $state_document_id = self::REJECTED;
             }
-            
+
             $request->merge(['state_document_id' => $state_document_id]);
-            
-            $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);    
+
+            $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
+
+            // Registrar asientos contables
+            $this->registerAccountingSaleEntries($this->document);
             // Registrar cupón
             $this->registerCustomerCoupon($this->document);
 
@@ -1049,6 +1060,102 @@ class DocumentController extends Controller
                 ]
             ];
         }
+    }
+
+    private function registerAccountingSaleEntries($document) {
+        $total = $document->total;
+        $total_tax = $document->total_tax;
+        $subtotal = $document->sale;
+
+        // $accountIdAsset = ChartOfAccount::where('code','13050501')->first();
+
+        $accountIdCash = ChartOfAccount::where('code','110505')->first();
+        $accountIdIncome = ChartOfAccount::where('code','413595')->first();
+
+        // selecciono un impuesto directamente en lugar de buscar el primero
+        // ya que los impuestos no tienen predeterminada las cuentas
+        // TO DO - deberia verificar entre los productos
+        $accountIdLiability = ChartOfAccount::where('code','240805')->first();
+
+        // $taxIva = Tax::where('name','IVA5')->first();
+        // if($taxIva){
+        //     $accountIdLiability = ChartOfAccount::where('code',$taxIva->chart_account_sale)->first();
+        // }
+
+        $saleCost = AccountingChartAccountConfiguration::first();
+        if($saleCost){
+            $accountIdSaleCost = ChartOfAccount::where('code',$saleCost->sale_cost_account)->first();
+        }
+
+        $assetInventory = ChartAccountSaleConfiguration::first();
+        if($assetInventory){
+            $accountIdInventory = ChartOfAccount::where('code',$assetInventory->income_account)->first();
+        }
+
+        // dd($accountIdCash, $accountIdIncome, $accountIdLiability,$accountIdSaleCost,$accountIdInventory);
+
+        if($accountIdCash && $accountIdIncome && $accountIdLiability){
+
+            $entry = JournalEntry::create([
+                'date' => date('Y-m-d'),
+                'journal_prefix_id' => 1,
+                'description' => 'Factura de Venta #'.$document->prefix.'-'.$document->number,
+                'document_id' => $document->id,
+                'status' => 'posted'
+            ]);
+
+            //Caja general (contado)
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdCash->id,
+                'debit' => $total,
+                'credit' => 0,
+            ]);
+
+            //Cuentas por cobrar (Activo)
+            // $entry->details()->create([
+            //     'chart_of_account_id' => $accountIdAsset->id,
+            //     'debit' => $total,
+            //     'credit' => 0,
+            // ]);
+
+            //Ingresos por ventas (Ingreso)
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdIncome->id,
+                'debit' => 0,
+                'credit' => $subtotal,
+            ]);
+
+            //IVA generado (Pasivo)
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdLiability->id,
+                'debit' => 0,
+                'credit' => $total_tax,
+            ]);
+
+            //Costo de ventas
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdSaleCost->id,
+                'debit' => 0,
+                'credit' => 0,
+            ]);
+
+            //Inventarios
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdInventory->id,
+                'debit' => 0,
+                'credit' => 0,
+            ]);
+        } else {
+            $accountingValueErrors = [
+                'accountIdCash' => $accountIdCash ? $accountIdCash->code : 'No encontrado',
+                'accountIdIncome' => $accountIdIncome ? $accountIdIncome->code : 'No encontrado',
+                'accountIdLiability' => isset($accountIdLiability) ? ($accountIdLiability ? $accountIdLiability->code : 'No encontrado') : 'No encontrado',
+                'accountIdSaleCost' => isset($accountIdSaleCost) ? ($accountIdSaleCost ? $accountIdSaleCost->code : 'No encontrado') : 'No encontrado',
+                'accountIdInventory' => isset($accountIdInventory) ? ($accountIdInventory ? $accountIdInventory->code : 'No encontrado') : 'No encontrado'
+            ];
+            \Log::debug('No se pudo registrar la entrada contable'. json_encode($accountingValueErrors));
+        }
+
     }
 
     public function preeliminarview(DocumentRequest $request){
@@ -1433,6 +1540,12 @@ class DocumentController extends Controller
                 'xml' => $this->getFileName(),
                 'cufe' => $response_model->cude
             ]);
+
+            // Registrar asientos contables
+            if($this->document->type_document_id == 3 ){
+                $this->registerAccountingCreditNoteEntries($this->document);
+            }
+
         }
         catch (\Exception $e) {
             DB::connection('tenant')->rollBack();
@@ -1492,6 +1605,60 @@ class DocumentController extends Controller
             ]
            //'data' => $data_document
         ];
+    }
+
+    private function registerAccountingCreditNoteEntries($document) {
+        $total = $document->total;
+        $total_tax = $document->total_tax;
+        $subtotal = $document->sale ;
+
+
+        $accountIdIncome = ChartOfAccount::where('code','41750501')->first();
+
+        $taxIva = Tax::where('name','IVA5')->first();
+        if($taxIva){
+            $accountIdLiability = ChartOfAccount::where('code',$taxIva->chart_account_return_sale)->first();
+        }
+
+        $accountConfiguration = AccountingChartAccountConfiguration::first();
+
+        if($accountConfiguration){
+            $accountIdCustomer = ChartOfAccount::where('code',$accountConfiguration->customer_returns_account)->first();
+        }
+
+        if($accountIdCustomer && $accountIdIncome && $accountIdLiability){
+
+            $entry = JournalEntry::create([
+                'date' => date('Y-m-d'),
+                'journal_prefix_id' => 1,
+                'description' => 'Nota de Crédito #'.$document->prefix.'-'.$document->number,
+                'document_id' => $document->id,
+                'status' => 'posted'
+            ]);
+
+            //ventas
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdIncome->id,
+                'debit' => $subtotal,
+                'credit' => 0,
+            ]);
+
+            //IVA generado (Pasivo)
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdLiability->id,
+                'debit' => $total_tax,
+                'credit' => 0,
+            ]);
+
+            //Clientes
+            $entry->details()->create([
+                'chart_of_account_id' => $accountIdCustomer->id,
+                'debit' => 0,
+                'credit' => $total,
+            ]);
+
+        }
+
     }
 
     /**
@@ -1675,13 +1842,13 @@ class DocumentController extends Controller
 
                 if ($resolution) {
                     $next_number = $resolution->generated + 1;
-                    
+
                     $document = Document::where('prefix', $prefix)
                         ->where('number', $next_number)
                         ->first();
 
                     if ($document) {
-                        if ($document->state_document_id == 6) { 
+                        if ($document->state_document_id == 6) {
                             $document->delete();
                             return $next_number;
                         }
@@ -1692,12 +1859,12 @@ class DocumentController extends Controller
             }
 
             $company = ServiceTenantCompany::firstOrFail();
-            
+
             $url = $this->getBaseUrlCorrelativeInvoice($type_service, $prefix, $ignore_state_document_id);
             $ch2 = curl_init($url);
 
             curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET"); 
+            curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET");
             curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
             curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
             curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
@@ -1715,7 +1882,7 @@ class DocumentController extends Controller
             }
 
             $response_encode = json_decode($response_data);
-            
+
             if (isset($response_encode->exception)) {
                 \Log::error($response_encode->trace);
                 throw new \Exception($response_encode->message);
@@ -2253,7 +2420,7 @@ class DocumentController extends Controller
                 'message' => 'Cupón no encontrado'
             ], 404);
         }
-        
+
         $coupon = ConfigurationPurchaseCoupon::where('id',$purchaseCoupon->configuration_purchase_coupon_id)->where('status',1)->first();
 
         if (!$coupon) {
