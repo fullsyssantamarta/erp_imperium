@@ -35,6 +35,7 @@ use App\Http\Controllers\Tenant\{
 };
 use Modules\Factcolombia1\Helpers\DocumentHelper;
 use App\Models\Tenant\ItemWarehouse;
+use App\Models\Tenant\InventoryKardex;
 use Carbon\Carbon;
 
 
@@ -318,7 +319,6 @@ class RemissionController extends Controller
             $remission->state_type_id = '11'; // 11 = Anulado
             $remission->save();
 
-            // Actualizar stock de los items
             foreach ($remission->items as $item) {
                 // Buscar el stock en el almacén correspondiente
                 $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)
@@ -329,9 +329,17 @@ class RemissionController extends Controller
                     $itemWarehouse->stock += $item->quantity;
                     $itemWarehouse->save();
                 }
+
+                // Registrar entrada en inventory_kardex
+                InventoryKardex::create([
+                    'date_of_issue' => now(),
+                    'item_id' => $item->item_id,
+                    'inventory_kardexable_id' => $remission->id,
+                    'inventory_kardexable_type' => Remission::class,
+                    'warehouse_id' => $remission->establishment_id,
+                    'quantity' => $item->quantity,
+                ]);
             }
-
-
         });
 
         return [
