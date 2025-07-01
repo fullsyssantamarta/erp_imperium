@@ -58,6 +58,10 @@ if($hostname) {
             Route::get('/income-statement', 'ReportIncomeStatementController@index')->name('tenant.accounting.report.income-statement');
             Route::get('/income-statement/records', 'ReportIncomeStatementController@records');
             Route::get('/income-statement/export', 'ReportIncomeStatementController@export');
+            // Reporte de Movimientos Auxiliares
+            Route::get('/auxiliary-movement', 'ReportAuxiliaryMovementController@index')->name('tenant.accounting.report.auxiliary-movement');
+            Route::get('/auxiliary-movement/records', 'ReportAuxiliaryMovementController@records');
+            Route::get('/auxiliary-movement/export', 'ReportAuxiliaryMovementController@export');
 
             Route::prefix('clasification-sale')->group(function () {
                 Route::get('records', 'ChartAccountSaleConfigurationController@records');

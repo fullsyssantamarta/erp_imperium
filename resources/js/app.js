@@ -382,6 +382,7 @@ Vue.component('tenant-accounting-journal-entries-index', require('@viewsModuleAc
 Vue.component('tenant-accounting-charts-index', require('@viewsModuleAccounting/chart_of_accounts/index.vue'));
 Vue.component('tenant-accounting-reports-financial-position-index', require('@viewsModuleAccounting/reports/financial_position.vue'));
 Vue.component('tenant-accounting-reports-income-statement-index', require('@viewsModuleAccounting/reports/income_statement.vue'));
+Vue.component('tenant-accounting-reports-auxiliary-movement-index', require('@viewsModuleAccounting/reports/auxiliary_movement.vue'));
 
 
 
