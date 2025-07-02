@@ -84,6 +84,7 @@
         async created() {
             this.initForm()
             await this.getConfigPrint()
+            await this.getQzTrayStatus()
         },
         mounted() {
             this.loadApiConfig()
@@ -98,6 +99,15 @@
                     })
                 if(this.enable_qz_tray) {
                     startConnection()
+                }
+            },
+            async getQzTrayStatus() {
+                // Consulta el estado del switch QZ Tray
+                try {
+                    const response = await this.$http.get('/certificates-qztray/record')
+                    this.enable_qz_tray = !!response.data.enable_qz_tray
+                } catch (e) {
+                    this.enable_qz_tray = false
                 }
             },
             // async printTicket() {
@@ -129,6 +139,12 @@
             //     }
             // },
             async printTicket() {
+                // Solo imprime con QZ Tray si está habilitado
+                if (!this.enable_qz_tray) {
+                    // Si quieres, puedes mostrar un mensaje o simplemente no hacer nada
+                    // this.$message.info('La impresión directa está desactivada.');
+                    return;
+                }
                 try {
                     // Obtener el PDF del ticket según la pestaña activa
                     const pdfUrl = {
@@ -261,7 +277,13 @@
                     .then(response => {
                         this.form = response.data.data
                         this.titleDialog = `Documento POS registrado:  ${this.form.serie}-${this.form.number}`
-                        this.printTicket()
+                        this.getQzTrayStatus().then(() => {
+                            // Solo imprimir automáticamente si QZ Tray está habilitado
+                            if (this.enable_qz_tray) {
+                                this.printTicket()
+                            }
+                            // Si QZ Tray está deshabilitado, solo se muestra el PDF en el <embed>
+                        })
                     })
             },
             clickFinalize() {
