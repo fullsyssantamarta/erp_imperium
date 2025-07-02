@@ -4,6 +4,8 @@ namespace Modules\Accounting\Models;
 
 use App\Models\Tenant\ModelTenant;
 use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Models\Tenant\Document;
+use App\Models\Tenant\Purchase;
 
 
 class JournalEntry extends ModelTenant
@@ -81,5 +83,15 @@ class JournalEntry extends ModelTenant
     public function isEditable()
     {
         return in_array($this->status, ['draft', 'rejected']);
+    }
+
+    public function document()
+    {
+        return $this->belongsTo(Document::class, 'document_id');
+    }
+
+    public function purchase()
+    {
+        return $this->belongsTo(Purchase::class, 'purchase_id');
     }
 }

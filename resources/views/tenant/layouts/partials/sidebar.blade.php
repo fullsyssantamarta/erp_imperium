@@ -848,7 +848,7 @@
                     </li>
                     @endif --}}
 
-                    <li class="nav-parent {{$path[0] === 'accounting' && in_array($path[1], ['journal', 'charts', 'income-statement', 'financial-position']) ? 'nav-active nav-expanded' : ''}}">
+                    <li class="nav-parent {{$path[0] === 'accounting' && in_array($path[1], ['journal', 'charts', 'income-statement', 'financial-position', 'auxiliary-movement']) ? 'nav-active nav-expanded' : ''}}">
                         <a class="nav-link" href="#">
                             <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
                             <i class="fas fa-hand-holding-usd" aria-hidden="true"></i>
@@ -873,6 +873,11 @@
                             <li class="{{(($path[0] === 'accounting') && ($path[1] == 'income-statement')) ? 'nav-active' : ''}}">
                                 <a class="nav-link" href="{{route('tenant.accounting.report.income-statement')}}">
                                     Reporte de Estado de resultado
+                                </a>
+                            </li>
+                            <li class="{{(($path[0] === 'accounting') && ($path[1] == 'auxiliary-movement')) ? 'nav-active' : ''}}">
+                                <a class="nav-link" href="{{route('tenant.accounting.report.auxiliary-movement')}}">
+                                    Reporte de Movimiento auxiliar
                                 </a>
                             </li>
                         </ul>
