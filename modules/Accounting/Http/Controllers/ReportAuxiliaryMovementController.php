@@ -98,8 +98,8 @@ class ReportAuxiliaryMovementController extends Controller
 
         if ($format === 'pdf') {
             return $this->exportPdf($request);
-        // } elseif ($format === 'excel') {
-        //     return $this->exportExcel($request);
+        } elseif ($format === 'excel') {
+            return $this->exportExcel($request);
         } else {
             return response()->json(['error' => 'Formato no soportado'], 400);
         }
@@ -127,5 +127,56 @@ class ReportAuxiliaryMovementController extends Controller
 
         // Descargar el PDF
         return $mpdf->Output('reporte_movimientos_auxiliares.pdf', 'I'); // 'I' para mostrar en el navegador
+    }
+
+    private function exportExcel(Request $request)
+    {
+        // Reutilizar la lógica de records para obtener los datos
+        $data = $this->records($request)->getData(true);
+
+        // Crear el archivo Excel
+        $filename = 'reporte_situacion_financiera.xlsx';
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Configurar encabezados
+        $sheet->setCellValue('A1', 'Código');
+        $sheet->setCellValue('B1', 'Cuenta');
+        $sheet->setCellValue('C1', 'Comprobante');
+        $sheet->setCellValue('D1', 'Número de documento');
+        $sheet->setCellValue('E1', 'Nombre del tercero');
+        $sheet->setCellValue('F1', 'Descripción');
+        $sheet->setCellValue('G1', 'Débito');
+        $sheet->setCellValue('H1', 'Crédito');
+
+
+        // Agregar datos de cuentas
+        $row = 2;
+        foreach ($data['data'] as $group) {
+            $row++;
+            $sheet->setCellValue('A' . $row, 'Cuenta contable:');
+            $sheet->setCellValue('B' . $row, $group['account_code']);
+            $sheet->setCellValue('G' . $row, $group['total_debit']);
+            $sheet->setCellValue('H' . $row, $group['total_credit']);
+            foreach($group['details'] as $detail) {
+                $row++;
+                $sheet->setCellValue('A' . $row, $detail['account_code']);
+                $sheet->setCellValue('B' . $row, $detail['account_name']);
+                $sheet->setCellValue('C' . $row, $detail['document_info']['type'] ?? '');
+                $sheet->setCellValue('D' . $row, $detail['document_info']['number'] ?? '');
+                $sheet->setCellValue('E' . $row, $detail['document_info']['third_party_name'] ?? '');
+                $sheet->setCellValue('F' . $row, $detail['description']);
+                $sheet->setCellValue('G' . $row, $detail['debit']);
+                $sheet->setCellValue('H' . $row, $detail['credit']);
+            }
+        }
+        $row++;
+
+        // Descargar el archivo Excel
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempFile = tempnam(sys_get_temp_dir(), $filename);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 }

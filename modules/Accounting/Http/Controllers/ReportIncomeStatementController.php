@@ -95,8 +95,8 @@ class ReportIncomeStatementController extends Controller
 
         if ($format === 'pdf') {
             return $this->exportPdf($request);
-        // } elseif ($format === 'excel') {
-        //     return $this->exportExcel($request);
+        } elseif ($format === 'excel') {
+            return $this->exportExcel($request);
         } else {
             return response()->json(['error' => 'Formato no soportado'], 400);
         }
@@ -130,5 +130,81 @@ class ReportIncomeStatementController extends Controller
 
         // Descargar el PDF
         return $mpdf->Output('reporte_estado_resultado.pdf', 'I'); // 'I' para mostrar en el navegador
+    }
+
+    private function exportExcel(Request $request)
+    {
+        // Reutilizar la lógica de records para obtener los datos
+        $data = $this->records($request)->getData(true);
+
+        // Crear el archivo Excel
+        $filename = 'reporte_situacion_financiera.xlsx';
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Configurar encabezados
+        $sheet->setCellValue('A1', 'Código');
+        $sheet->setCellValue('B1', 'Nombre');
+        $sheet->setCellValue('C1', 'Tipo');
+        $sheet->setCellValue('D1', 'Saldo');
+
+        // Agregar datos de Ingresos
+        $row = 2;
+        $sheet->setCellValue('A' . $row, 'Ingresos');
+        foreach ($data['revenues'] as $asset) {
+            $row++;
+            $sheet->setCellValue('A' . $row, $asset['code']);
+            $sheet->setCellValue('B' . $row, $asset['name']);
+            $sheet->setCellValue('C' . $row, $asset['type']);
+            $sheet->setCellValue('D' . $row, $asset['saldo']);
+        }
+        $row++;
+        $sheet->setCellValue('C' . $row, 'Total Ingresos');
+        $sheet->setCellValue('D' . $row, $data['totals']['revenue']);
+
+        // Agregar datos de Pasivos
+        $row += 2;
+        $sheet->setCellValue('A' . $row, 'Gastos');
+        foreach ($data['expenses'] as $liability) {
+            $row++;
+            $sheet->setCellValue('A' . $row, $liability['code']);
+            $sheet->setCellValue('B' . $row, $liability['name']);
+            $sheet->setCellValue('C' . $row, $liability['type']);
+            $sheet->setCellValue('D' . $row, $liability['saldo']);
+        }
+        $row++;
+        $sheet->setCellValue('C' . $row, 'Total Gastos');
+        $sheet->setCellValue('D' . $row, $data['totals']['expense']);
+
+        // Agregar datos de Patrimonio
+        $row += 2;
+        $sheet->setCellValue('A' . $row, 'Costos');
+        foreach ($data['costs'] as $equity) {
+            $row++;
+            $sheet->setCellValue('A' . $row, $equity['code']);
+            $sheet->setCellValue('B' . $row, $equity['name']);
+            $sheet->setCellValue('C' . $row, $equity['type']);
+            $sheet->setCellValue('D' . $row, $equity['saldo']);
+        }
+        $row++;
+        $sheet->setCellValue('C' . $row, 'Total Costos');
+        $sheet->setCellValue('D' . $row, $data['totals']['cost']);
+
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Utilidad Bruta');
+        $sheet->setCellValue('B' . $row, $data['gross_profit']);
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Utilidad Operativa');
+        $sheet->setCellValue('B' . $row, $data['operating_profit']);
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Resultado Neto');
+        $sheet->setCellValue('B' . $row, $data['net_profit']);
+
+        // Descargar el archivo Excel
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempFile = tempnam(sys_get_temp_dir(), $filename);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 }

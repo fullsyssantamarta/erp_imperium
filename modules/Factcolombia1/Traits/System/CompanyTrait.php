@@ -338,9 +338,35 @@ trait CompanyTrait
                 'type_tax_id' => 5
             ]);
 
-        DB::table('co_taxes')->insert([
-            [ 'name' => 'IVA5', 'code' => '71', 'rate' => '5.0', 'conversion' => '100.0', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'), 'type_tax_id' => 1 ],
-        ]);
+        // DB::table('co_taxes')->insert([
+        //     [ 'name' => 'IVA5', 'code' => '71', 'rate' => '5.0', 'conversion' => '100.0', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'), 'type_tax_id' => 1 ],
+        // ]);
+
+        $iva5 = DB::connection('tenant')->table('co_taxes')->where('name', 'IVA5')->first();
+
+        if ($iva5) {
+            // Si existe, actualiza los campos que necesites
+            DB::connection('tenant')->table('co_taxes')->where('id', $iva5->id)->update([
+                'code' => '71',
+                'rate' => '5.0',
+                'conversion' => '100.0',
+                'type_tax_id' => 1,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        } else {
+            // Si no existe, inserta el registro
+            DB::connection('tenant')->table('co_taxes')->insert([
+                [
+                    'name' => 'IVA5',
+                    'code' => '71',
+                    'rate' => '5.0',
+                    'conversion' => '100.0',
+                    'type_tax_id' => 1,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ],
+            ]);
+        }
 
     }
 

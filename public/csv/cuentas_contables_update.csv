@@ -1,0 +1,11 @@
+code,name,type,level,parent_code
+24080502,IVA generado 5%,Asset,5,240805
+240810,IVA descontable devoluciones en ventas,Asset,4,2408
+24081001,IVA descontable por devoluciones en ventas 19%,Asset,5,240810
+24081002,IVA descontable por devoluciones en ventas 5%,Asset,5,240810
+240815,IVA descontable en compras,Asset,4,2408
+24081501,IVA descontable por compras del 19%,Asset,5,240815
+24081502,IVA descontable por compras del 5%,Asset,5,240815
+240820,IVA devoluciones en compras,Asset,4,2408
+24082001,IVA devoluciones en compras 19%,Asset,5,240820
+24082002,IVA devoluciones en compras 5%,Asset,5,240820

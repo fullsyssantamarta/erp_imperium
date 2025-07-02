@@ -43,7 +43,7 @@ class CreateAccountsTable extends Migration
         });
         Schema::dropIfExists('chart_of_accounts');
     }
-    
+
     private function importAccountsFromCSV()
     {
         $file = public_path('csv/cuentas_contables.csv');

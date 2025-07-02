@@ -47,7 +47,7 @@
                         </table>
                     </div>
                 </el-tab-pane>
-                <el-tab-pane label="Inventario" name="inventory">
+                <!-- <el-tab-pane label="Inventario" name="inventory">
                   <div class="row">
                       <div class="col-md-12">
                           <div class="form-group">
@@ -86,7 +86,7 @@
                     <el-button @click.prevent="close()">Cancelar</el-button>
                     <el-button type="primary" @click.prevent="submit()" :loading="loading_submit" >Guardar</el-button>
                   </div>
-                </el-tab-pane>
+                </el-tab-pane> -->
                 <el-tab-pane label="Clientes y Proveedores" name="customer_supplier">
                   <div class="row">
                       <div class="col-md-12">
@@ -103,7 +103,7 @@
                               <small class="form-control-feedback" v-if="errors.customer_receivable_account" v-text="errors.customer_receivable_account[0]"></small>
                           </div>
                       </div>
-                      <div class="col-md-4">
+                      <!-- <div class="col-md-4">
                           <div class="form-group" :class="{'has-danger': errors.customer_returns_account}">
                               <label class="control-label">	Devoluciones de clientes</label>
                               <el-select v-model="form.customer_returns_account" filterable >
@@ -111,7 +111,7 @@
                               </el-select>
                               <small class="form-control-feedback" v-if="errors.customer_returns_account" v-text="errors.customer_returns_account[0]"></small>
                           </div>
-                      </div>
+                      </div> -->
                       <div class="col-md-4">
                           <div class="form-group" :class="{'has-danger': errors.supplier_payable_account}">
                               <label class="control-label">Cuentas de proveedores</label>
@@ -121,7 +121,7 @@
                               <small class="form-control-feedback" v-if="errors.supplier_payable_account" v-text="errors.supplier_payable_account[0]"></small>
                           </div>
                       </div>
-                      <div class="col-md-4">
+                      <!-- <div class="col-md-4">
                           <div class="form-group" :class="{'has-danger': errors.supplier_returns_account}">
                               <label class="control-label">	Devoluciones de proveedores</label>
                               <el-select v-model="form.supplier_returns_account" filterable >
@@ -129,7 +129,7 @@
                               </el-select>
                               <small class="form-control-feedback" v-if="errors.supplier_returns_account" v-text="errors.supplier_returns_account[0]"></small>
                           </div>
-                      </div>
+                      </div> -->
                   </div>
                   <div class="form-actions text-right pt-2">
                     <el-button @click.prevent="close()">Cancelar</el-button>
