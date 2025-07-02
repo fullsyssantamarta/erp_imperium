@@ -419,7 +419,8 @@ class DocumentPos extends ModelTenant
                         'sale',
                         'total_tax',
                         'subtotal',
-                        'state_type_id'
+                        'state_type_id',
+                        'total_discount',
                     ]);
     }
 

@@ -61,11 +61,18 @@
             @php
                 $row = $value->getDataReportSalesBook();
                 $customer = $value->person;
-                $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false;
-                $is_void_pos = $value instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11';
-                $multiplier = $is_void_pos ? 0 : ($is_credit_note ? -1 : 1);
+                // Nueva lógica para identificar notas de crédito y anulaciones
+                $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false || 
+                    ($value instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11');
+                $is_void_pos = false; // ya se incluye en la lógica de $is_credit_note
+                $multiplier = $is_credit_note ? -1 : 1;
 
-                if (!$is_void_pos) {
+                if (!$is_credit_note) {
+                    $total += floatval(str_replace(',', '', $row['total'])) * $multiplier;
+                    $net_total += floatval(str_replace(',', '', $row['net_total'])) * $multiplier;
+                    $total_exempt += floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier;
+                    $total_discount += floatval(str_replace(',', '', ($row['total_discount'] ?? 0))) * $multiplier;
+                } else {
                     $total += floatval(str_replace(',', '', $row['total'])) * $multiplier;
                     $net_total += floatval(str_replace(',', '', $row['net_total'])) * $multiplier;
                     $total_exempt += floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier;
@@ -82,15 +89,13 @@
                     'tax' => 0
                 ];
                 
-                if (!$is_void_pos) {
-                    foreach($taxes as $tax) {
-                        $item_values = $value->getItemValuesByTax($tax->id);
-                        $base_totals_by_type[$tax->id] += floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
-                        $tax_totals['tax'] += floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
-                    }
-                    $total_tax_base += $tax_totals['base'];
-                    $total_tax_amount += $tax_totals['tax'];
+                foreach($taxes as $tax) {
+                    $item_values = $value->getItemValuesByTax($tax->id);
+                    $base_totals_by_type[$tax->id] += floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
+                    $tax_totals['tax'] += floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
                 }
+                $total_tax_base += $tax_totals['base'];
+                $total_tax_amount += $tax_totals['tax'];
 
                 // Procesar retenciones por tipo
                 $taxes_raw = json_decode($value->getRawTaxes(), true) ?? [];
@@ -110,7 +115,7 @@
                         }
                         if(isset($retentions_by_type[$tax['id']])) {
                             $retentions_by_type[$tax['id']] += $amount * $multiplier;
-                            if (!$is_void_pos) {
+                            if (!$is_credit_note) {
                                 $retention_totals[$tax['id']] += $amount * $multiplier;
                             }
                             if($amount * $multiplier != 0) {
@@ -122,49 +127,42 @@
                 }
                 $retention_names_str = implode(' / ', array_unique($retention_names));
             @endphp
-            <tr class="{{ $is_void_pos ? 'anulado' : ($is_credit_note ? 'credit-note' : '') }}">
+            <tr class="{{ $is_credit_note ? 'credit-note' : '' }}">
                 <td class="celda">{{ $row['date_of_issue'] }}</td>
                 <td class="celda">{{ $row['type_document_name'] }}</td>
                 <td class="celda">{{ $row['number_full'] }}</td>
                 <td class="celda">{{ $customer ? $customer->number : ($row['customer_number'] ?? '') }}</td>
                 <td class="celda">{{ $customer ? $customer->name : ($row['customer_name'] ?? '') }}</td>
                 <td class="celda">{{ $customer ? $customer->address : ($row['customer_address'] ?? '') }}</td>
-                <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format(floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier, 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format(floatval(str_replace(',', '', ($row['total_discount'] ?? 0))) * $multiplier, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', ($row['total_discount'] ?? 0))) * $multiplier, 2, '.', '') }}</td>
                 @foreach($taxes as $tax)
                     @php
                         $item_values = $value->getItemValuesByTax($tax->id);
-                        $base_amount = $is_void_pos ? 0 : (floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier);
+                        $base_amount = floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
                     @endphp
-                    <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format($base_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">{{ number_format($base_amount, 2, '.', '') }}</td>
                 @endforeach
                 <td class="celda">{{ $tax_names }}</td>
                 @foreach($taxes as $tax)
                     @php
                         $item_values = $value->getItemValuesByTax($tax->id);
-                        $tax_amount = $is_void_pos ? 0 : (floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier);
+                        $tax_amount = floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
+                        $tax_totals_by_type[$tax->id] += $tax_amount;
                     @endphp
-                    <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format($tax_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">{{ number_format($tax_amount, 2, '.', '') }}</td>
                 @endforeach
-                <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format($tax_totals['tax'], 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format(floatval(str_replace(',', '', $row['net_total'])) * $multiplier + $tax_totals['tax'], 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ number_format($tax_totals['tax'], 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', $row['net_total'])) * $multiplier + $tax_totals['tax'], 2, '.', '') }}</td>
                 @if($retention_types->count())
                     <td class="celda text-right-td retencion-cell">
-                        @if($is_void_pos)
-                            -
-                        @else
-                            {{ $retention_names_str }}
-                        @endif
+                        {{ $retention_names_str }}
                     </td>
                     <td class="celda text-right-td">
-                        @if($is_void_pos)
-                            -
-                        @else
-                            {{ $retention_sum != 0 ? number_format($retention_sum, 2, '.', '') : '' }}
-                        @endif
+                        {{ $retention_sum != 0 ? number_format($retention_sum, 2, '.', '') : '' }}
                     </td>
                 @endif
-                <td class="celda text-right-td">{{ $is_void_pos ? '-' : number_format(floatval(str_replace(',', '', $row['total'])) * $multiplier, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', $row['total'])) * $multiplier, 2, '.', '') }}</td>
             </tr>
         @endforeach
 
