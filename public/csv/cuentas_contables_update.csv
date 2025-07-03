@@ -1,11 +1,76 @@
 code,name,type,level,parent_code
-24080502,IVA generado 5%,Asset,5,240805
-240810,IVA descontable devoluciones en ventas,Asset,4,2408
-24081001,IVA descontable por devoluciones en ventas 19%,Asset,5,240810
-24081002,IVA descontable por devoluciones en ventas 5%,Asset,5,240810
-240815,IVA descontable en compras,Asset,4,2408
-24081501,IVA descontable por compras del 19%,Asset,5,240815
-24081502,IVA descontable por compras del 5%,Asset,5,240815
-240820,IVA devoluciones en compras,Asset,4,2408
-24082001,IVA devoluciones en compras 19%,Asset,5,240820
-24082002,IVA devoluciones en compras 5%,Asset,5,240820
+24080502,IVA generado 5%,Liability,5,240805
+24080503,IVA generado 19% aui,Liability,5,240805
+240810,IVA descontable devoluciones en ventas,Liability,4,2408
+24081001,IVA descontable por devoluciones en ventas 19%,Liability,5,240810
+24081002,IVA descontable por devoluciones en ventas 5%,Liability,5,240810
+24081003,IVA descontable por devoluciones en ventas 19% aui,Liability,5,240810
+240815,IVA descontable en compras,Liability,4,2408
+24081501,IVA descontable por compras del 19%,Liability,5,240815
+24081502,IVA descontable por compras del 5%,Liability,5,240815
+24081503,IVA descontable por compras del 19% aui,Liability,5,240815
+240820,IVA devoluciones en compras,Liability,4,2408
+24082001,IVA devoluciones en compras 19%,Liability,5,240820
+24082002,IVA devoluciones en compras 5%,Liability,5,240820
+24082003,IVA devoluciones en compras 19% aui,Liability,5,240820
+249505,Impuesto al consumo,Liability,4,2495
+24950101,Impuesto al consumo 8%,Liability,5,249505
+24950102,Devoluciones Impuesto al consumo 8%,Liability,5,249505
+24950105,Impuesto nacional al consumo 4%,Liability,5,249505
+24950106,Devolucion Impuesto nacional al consumo 4%,Liability,5,249505
+13551701,Reteiva 15%,Asset,5,135517
+13551702,Devolucion reteiva 15%,Asset,5,135517
+13551801,Anticipo reteica 10%,Asset,5,135518
+13551802,Devolucion reteica 10%,Asset,5,135518
+13551803,Anticipo reteica 9%,Asset,5,135518
+13551804,Devolucion reteica 9%,Asset,5,135518
+13551805,Anticipo reteica 8%,Asset,5,135518
+13551806,Devolucion reteica 8%,Asset,5,135518
+13551807,Anticipo reteica 7%,Asset,5,135518
+13551808,Devolucion reteica 7%,Asset,5,135518
+13551809,Anticipo reteica 6%,Asset,5,135518
+13551810,Devolucion reteica 6%,Asset,5,135518
+13551811,Anticipo reteica 5%,Asset,5,135518
+13551812,Devolucion reteica 5%,Asset,5,135518
+23651501,Retefuente 11% honorarios,Liability,6,236515
+23651502,Devoluciones retefuente 11% honorarios,Liability,6,236515
+23651503,Retefuente 10% honorarios,Liability,6,236515
+23651504,Devoluciones retefuente 10% honorarios,Liability,6,236515
+23652501,Retefuente 3.5% hotel y restaurantes,Liability,6,236525
+23652502,Devoluciones retefuente 3.5% hotel y restaurantes,Liability,6,236525
+23652503,Retefuente 2% salud IPS,Liability,6,236525
+23652504,Devoluciones retefuente 2% salud IPS,Liability,6,236525
+23652505,Retefuente 3.5% transporte personal,Liability,6,236525
+23652506,Devoluciones retefuente 3.5% transporte personal,Liability,6,236525
+23652507,Retefuente 1% transporte carga,Liability,6,236525
+23652508,Devoluciones retefuente 1% transporte carga,Liability,6,236525
+23652509,Retefuente 4% generales,Liability,6,236525
+23652510,Devoluciones retefuente 4% generales,Liability,6,236525
+23652511,Retefuente 6% generales,Liability,6,236525
+23652512,Devoluciones retefuente 6% generales,Liability,6,236525
+23653001,Retefuente 4% alquiler inmuebles,Liability,6,236530
+23653002,Devoluciones retefuente 4% alquiler inmuebles,Liability,6,236530
+23653003,Retefuente 3.5% alquiler muebles,Liability,6,236530
+23653004,Devoluciones retefuente 3.5% alquiler muebles,Liability,6,236530
+23654001,Retefuente 2.5% compras,Liability,6,236540
+23654002,Devoluciones retefuente 2.5% compras,Liability,6,236540
+23654003,Retefuente 3.5% compras,Liability,6,236540
+23654004,Devoluciones retefuente 3.5% compras,Liability,6,236540
+23654005,Retefuente 0.1% combustible,Liability,6,236540
+23654006,Devoluciones retefuente 0.1% combustible,Liability,6,236540
+236705,Impuesto a las ventas retenido,Liability,5,2367
+23670501,Reteiva 15%,Liability,6,236705
+23670502,Devolucion R 15%,Liability,6,236705
+236805,Impuesto de industria y comercio retenido,Liability,5,2368
+23680501,Anticipo RETEICA 10%,Liability,6,236805
+23680502,Devolucion RETEICA 10%,Liability,6,236805
+23680503,Anticipo RETEICA 9%,Liability,6,236805
+23680504,Devolucion RETEICA 9%,Liability,6,236805
+23680505,Anticipo RETEICA 8%,Liability,6,236805
+23680506,Devolucion RETEICA 8%,Liability,6,236805
+23680507,Anticipo RETEICA 7%,Liability,6,236805
+23680508,Devolucion RETEICA 7%,Liability,6,236805
+23680509,Anticipo RETEICA 6%,Liability,6,236805
+23680510,Devolucion RETEICA 6%,Liability,6,236805
+23680511,Anticipo RETEICA 5%,Liability,6,236805
+23680512,Devolucion RETEICA 5%,Liability,6,236805

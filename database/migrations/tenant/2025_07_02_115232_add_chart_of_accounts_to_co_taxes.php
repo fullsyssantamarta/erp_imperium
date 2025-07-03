@@ -38,7 +38,7 @@ class AddChartOfAccountsToCoTaxes extends Migration
             ]);
         }
 
-        // $this->importAccountsFromCSV();
+        $this->importAccountsFromCSV();
 
         DB::table('co_taxes')->where('name', 'IVA19')->update([
             'chart_account_sale' => '24080501',

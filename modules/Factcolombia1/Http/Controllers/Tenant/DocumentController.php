@@ -1072,16 +1072,6 @@ class DocumentController extends Controller
         $accountIdCash = ChartOfAccount::where('code','110505')->first();
         $accountIdIncome = ChartOfAccount::where('code','413595')->first();
 
-        // selecciono un impuesto directamente en lugar de buscar el primero
-        // ya que los impuestos no tienen predeterminada las cuentas
-        // TO DO - deberia verificar entre los productos
-        $accountIdLiability = ChartOfAccount::where('code','240805')->first();
-
-        // $taxIva = Tax::where('name','IVA5')->first();
-        // if($taxIva){
-        //     $accountIdLiability = ChartOfAccount::where('code',$taxIva->chart_account_sale)->first();
-        // }
-
         $saleCost = AccountingChartAccountConfiguration::first();
         if($saleCost){
             $accountIdSaleCost = ChartOfAccount::where('code',$saleCost->sale_cost_account)->first();
@@ -1092,9 +1082,9 @@ class DocumentController extends Controller
             $accountIdInventory = ChartOfAccount::where('code',$assetInventory->income_account)->first();
         }
 
-        // dd($accountIdCash, $accountIdIncome, $accountIdLiability,$accountIdSaleCost,$accountIdInventory);
+        // dd($accountIdCash,$accountIdIncome,$accountIdSaleCost,$accountIdInventory);
 
-        if($accountIdCash && $accountIdIncome && $accountIdLiability){
+        if($accountIdCash && $accountIdIncome){
 
             $entry = JournalEntry::create([
                 'date' => date('Y-m-d'),
@@ -1111,13 +1101,6 @@ class DocumentController extends Controller
                 'credit' => 0,
             ]);
 
-            //Cuentas por cobrar (Activo)
-            // $entry->details()->create([
-            //     'chart_of_account_id' => $accountIdAsset->id,
-            //     'debit' => $total,
-            //     'credit' => 0,
-            // ]);
-
             //Ingresos por ventas (Ingreso)
             $entry->details()->create([
                 'chart_of_account_id' => $accountIdIncome->id,
@@ -1125,31 +1108,54 @@ class DocumentController extends Controller
                 'credit' => $subtotal,
             ]);
 
-            //IVA generado (Pasivo)
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdLiability->id,
-                'debit' => 0,
-                'credit' => $total_tax,
-            ]);
+            //Cuentas por cobrar (Activo)
+            // $entry->details()->create([
+            //     'chart_of_account_id' => $accountIdAsset->id,
+            //     'debit' => $total,
+            //     'credit' => 0,
+            // ]);
 
-            //Costo de ventas
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdSaleCost->id,
-                'debit' => 0,
-                'credit' => 0,
-            ]);
+            //Costo de ventas TO DO
+            // $entry->details()->create([
+            //     'chart_of_account_id' => $accountIdSaleCost->id,
+            //     'debit' => 0,
+            //     'credit' => 0,
+            // ]);
 
-            //Inventarios
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdInventory->id,
-                'debit' => 0,
-                'credit' => 0,
-            ]);
+            //Inventarios TO DO
+            // $entry->details()->create([
+            //     'chart_of_account_id' => $accountIdInventory->id,
+            //     'debit' => 0,
+            //     'credit' => 0,
+            // ]);
+
+            // Impuestos
+            if (!empty($document->taxes)) {
+                foreach ($document->taxes as $taxData) {
+                    // Si $taxData es un array, conviértelo a objeto para acceder con ->
+                    $tax = is_array($taxData) ? (object)$taxData : $taxData;
+
+                    // Buscar el tax en la base de datos para obtener la cuenta contable
+                    $taxModel = Tax::find($tax->id);
+
+                    // Si existe la cuenta contable y el total es mayor a cero
+                    if ($taxModel && $taxModel->chart_account_sale && floatval($tax->total) > 0) {
+                        $account = ChartOfAccount::where('code', $taxModel->chart_account_sale)->first();
+                        if ($account) {
+                            $entry->details()->create([
+                                'chart_of_account_id' => $account->id,
+                                'debit' => 0,
+                                'credit' => $tax->total,
+                            ]);
+                        }
+                    }
+                }
+            }
+
         } else {
             $accountingValueErrors = [
                 'accountIdCash' => $accountIdCash ? $accountIdCash->code : 'No encontrado',
                 'accountIdIncome' => $accountIdIncome ? $accountIdIncome->code : 'No encontrado',
-                'accountIdLiability' => isset($accountIdLiability) ? ($accountIdLiability ? $accountIdLiability->code : 'No encontrado') : 'No encontrado',
                 'accountIdSaleCost' => isset($accountIdSaleCost) ? ($accountIdSaleCost ? $accountIdSaleCost->code : 'No encontrado') : 'No encontrado',
                 'accountIdInventory' => isset($accountIdInventory) ? ($accountIdInventory ? $accountIdInventory->code : 'No encontrado') : 'No encontrado'
             ];

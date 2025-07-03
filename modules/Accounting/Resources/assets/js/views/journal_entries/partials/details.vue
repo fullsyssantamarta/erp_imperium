@@ -41,10 +41,10 @@
                                 <tr>
                                     <td colspan="4" class="text-right"><b>Total</b></td>
                                     <td>
-                                        <b>{{ records.reduce((sum, r) => sum + Number(r.debit || 0), 0) }}</b>
+                                        <b>{{ records.reduce((sum, r) => sum + Number(r.debit || 0), 0).toFixed(2) }}</b>
                                     </td>
                                     <td>
-                                        <b>{{ records.reduce((sum, r) => sum + Number(r.credit || 0), 0) }}</b>
+                                        <b>{{ records.reduce((sum, r) => sum + Number(r.credit || 0), 0).toFixed(2) }}</b>
                                     </td>
                                 </tr>
                             </tfoot>
