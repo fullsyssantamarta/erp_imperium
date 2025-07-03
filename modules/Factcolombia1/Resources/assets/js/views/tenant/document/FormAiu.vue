@@ -338,7 +338,8 @@ export default {
                 value_utility: 0,
                 note: null
             },
-            resolutions: []
+            resolutions: [],
+            advanced_configuration: {}
         }
     },
     computed: {
@@ -347,6 +348,10 @@ export default {
         }
     },
     async created() {
+        // Cargar configuración avanzada antes de todo
+        await this.$http.get('/co-advanced-configuration/record').then(response => {
+            this.advanced_configuration = response.data.data
+        })
         await this.initForm()
         await this.$http.get(`/${this.resource}/tables`)
             .then(response => {
@@ -573,6 +578,21 @@ export default {
             // }
         },
         addRow(row) {
+            if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {
+                    const warehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = row.item.stock_min !== undefined ? row.item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    if (Number(row.quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             // si no selecciona la casilla de "impuesto incluido en el precio" se debe sumar el impuesto al precio
             if(row.tax_included_in_price) {
                 const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
@@ -580,14 +600,12 @@ export default {
                 row.price = price_without_tax;
             }
             if (this.recordItem) {
-                //this.form.items.$set(this.recordItem.indexi, row)
                 this.form.items[this.recordItem.indexi] = row
                 this.recordItem = null
             }
             else {
                 this.form.items.push(JSON.parse(JSON.stringify(row)));
             }
-            // console.log(this.form)
             this.calculateTotal();
         },
         async addRowRetention(row) {

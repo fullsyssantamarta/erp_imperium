@@ -319,6 +319,7 @@ export default {
                     value: 'FB'
                 }
             ],
+            advanced_configuration: {},
         }
     },
     async created() {
@@ -338,6 +339,10 @@ export default {
         this.loading_form = true
         this.$eventHub.$on('reloadDataPersons', (customer_id) => {
             this.reloadDataCustomers(customer_id)
+        })
+        // Cargar configuración avanzada para validación de stock
+        await this.$http.get('/co-advanced-configuration/record').then(response => {
+            this.advanced_configuration = response.data.data
         })
     },
     methods: {
@@ -419,6 +424,22 @@ export default {
             this.customers = this.all_customers
         },
         addRow(row) {
+            // Validar stock mínimo si la opción está activa
+            if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {
+                    const warehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = row.item.stock_min !== undefined ? row.item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    if (Number(row.quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             if(row.tax_included_in_price) {
                 const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
                 const price_without_tax = row.price / (1 + tax_caculable);

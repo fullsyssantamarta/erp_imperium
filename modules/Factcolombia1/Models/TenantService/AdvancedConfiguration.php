@@ -30,6 +30,7 @@ class AdvancedConfiguration extends Model
         'radian_imap_user',
         'uvt',
         'item_tax_included',
+        'validate_min_stock',
         'digital_certificate_qztray',
         'private_certificate_qztray',
         'enable_qz_tray',
@@ -39,6 +40,7 @@ class AdvancedConfiguration extends Model
         'uvt' => 'float',
         'item_tax_included' => 'bool',
         'enable_qz_tray' => 'bool',
+        'validate_min_stock' => 'bool',
     ];
 
 
@@ -61,6 +63,7 @@ class AdvancedConfiguration extends Model
             'radian_imap_user' => $this->radian_imap_user,
             'uvt' => $this->uvt,
             'item_tax_included' => $this->item_tax_included,
+            'validate_min_stock' => $this->validate_min_stock,
         ];
 
     }

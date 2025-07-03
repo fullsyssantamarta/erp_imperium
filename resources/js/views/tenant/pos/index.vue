@@ -240,7 +240,7 @@
                             <table class="table table-sm table-borderless mb-0">
                                 <tr v-for="(item,index) in form.items" :key="index">
                                     <td width="20%">
-                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class @input="clickAddItem(item,index,true)"></el-input>
+                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class @change="onQuantityInput(item, index)"></el-input>
                                     </td>
                                     <td width="20%">
                                         <p class="m-0" style="line-height: 1em;">
@@ -526,6 +526,7 @@ export default {
             category_selected: "",
             plate_number_valid: true,
             electronic: false,
+            advanced_configuration: {},
         };
     },
 
@@ -534,6 +535,10 @@ export default {
 
     async created() {
         try {
+            // Cargar configuración avanzada antes de todo
+            await this.$http.get('/co-advanced-configuration/record').then(response => {
+                this.advanced_configuration = response.data.data
+            })
             // Verificar y establecer plate_number inicial
             const configPlateNumber = this.configuration?.configuration_pos?.plate_number;
             let storedPlateNumber = localStorage.getItem("plate_number");
@@ -816,6 +821,31 @@ export default {
                 );
 
                 if (quantity) {
+                    // Validación de stock mínimo y stock suficiente
+                    if (
+                        this.advanced_configuration &&
+                        this.advanced_configuration.validate_min_stock &&
+                        this.form.items[index].item.warehouses &&
+                        this.form.items[index].item.unit_type_id !== 'ZZ'
+                    ) {
+                        const warehouse = this.form.items[index].item.warehouses.find(w => w.checked) || this.form.items[index].item.warehouses[0];
+                        const stock = warehouse ? warehouse.stock : 0;
+                        const stock_min = this.form.items[index].item.stock_min !== undefined ? this.form.items[index].item.stock_min : 0;
+                        if (Number(stock) < Number(stock_min)) {
+                            this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                            // Revertir cantidad
+                            this.form.items[index].quantity = stock;
+                            this.form.items[index].item.aux_quantity = stock;
+                            return;
+                        }
+                        if (Number(quantity) > Number(stock)) {
+                            this.$message.error('No hay stock suficiente para este producto.');
+                            // Revertir cantidad
+                            this.form.items[index].quantity = stock;
+                            this.form.items[index].item.aux_quantity = stock;
+                            return;
+                        }
+                    }
                     this.form.items[index].quantity = quantity;
                     this.form.items[index].item.aux_quantity = quantity;
                 } else {
@@ -823,7 +853,7 @@ export default {
                     this.form.items[index].item.aux_quantity = 0;
                 }
             }
-
+            
         },
 
         changeCustomer() {
@@ -1000,6 +1030,37 @@ export default {
             this.setFormPosLocalStorage()
         },
         async clickAddItem(item, index, input = false) {
+            // Validar stock mínimo si la opción está activa y no es devolución
+            if (!this.type_refund && this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                if (item.warehouses && item.unit_type_id !== 'ZZ') {
+                    const warehouse = item.warehouses.find(w => w.checked) || item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = item.stock_min !== undefined ? item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    // Si ya existe el item, sumar la cantidad
+                    let exist_item = null;
+                    if(!item.presentation) {
+                        exist_item = _.find(this.form.items, {
+                            item_id: item.item_id,
+                            unit_type_id: item.unit_type_id
+                        })
+                    } else {
+                        exist_item = _.find(this.form.items, {
+                            item_id: item.item_id,
+                            presentation: item.presentation,
+                            unit_type_id: item.unit_type_id
+                        })
+                    }
+                    let next_quantity = exist_item ? (parseFloat(exist_item.item.aux_quantity) + (input ? 0 : 1)) : 1;
+                    if (Number(next_quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             const presentation = item.presentation
             // console.log(item)
             if (this.type_refund) {
@@ -1585,6 +1646,46 @@ export default {
         },
         clearText(texto) {
             return texto.replace(/&nbsp;/g, ' ').replace(/\s{2,}/g, ' ').trim();
+        },
+        onQuantityInput(item, index) {
+            // Solo valida si está activa la validación y no es servicio
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_min_stock &&
+                item.item.warehouses &&
+                item.item.unit_type_id !== 'ZZ'
+            ) {
+                const warehouse = item.item.warehouses.find(w => w.checked) || item.item.warehouses[0];
+                const stock = warehouse ? Number(warehouse.stock) : 0;
+                const stock_min = item.item.stock_min !== undefined ? Number(item.item.stock_min) : 0;
+                let qty = Number(item.item.aux_quantity);
+
+                if (stock < stock_min) {
+                    this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                    item.item.aux_quantity = stock;
+                    item.quantity = stock;
+                    this.calculateTotal();
+                    return;
+                }
+                if (qty > stock) {
+                    this.$message.error('No hay stock suficiente para este producto.');
+                    item.item.aux_quantity = stock;
+                    item.quantity = stock;
+                    this.calculateTotal();
+                    return;
+                }
+                if (qty < 1) {
+                    item.item.aux_quantity = 1;
+                    item.quantity = 1;
+                    this.calculateTotal();
+                    return;
+                }
+                item.quantity = qty;
+                this.calculateTotal();
+            } else {
+                item.quantity = Number(item.item.aux_quantity);
+                this.calculateTotal();
+            }
         }
     }
 };

@@ -49,6 +49,19 @@
                                             <small class="form-control-feedback" v-if="errors.item_tax_included" v-text="errors.item_tax_included[0]"></small>
                                         </div>
                                     </div>
+                                    <!-- Nuevo switch para validar stock mínimo -->
+                                    <div class="col-md-4 mt-4" :class="{'has-danger': errors.validate_min_stock}">
+                                        <label class="control-label">
+                                            Validar stock mínimo
+                                            <el-tooltip class="item" effect="dark" content="Si está activo, no se podrá vender por debajo del stock mínimo" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch v-model="form.validate_min_stock" active-text="Si" inactive-text="No" @change="submit"></el-switch>
+                                            <small class="form-control-feedback" v-if="errors.validate_min_stock" v-text="errors.validate_min_stock[0]"></small>
+                                        </div>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 

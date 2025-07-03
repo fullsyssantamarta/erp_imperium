@@ -2,7 +2,8 @@
     <el-dialog :title="title" :visible="showDialog" @close="close" @open="getData" width="65%">
         <div class="form-body">
             <div class="row">
-                <div class="col-md-12" v-if="records.length > 0">
+                <!-- Vista de tabla para pantallas grandes (>=1000px) -->
+                <div class="col-md-12 show-table" v-if="records.length > 0">
                     <!--<div class="right-wrapper pull-right">
                         <button type="button" @click.prevent="clickDownloadReport()" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fas fa-money-bill-wave-alt"></i> Reporte</button>
                     </div>-->
@@ -130,6 +131,101 @@
                         </table>
                     </div>
                 </div>
+                <!-- Vista tipo card para pantallas pequeñas (<1000px) -->
+                <div class="col-12 show-cards" v-if="records.length > 0">
+                    <div v-for="(row, index) in records" :key="index" class="card mb-2">
+                        <div class="card-body p-2">
+                            <template v-if="row.id">
+                                <div class="d-flex justify-content-between">
+                                    <strong>PAGO-{{ row.id }}</strong>
+                                    <span>{{ row.date_of_payment }}</span>
+                                </div>
+                                <div><b>Método:</b> {{ row.payment_method_type_description }}</div>
+                                <div><b>Destino:</b> {{ row.destination_description }}</div>
+                                <div><b>Referencia:</b> {{ row.reference }}</div>
+                                <div>
+                                    <b>Archivo:</b>
+                                    <button v-if="row.filename" type="button" class="btn btn-xs btn-primary" @click.prevent="clickDownloadFile(row.filename)">
+                                        <i class="fas fa-file-download"></i>
+                                    </button>
+                                </div>
+                                <div><b>Monto:</b> {{ row.payment }}</div>
+                                <div class="text-right mt-2">
+                                    <button type="button" class="btn btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <!-- Campos de edición para nuevo pago en móvil -->
+                                <div class="form-group mb-1" :class="{'has-danger': row.errors.date_of_payment}">
+                                    <label>Fecha de pago</label>
+                                    <el-date-picker v-model="row.date_of_payment"
+                                                    type="date"
+                                                    :clearable="false"
+                                                    format="dd/MM/yyyy"
+                                                    value-format="yyyy-MM-dd"></el-date-picker>
+                                    <small class="form-control-feedback" v-if="row.errors.date_of_payment" v-text="row.errors.date_of_payment[0]"></small>
+                                </div>
+                                <div class="form-group mb-1" :class="{'has-danger': row.errors.payment_method_type_id}">
+                                    <label>Método de pago</label>
+                                    <el-select v-model="row.payment_method_type_id">
+                                        <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="row.errors.payment_method_type_id" v-text="row.errors.payment_method_type_id[0]"></small>
+                                </div>
+                                <div class="form-group mb-1" :class="{'has-danger': row.errors.payment_destination_id}">
+                                    <label>Destino</label>
+                                    <el-select v-model="row.payment_destination_id" filterable :disabled="row.payment_destination_disabled">
+                                        <el-option v-for="option in payment_destinations" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="row.errors.payment_destination_id" v-text="row.errors.payment_destination_id[0]"></small>
+                                </div>
+                                <div class="form-group mb-1" :class="{'has-danger': row.errors.reference}">
+                                    <label>Referencia</label>
+                                    <el-input v-model="row.reference"></el-input>
+                                    <small class="form-control-feedback" v-if="row.errors.reference" v-text="row.errors.reference[0]"></small>
+                                </div>
+                                <div class="form-group mb-1">
+                                    <label>Archivo</label>
+                                    <el-upload
+                                            :data="{'index': index}"
+                                            :headers="headers"
+                                            :multiple="false"
+                                            :on-remove="handleRemove"
+                                            :action="`/finances/payment-file/upload`"
+                                            :show-file-list="true"
+                                            :file-list="fileList"
+                                            :on-success="onSuccess"
+                                            :limit="1"
+                                            >
+                                        <el-button slot="trigger" type="primary">Seleccione un archivo</el-button>
+                                    </el-upload>
+                                </div>
+                                <div class="form-group mb-1" :class="{'has-danger': row.errors.payment}">
+                                    <label>Monto</label>
+                                    <el-input v-model="row.payment"></el-input>
+                                    <small class="form-control-feedback" v-if="row.errors.payment" v-text="row.errors.payment[0]"></small>
+                                </div>
+                                <div class="text-right mt-2">
+                                    <button type="button" class="btn btn-xs btn-info" @click.prevent="clickSubmit(index)">
+                                        <i class="fa fa-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-danger" @click.prevent="clickCancel(index)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- Totales en móvil -->
+                    <div class="card mt-2">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between"><b>TOTAL PAGADO</b> <span>{{ document.total_paid }}</span></div>
+                            <div class="d-flex justify-content-between"><b>TOTAL A PAGAR</b> <span>{{ document.total }}</span></div>
+                            <div class="d-flex justify-content-between"><b>PENDIENTE DE PAGO</b> <span>{{ document.total_difference }}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Botón "Nuevo" visible en ambas vistas -->
                 <div class="col-md-12 text-center pt-2" v-if="showAddButton && (document.total_difference > 0)">
                     <el-button type="primary" icon="el-icon-plus" @click="clickAddRow">Nuevo</el-button>
                 </div>
@@ -138,6 +234,31 @@
     </el-dialog>
 
 </template>
+
+<style scoped>
+.show-table {
+    display: none;
+}
+.show-cards {
+    display: block;
+}
+@media (min-width: 1000px) {
+    .show-table {
+        display: block;
+    }
+    .show-cards {
+        display: none;
+    }
+}
+.card {
+    border: 1px solid #e3e3e3;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.card-body {
+    padding: 1rem;
+}
+</style>
 
 <script>
 
@@ -300,6 +421,17 @@
                 this.destroy(`/${this.resource}/${id}`).then(() =>{
                         this.getData()
                         this.$eventHub.$emit('reloadData')
+                        // this.initDocumentTypes()
+                    }
+                )
+            },
+            clickDownloadReport(id)
+            {
+                window.open(`/${this.resource}/report/${this.documentId}`, '_blank');
+            }
+        }
+    }
+</script>
                         // this.initDocumentTypes()
                     }
                 )
