@@ -516,7 +516,8 @@ export default {
             correlative_api: null, // Aquí almacenarás el siguiente número consecutivo
             currentPrefix: null,
             global_discount_is_amount: true,
-            bank_accounts: [], // <-- nuevo array para cuentas bancarias
+            bank_accounts: [],
+            advanced_configuration: {},
         }
     },
     //filtro de separadores de mil
@@ -531,6 +532,9 @@ export default {
     },
     async created() {
         //            console.log(this.invoice)
+        await this.$http.get('/co-advanced-configuration/record').then(response => {
+            this.advanced_configuration = response.data.data
+        })
         await this.initForm()
         await this.fetchCompanyInfo();
         await this.$http.get(`/${this.resource}/tables`)
@@ -962,7 +966,26 @@ export default {
             // }
         },
         addRow(row) {
-            // si no selecciona la casilla de "impuesto incluido en el precio" se debe sumar el impuesto al precio
+            // Validar stock mínimo si la opción está activa
+            if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                // Si el producto tiene warehouses y no es servicio
+                if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {
+                    // Buscar el almacén seleccionado o el primero
+                    const warehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = row.item.stock_min !== undefined ? row.item.stock_min : 0;
+                    // Validar stock real vs stock mínimo
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    // Validar cantidad solicitada vs stock real
+                    if (Number(row.quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             if(row.tax_included_in_price) {
                 const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
                 const price_without_tax = row.price / (1 + tax_caculable);
