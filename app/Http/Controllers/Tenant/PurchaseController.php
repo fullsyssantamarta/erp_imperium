@@ -314,19 +314,35 @@ class PurchaseController extends Controller
             'credit' => 0,
         ]);
 
-        //IVA descontable (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdTax->id, // ID de cuenta de IVA descontable
-            'debit' => $total_tax,
-            'credit' => 0,
-        ]);
-
         //Cuentas por pagar a proveedores (Pasivo)
         $entry->details()->create([
             'chart_of_account_id' => $accountIdLiability->id, // ID de cuenta de cuentas por pagar
             'debit' => 0,
             'credit' => $total,
         ]);
+
+        //IVA descontable (Activo)
+        if (!empty($document->taxes)) {
+            foreach ($document->taxes as $taxData) {
+                // Si $taxData es un array, conviértelo a objeto para acceder con ->
+                $tax = is_array($taxData) ? (object)$taxData : $taxData;
+
+                // Buscar el tax en la base de datos para obtener la cuenta contable
+                $taxModel = Tax::find($tax->id);
+
+                // Si existe la cuenta contable y el total es mayor a cero
+                if ($taxModel && $taxModel->chart_account_purchase && floatval($tax->total) > 0) {
+                    $account = ChartOfAccount::where('code', $taxModel->chart_account_purchase)->first();
+                    if ($account) {
+                        $entry->details()->create([
+                            'chart_of_account_id' => $account->id,
+                            'debit' => $tax->total,
+                            'credit' => 0,
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
     private function registerAccountingCreditNotePurchase($document) {
@@ -366,20 +382,28 @@ class PurchaseController extends Controller
             'credit' => 0,
         ]);
 
-        //Inventario (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdInventory->id,
-            'debit' => 0,
-            'credit' => $subtotal,
-        ]);
-
         //IVA descontable (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdTax->id,
-            'debit' => 0,
-            'credit' => $iva,
-        ]);
+        if (!empty($document->taxes)) {
+            foreach ($document->taxes as $taxData) {
+                // Si $taxData es un array, conviértelo a objeto para acceder con ->
+                $tax = is_array($taxData) ? (object)$taxData : $taxData;
 
+                // Buscar el tax en la base de datos para obtener la cuenta contable
+                $taxModel = Tax::find($tax->id);
+
+                // Si existe la cuenta contable y el total es mayor a cero
+                if ($taxModel && $taxModel->chart_account_purchase && floatval($tax->total) > 0) {
+                    $account = ChartOfAccount::where('code', $taxModel->chart_account_purchase)->first();
+                    if ($account) {
+                        $entry->details()->create([
+                            'chart_of_account_id' => $account->id,
+                            'debit' => 0,
+                            'credit' => $tax->total,
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
     public function update(PurchaseRequest $request)
