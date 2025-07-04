@@ -74,3 +74,34 @@ code,name,type,level,parent_code
 23680510,Devolucion RETEICA 6%,Liability,6,236805
 23680511,Anticipo RETEICA 5%,Liability,6,236805
 23680512,Devolucion RETEICA 5%,Liability,6,236805
+511595,Otros Impuestos,Expense,4,5115
+51159501,impuesto al consumo 8%,Expense,5,511595
+51159502,Devolucion  impuesto al consumo 8%,Expense,5,511595
+51159503,Impuesto nacional al consumo 4%,Expense,5,511595
+51159504,Devolucion Impuesto nacional al consumo 4%,Expense,5,511595
+13551501,Anticipo RETEFUENTE 2.5% compras,Asset,6,135515
+13551502,Devolucion RETEFUENTE 2.5% compras,Asset,6,135515
+13551503,Anticipo RETEFUENTE 3.5% compras,Asset,6,135515
+13551504,Devolucion RETEFUENTE 3.5% compras,Asset,6,135515
+13551505,Anticipo RETEFUENTE 4% generales,Asset,6,135515
+13551506,Devolucion RETEFUENTE 4% generales,Asset,6,135515
+13551507,Anticipo RETEFUENTE 6% generales,Asset,6,135515
+13551508,Devolucion RETEFUENTE 6% generales,Asset,6,135515
+13551509,Anticipo RETEFUENTE 1% transporte carga,Asset,6,135515
+13551510,Devolucion RETEFUENTE 1% transporte carga,Asset,6,135515
+13551511,Anticipo RETEFUENTE 3.5% transporte personal,Asset,6,135515
+13551512,Devolucion RETEFUENTE 3.5% transporte personal,Asset,6,135515
+13551513,Anticipo RETEFUENTE 4% alquiler inmuebles,Asset,6,135515
+13551514,Devolucion RETEFUENTE 4% alquiler inmuebles,Asset,6,135515
+13551515,Anticipo RETEFUENTE 3.5% alquiler muebles,Asset,6,135515
+13551516,Devolucion RETEFUENTE 3.5% alquiler muebles,Asset,6,135515
+13551517,Anticipo RETEFUENTE 0.1% combustible,Asset,6,135515
+13551518,Devolucion RETEFUENTE 0.1% combustible,Asset,6,135515
+13551519,Anticipo RETEFUENTE 11% honorarios,Asset,6,135515
+13551520,Devolucion RETEFUENTE 11% honorarios,Asset,6,135515
+13551521,Anticipo RETEFUENTE 10% honorarios,Asset,6,135515
+13551522,Devolucion RETEFUENTE 10% honorarios,Asset,6,135515
+13551523,Anticipo RETEFUENTE 3.5% hotel Y restaurantes,Asset,6,135515
+13551524,Devolucion RETEFUENTE 3.5% hotel Y restaurantes,Asset,6,135515
+13551525,Anticipo RETEFUENTE 2% salud IPS,Asset,6,135515
+13551526,Devolucion RETEFUENTE 2% salud IPS,Asset,6,135515
