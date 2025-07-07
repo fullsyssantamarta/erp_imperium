@@ -428,8 +428,8 @@ class PurchaseController extends Controller
                     if ($account) {
                         $entry->details()->create([
                             'chart_of_account_id' => $account->id,
-                            'debit' => 0,
-                            'credit' => $tax->retention,
+                            'debit' => $tax->retention,
+                            'credit' => 0,
                         ]);
                     }
                 }
