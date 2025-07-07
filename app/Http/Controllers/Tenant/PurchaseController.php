@@ -341,6 +341,18 @@ class PurchaseController extends Controller
                         ]);
                     }
                 }
+
+                // retenciones
+                if ($taxModel && $taxModel->chart_account_purchase && $tax->is_retention && floatval($tax->retention) > 0) {
+                    $account = ChartOfAccount::where('code', $taxModel->chart_account_purchase)->first();
+                    if ($account) {
+                        $entry->details()->create([
+                            'chart_of_account_id' => $account->id,
+                            'debit' => 0,
+                            'credit' => $tax->retention,
+                        ]);
+                    }
+                }
             }
         }
     }
@@ -361,7 +373,7 @@ class PurchaseController extends Controller
         }
 
         if($accountConfiguration){
-            $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_returns_account)->first();
+            $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
         }
 
         //1 Registrar la entrada en el libro diario
@@ -375,14 +387,21 @@ class PurchaseController extends Controller
 
         // 2 Registrar los detalles contables
 
-        //proveedores (Pasivo)
+        //proveedores (Pasivo | Debe)
         $entry->details()->create([
             'chart_of_account_id' => $accountIdLiability->id,
             'debit' => $total,
             'credit' => 0,
         ]);
 
-        //IVA descontable (Activo)
+        //Inventario de Mercancías (Activo | Haber)
+        $entry->details()->create([
+            'chart_of_account_id' => $accountIdInventory->id, // ID de cuenta de inventario
+            'debit' => 0,
+            'credit' => $subtotal,
+        ]);
+
+        //IVA descontable (Activo | Haber)
         if (!empty($document->taxes)) {
             foreach ($document->taxes as $taxData) {
                 // Si $taxData es un array, conviértelo a objeto para acceder con ->
@@ -392,13 +411,25 @@ class PurchaseController extends Controller
                 $taxModel = Tax::find($tax->id);
 
                 // Si existe la cuenta contable y el total es mayor a cero
-                if ($taxModel && $taxModel->chart_account_purchase && floatval($tax->total) > 0) {
-                    $account = ChartOfAccount::where('code', $taxModel->chart_account_purchase)->first();
+                if ($taxModel && $taxModel->chart_account_return_purchase && floatval($tax->total) > 0) {
+                    $account = ChartOfAccount::where('code', $taxModel->chart_account_return_purchase)->first();
                     if ($account) {
                         $entry->details()->create([
                             'chart_of_account_id' => $account->id,
                             'debit' => 0,
                             'credit' => $tax->total,
+                        ]);
+                    }
+                }
+
+                // retenciones
+                if ($taxModel && $taxModel->chart_account_return_purchase && $tax->is_retention && floatval($tax->retention) > 0) {
+                    $account = ChartOfAccount::where('code', $taxModel->chart_account_return_purchase)->first();
+                    if ($account) {
+                        $entry->details()->create([
+                            'chart_of_account_id' => $account->id,
+                            'debit' => 0,
+                            'credit' => $tax->retention,
                         ]);
                     }
                 }
@@ -755,6 +786,12 @@ class PurchaseController extends Controller
 
                 $row = Purchase::findOrFail($id);
                 $this->deleteAllPayments($row->purchase_payments);
+
+                // eliminar asientos contables
+                $journal = JournalEntry::where('purchase_id', $row->id)->first();
+                $journal->details()->delete();
+                $journal->delete();
+
                 $row->delete();
 
             });

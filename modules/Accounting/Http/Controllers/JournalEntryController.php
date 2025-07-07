@@ -38,7 +38,7 @@ class JournalEntryController extends Controller
         }
 
         // Obtener datos paginados
-        $entries = $query->with('journal_prefix')->orderBy('date', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        $entries = $query->with('journal_prefix')->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
 
         // Construir respuesta con estructura específica
         return response()->json([

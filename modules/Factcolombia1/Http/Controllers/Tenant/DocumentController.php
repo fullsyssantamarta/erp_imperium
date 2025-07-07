@@ -1138,6 +1138,8 @@ class DocumentController extends Controller
                     // Buscar el tax en la base de datos para obtener la cuenta contable
                     $taxModel = Tax::find($tax->id);
 
+                    if (!$taxModel) continue;
+
                     // Si existe la cuenta contable y el total es mayor a cero
                     if ($taxModel && $taxModel->chart_account_sale && floatval($tax->total) > 0) {
                         $account = ChartOfAccount::where('code', $taxModel->chart_account_sale)->first();
@@ -1146,6 +1148,18 @@ class DocumentController extends Controller
                                 'chart_of_account_id' => $account->id,
                                 'debit' => 0,
                                 'credit' => $tax->total,
+                            ]);
+                        }
+                    }
+
+                    // retenciones
+                    if ($taxModel && $taxModel->chart_account_sale && $tax->is_retention && floatval($tax->retention) > 0) {
+                        $account = ChartOfAccount::where('code', $taxModel->chart_account_sale)->first();
+                        if ($account) {
+                            $entry->details()->create([
+                                'chart_of_account_id' => $account->id,
+                                'debit' => $tax->retention,
+                                'credit' => 0,
                             ]);
                         }
                     }
@@ -1673,6 +1687,18 @@ class DocumentController extends Controller
                                 'chart_of_account_id' => $account->id,
                                 'debit' => $tax->total,
                                 'credit' => 0,
+                            ]);
+                        }
+                    }
+
+                    // retenciones
+                    if ($taxModel && $taxModel->chart_account_return_sale && $tax->is_retention && floatval($tax->retention) > 0) {
+                        $account = ChartOfAccount::where('code', $taxModel->chart_account_return_sale)->first();
+                        if ($account) {
+                            $entry->details()->create([
+                                'chart_of_account_id' => $account->id,
+                                'debit' => 0,
+                                'credit' => $tax->retention,
                             ]);
                         }
                     }
