@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 use Modules\Accounting\Models\ChartOfAccount;
 
-class AddRestOfChartOfAccountsToCoTaxes extends Migration
+class AddRestOfChartOfAccountsToCoTaxes2 extends Migration
 {
     /**
      * Run the migrations.
