@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 use Modules\Accounting\Models\ChartOfAccount;
 
-class AddRestOfChartOfAccountsToCoTaxes extends Migration
+class AddRestOfChartOfAccountsToCoTaxes2 extends Migration
 {
     /**
      * Run the migrations.
@@ -21,6 +21,13 @@ class AddRestOfChartOfAccountsToCoTaxes extends Migration
             'chart_account_sale' => '24950101',
             'chart_account_return_purchase' => '51159502',
             'chart_account_return_sale' => '24950102',
+        ]);
+
+        DB::table('co_taxes')->where('name', 'IMPUESTO NACIONAL AL CONSUMO')->update([
+            'chart_account_purchase' => '51159503',
+            'chart_account_sale' => '24950105',
+            'chart_account_return_purchase' => '51159504',
+            'chart_account_return_sale' => '24950106',
         ]);
 
         // borrar  13551530 13551535 13551540
