@@ -25,7 +25,7 @@ use Modules\RadianEvent\Helpers\ZipHelper;
 use Illuminate\Support\Facades\DB;
 use Modules\Payroll\Traits\UtilityTrait;
 use Carbon\Carbon;
-
+use Doctrine\DBAL\Exception\ConnectionException;
 
 class SearchEmailController extends Controller
 {
@@ -234,7 +234,7 @@ class SearchEmailController extends Controller
             ];
 
         }
-        catch(PhpImap\Exceptions\ConnectionException $ex)
+        catch(ConnectionException $ex)
         {
             return $this->getGeneralResponse(false, 'Conexión IMAP fallida: ' . implode(",", $ex->getErrors('all')));
         }
@@ -355,50 +355,47 @@ class SearchEmailController extends Controller
 
         $response = $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
         
-        // Validar si es documento de crédito 
-        if($response['success']) {
-            $data = $response['data'];
-            // Si no es documento de crédito, retornamos respuesta indicando que se debe omitir
-            if (!$this->isValidCreditDocument($data)) {
-                return [
-                    'success' => false,
-                    'message' => 'Documento omitido: No es un documento de crédito',
-                    'skip_document' => true
-                ];
-            }
+        // Validar si es documento de crédito usando la lógica de RadianEventController
+        if(!$this->isCreditFromXml($xml_content)) {
+            return [
+                'success' => false,
+                'message' => 'Documento omitido: No es un documento de crédito',
+                'skip_document' => true
+            ];
         }
 
         return $response;
     }
 
-    private function isValidCreditDocument($data)
+    /**
+     * Validar si el XML corresponde a un comprobante de crédito (igual que en RadianEventController)
+     * @param string $xmlContent
+     * @return bool
+     */
+    private function isCreditFromXml($xmlContent)
     {
-        // Validar que exista payment_means
-        if (!isset($data['payment_means'])) {
+        $matches = [];
+        preg_match('/<Invoice[\s\S]*<\/Invoice>/', $xmlContent, $matches);
+        if (!$matches) return false;
+
+        $invoiceXml = $matches[0];
+        try {
+            $invoice = new \SimpleXMLElement($invoiceXml);
+        } catch (\Exception $e) {
             return false;
         }
+        $namespaces = $invoice->getNamespaces(true);
 
-        $payment_means = $data['payment_means'];
-
-        // Validar que sea crédito (id = 2)
-        if (!isset($payment_means['id']) || $payment_means['id'] !== '2') {
-            return false; 
+        // Buscar PaymentMeans
+        if (isset($namespaces['cac']) && isset($namespaces['cbc'])) {
+            foreach ($invoice->children($namespaces['cac'])->PaymentMeans as $paymentMeans) {
+                $id = (string)$paymentMeans->children($namespaces['cbc'])->ID;
+                if ($id === '2') {
+                    return true;
+                }
+            }
         }
-
-        // Validar que tenga fecha de vencimiento
-        if (!isset($payment_means['payment_due_date'])) {
-            return false;
-        }
-
-        // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
-        $due_date = Carbon::parse($payment_means['payment_due_date']);
-        $issue_date = isset($data['issue_date']) ? Carbon::parse($data['issue_date']) : null;
-
-        if ($issue_date && $due_date->lessThanOrEqualTo($issue_date)) {
-            return false;
-        }
-
-        return true;
+        return false;
     }
 
 
