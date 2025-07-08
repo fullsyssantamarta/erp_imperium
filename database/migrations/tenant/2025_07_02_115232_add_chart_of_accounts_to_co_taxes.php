@@ -117,14 +117,25 @@ class AddChartOfAccountsToCoTaxes extends Migration
             $parentId = ChartOfAccount::where('code', $data['parent_code'])->value('id');
 
             // Crear la cuenta
-            $account = ChartOfAccount::create([
-                'code' => $data['code'],
-                'name' => $data['name'],
-                'type' => $data['type'],
-                'level' => $data['level'],
-                'parent_id' => $parentId,
-                'status' => true,
-            ]);
+            $account = ChartOfAccount::where('code', $data['code'])->first();
+            if ($account) {
+                $account->update([
+                    'name' => $data['name'],
+                    'type' => $data['type'],
+                    'level' => $data['level'],
+                    'parent_id' => $parentId,
+                    'status' => true,
+                ]);
+            } else {
+                ChartOfAccount::create([
+                    'code' => $data['code'],
+                    'name' => $data['name'],
+                    'type' => $data['type'],
+                    'level' => $data['level'],
+                    'parent_id' => $parentId,
+                    'status' => true,
+                ]);
+            }
 
             // Registrar la cuenta insertada
             $inserted[$code] = $account->id;
