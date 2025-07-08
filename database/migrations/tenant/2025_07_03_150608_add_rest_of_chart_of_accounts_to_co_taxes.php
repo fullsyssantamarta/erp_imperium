@@ -85,22 +85,31 @@ class AddRestOfChartOfAccountsToCoTaxes extends Migration
 
         fclose($handle);
 
-        // dd($accounts);
-
         foreach ($accounts as $code => $data) {
             $parentId = ChartOfAccount::where('code', $data['parent_code'])->value('id');
 
-            // Usar updateOrCreate en vez de create
-            ChartOfAccount::updateOrCreate(
-                ['code' => $data['code']], // Campos para buscar
-                [
+            // Buscar si ya existe la cuenta
+            $account = ChartOfAccount::where('code', $data['code'])->first();
+            if ($account) {
+                // Actualizar si existe
+                $account->update([
                     'name' => $data['name'],
                     'type' => $data['type'],
                     'level' => $data['level'],
                     'parent_id' => $parentId,
                     'status' => true,
-                ]
-            );
+                ]);
+            } else {
+                // Crear si no existe
+                ChartOfAccount::create([
+                    'code' => $data['code'],
+                    'name' => $data['name'],
+                    'type' => $data['type'],
+                    'level' => $data['level'],
+                    'parent_id' => $parentId,
+                    'status' => true,
+                ]);
+            }
         }
     }
 }
