@@ -8,6 +8,8 @@ use Illuminate\Routing\Controller;
 use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\JournalEntry;
 use Modules\Accounting\Models\JournalEntryDetail;
+use Modules\Factcolombia1\Models\Tenant\Company;
+use Modules\Factcolombia1\Models\Tenant\TypeIdentityDocument;
 use Mpdf\Mpdf;
 
 class ReportAuxiliaryMovementController extends Controller
@@ -133,25 +135,39 @@ class ReportAuxiliaryMovementController extends Controller
     {
         // Reutilizar la lógica de records para obtener los datos
         $data = $this->records($request)->getData(true);
+        $company = Company::first();
+        $document_type = TypeIdentityDocument::find($company->type_identity_document_id);
 
         // Crear el archivo Excel
         $filename = 'reporte_situacion_financiera.xlsx';
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        $sheet->setCellValue('A1', $company->name);
+        $sheet->setCellValue('A2', $document_type->name);
+        $sheet->setCellValue('B2', $company->identification_number);
+        $sheet->setCellValue('A3', 'DIRECCIÓN');
+        $sheet->setCellValue('B3', $company->address);
+
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
+        $sheet->setCellValue('A5', 'Fechas');
+        $sheet->setCellValue('B5', ' del ' . ($dateStart ?? '-') . ' al ' . ($dateEnd ?? '-'));
+
+
         // Configurar encabezados
-        $sheet->setCellValue('A1', 'Código');
-        $sheet->setCellValue('B1', 'Cuenta');
-        $sheet->setCellValue('C1', 'Comprobante');
-        $sheet->setCellValue('D1', 'Número de documento');
-        $sheet->setCellValue('E1', 'Nombre del tercero');
-        $sheet->setCellValue('F1', 'Descripción');
-        $sheet->setCellValue('G1', 'Débito');
-        $sheet->setCellValue('H1', 'Crédito');
+        $sheet->setCellValue('A7', 'Código');
+        $sheet->setCellValue('B7', 'Cuenta');
+        $sheet->setCellValue('C7', 'Comprobante');
+        $sheet->setCellValue('D7', 'Número de documento');
+        $sheet->setCellValue('E7', 'Nombre del tercero');
+        $sheet->setCellValue('F7', 'Descripción');
+        $sheet->setCellValue('G7', 'Débito');
+        $sheet->setCellValue('H7', 'Crédito');
 
 
         // Agregar datos de cuentas
-        $row = 2;
+        $row = 8;
         foreach ($data['data'] as $group) {
             $row++;
             $sheet->setCellValue('A' . $row, 'Cuenta contable:');
@@ -176,6 +192,19 @@ class ReportAuxiliaryMovementController extends Controller
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         $tempFile = tempnam(sys_get_temp_dir(), $filename);
         $writer->save($tempFile);
+
+        // debug
+        // $dataArray = $sheet->toArray();
+        // echo '<table border="1">';
+        // foreach ($dataArray as $row) {
+        //     echo '<tr>';
+        //     foreach ($row as $cell) {
+        //         echo '<td>' . htmlspecialchars($cell) . '</td>';
+        //     }
+        //     echo '</tr>';
+        // }
+        // echo '</table>';
+        // exit;
 
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }

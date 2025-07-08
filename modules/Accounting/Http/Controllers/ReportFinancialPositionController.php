@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Modules\Accounting\Models\ChartOfAccount;
+use Modules\Factcolombia1\Models\Tenant\Company;
+use Modules\Factcolombia1\Models\Tenant\TypeIdentityDocument;
 use Mpdf\Mpdf;
 
 /**
@@ -128,20 +130,33 @@ class ReportFinancialPositionController extends Controller
     {
         // Reutilizar la lógica de records para obtener los datos
         $data = $this->records($request)->getData(true);
+        $company = Company::first();
+        $document_type = TypeIdentityDocument::find($company->type_identity_document_id);
 
         // Crear el archivo Excel
         $filename = 'reporte_situacion_financiera.xlsx';
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        $sheet->setCellValue('A1', $company->name);
+        $sheet->setCellValue('A2', $document_type->name);
+        $sheet->setCellValue('B2', $company->identification_number);
+        $sheet->setCellValue('A3', 'DIRECCIÓN');
+        $sheet->setCellValue('B3', $company->address);
+
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
+        $sheet->setCellValue('A5', 'Fechas');
+        $sheet->setCellValue('B5', ' del ' . ($dateStart ?? '-') . ' al ' . ($dateEnd ?? '-'));
+
         // Configurar encabezados
-        $sheet->setCellValue('A1', 'Código');
-        $sheet->setCellValue('B1', 'Nombre');
-        $sheet->setCellValue('C1', 'Tipo');
-        $sheet->setCellValue('D1', 'Saldo');
+        $sheet->setCellValue('A7', 'Código');
+        $sheet->setCellValue('B7', 'Nombre');
+        $sheet->setCellValue('C7', 'Tipo');
+        $sheet->setCellValue('D7', 'Saldo');
 
         // Agregar datos de Activos
-        $row = 2;
+        $row = 8;
         $sheet->setCellValue('A' . $row, 'Activos');
         foreach ($data['assets'] as $asset) {
             $row++;
