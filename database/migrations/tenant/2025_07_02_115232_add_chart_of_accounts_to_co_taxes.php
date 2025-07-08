@@ -116,7 +116,6 @@ class AddChartOfAccountsToCoTaxes extends Migration
         foreach ($accounts as $code => $data) {
             $parentId = ChartOfAccount::where('code', $data['parent_code'])->value('id');
 
-            // Crear la cuenta
             $account = ChartOfAccount::where('code', $data['code'])->first();
             if ($account) {
                 $account->update([
@@ -126,8 +125,9 @@ class AddChartOfAccountsToCoTaxes extends Migration
                     'parent_id' => $parentId,
                     'status' => true,
                 ]);
+                $inserted[$code] = $account->id;
             } else {
-                ChartOfAccount::create([
+                $newAccount = ChartOfAccount::create([
                     'code' => $data['code'],
                     'name' => $data['name'],
                     'type' => $data['type'],
@@ -135,10 +135,8 @@ class AddChartOfAccountsToCoTaxes extends Migration
                     'parent_id' => $parentId,
                     'status' => true,
                 ]);
+                $inserted[$code] = $newAccount->id;
             }
-
-            // Registrar la cuenta insertada
-            $inserted[$code] = $account->id;
         }
     }
 }
