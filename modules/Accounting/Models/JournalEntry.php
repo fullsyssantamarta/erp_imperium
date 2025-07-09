@@ -2,6 +2,7 @@
 
 namespace Modules\Accounting\Models;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Tenant\ModelTenant;
 use Hyn\Tenancy\Traits\UsesTenantConnection;
 use App\Models\Tenant\Document;
@@ -19,7 +20,8 @@ class JournalEntry extends ModelTenant
         'description',
         'document_id',
         'purchase_id',
-        'status'
+        'status',
+        'number',
     ];
 
     public function details()
@@ -93,5 +95,38 @@ class JournalEntry extends ModelTenant
     public function purchase()
     {
         return $this->belongsTo(Purchase::class, 'purchase_id');
+    }
+
+    /**
+     * Obtiene el siguiente número de journal para el prefijo de journal especificado.
+     *
+     * @param int $journalPrefixId Identificador del prefijo de journal.
+     * @return int El siguiente número de journal.
+     */
+    public static function getNextNumber($journalPrefixId)
+    {
+        // Bloquea la tabla para evitar duplicados en concurrencia
+        $last = self::where('journal_prefix_id', $journalPrefixId)
+            ->orderByDesc('number')
+            ->lockForUpdate()
+            ->first();
+
+        return $last ? $last->number + 1 : 1;
+    }
+
+    /**
+     * Crea un nuevo asiento contable con un número único,
+     * bloqueando la tabla para evitar duplicados en concurrencia.
+     *
+     * @param array $data Los datos del asiento contable.
+     * @return \Modules\Accounting\Models\JournalEntry El asiento contable creado.
+     */
+    public static function createWithNumber(array $data)
+    {
+        return DB::transaction(function () use ($data) {
+            $number = self::getNextNumber($data['journal_prefix_id']);
+            $data['number'] = $number;
+            return self::create($data);
+        });
     }
 }

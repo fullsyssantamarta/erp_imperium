@@ -297,7 +297,7 @@ class PurchaseController extends Controller
         }
 
         //1 Registrar la entrada en el libro diario
-        $entry = JournalEntry::create([
+        $entry = JournalEntry::createWithNumber([
             'date' => date('Y-m-d'),
             'journal_prefix_id' => 2, // Prefijo para compras
             'description' => 'Factura de Compra #'.$document->series . '-' . $document->number,
@@ -377,7 +377,7 @@ class PurchaseController extends Controller
         }
 
         //1 Registrar la entrada en el libro diario
-        $entry = JournalEntry::create([
+        $entry = JournalEntry::createWithNumber([
             'date' => date('Y-m-d'),
             'journal_prefix_id' => 2, // Prefijo para compras
             'description' => 'Nota de Crédito #'.$document->series . '-' . $document->number,

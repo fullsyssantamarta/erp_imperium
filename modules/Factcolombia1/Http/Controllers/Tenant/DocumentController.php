@@ -1086,7 +1086,7 @@ class DocumentController extends Controller
 
         if($accountIdCash && $accountIdIncome){
 
-            $entry = JournalEntry::create([
+            $entry = JournalEntry::createWithNumber([
                 'date' => date('Y-m-d'),
                 'journal_prefix_id' => 1,
                 'description' => 'Factura de Venta #'.$document->prefix.'-'.$document->number,
@@ -1648,7 +1648,7 @@ class DocumentController extends Controller
 
         if($accountIdCustomer && $accountIdIncome && $accountIdLiability){
 
-            $entry = JournalEntry::create([
+            $entry = JournalEntry::createWithNumber([
                 'date' => date('Y-m-d'),
                 'journal_prefix_id' => 1,
                 'description' => 'Nota de Crédito #'.$document->prefix.'-'.$document->number,

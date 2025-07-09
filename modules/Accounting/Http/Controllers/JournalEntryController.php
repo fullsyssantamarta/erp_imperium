@@ -71,7 +71,8 @@ class JournalEntryController extends Controller
 
         $request->merge(['status' => 'draft']);
 
-        $entry = JournalEntry::create($request->only(['date', 'journal_prefix_id', 'description', 'status']));
+        $entry = JournalEntry::createWithNumber($request->only(['date', 'journal_prefix_id', 'description', 'status']));
+
         foreach ($request->details as $detail) {
             $entry->details()->create([
                 'chart_of_account_id' => $detail['chart_of_account_id'],

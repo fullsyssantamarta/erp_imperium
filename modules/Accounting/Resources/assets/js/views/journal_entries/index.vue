@@ -27,7 +27,7 @@
                     <tr slot="heading">
                         <th>#</th>
                         <th>Fecha</th>
-                        <th>Prefijo</th>
+                        <th>Número</th>
                         <th>Descripción</th>
                         <th>Estado</th>
                         <th class="text-right">Acciones</th>
@@ -36,7 +36,7 @@
                     <tr slot-scope="{ index, row }">
                         <td>{{ index }}</td>
                         <td>{{ row.date }}</td>
-                        <td>{{ row.journal_prefix.prefix }}</td>
+                        <td>{{ row.journal_prefix.prefix }}-{{ row.number }}</td>
                         <td>{{ row.description }}</td>
                         <td>
                             <span :class="statusClass(row.status)">{{ statusText(row.status) }}</span>
@@ -69,9 +69,9 @@
 
         </div>
         <journal-entry-form :showDialog.sync="showDialog" :recordId="recordId"></journal-entry-form>
-        
-        <journal-entry-detail 
-            :showDialog.sync="showDialogDetail" 
+
+        <journal-entry-detail
+            :showDialog.sync="showDialogDetail"
             :recordId="recordId"
             >
         </journal-entry-detail>
