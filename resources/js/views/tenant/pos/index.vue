@@ -237,20 +237,71 @@
                     </div>
                     <div class="row py-1 border-bottom m-0 p-0">
                         <div class="col-12">
-                            <table class="table table-sm table-borderless mb-0">
-                                <tr v-for="(item,index) in form.items" :key="index">
+                            <!-- Responsive tabla SOLO en móvil -->
+                            <table v-show="isMobile" class="table table-sm table-borderless mb-0 table-pos-products">
+                                <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
+                                    <td width="20%" class="td-main">
+                                        <div class="row-main">
+                                            <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
+                                            <div class="product-name">
+                                                <span v-html="clearText(item.item.name)"></span>
+                                                <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
+                                                <template v-if="item.item.lot_code || item.item.date_of_due">
+                                                    <small class="text-muted lote-info">
+                                                        <span v-if="item.item.lot_code">Lote: {{item.item.lot_code}}</span>
+                                                        <span v-if="item.item.lot_code && item.item.date_of_due"> - </span>
+                                                        <span v-if="item.item.date_of_due">FV: {{item.item.date_of_due}}</span>
+                                                    </small>
+                                                </template>
+                                                <small> {{nameSets(item.item_id)}} </small>
+                                            </div>
+                                        </div>
+                                        <div class="row-secondary">
+                                            <el-input v-model="item.sale_unit_price_with_tax" class="input-price input-text-right" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity"></el-input>
+                                            <el-input v-model="item.total" @input="calculateQuantity(index)" class="input-total input-text-right" :readonly="!item.item.calculate_quantity"></el-input>
+                                            <a class="btn btn-sm btn-default btn-trash" @click="clickDeleteItem(index)">
+                                                <i class="fas fa-trash fa-wf"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Refund items (puedes adaptar igual si lo necesitas) -->
+                                <tr v-for="(item,index) in items_refund" :key="index + 'R'" class="pos-product-row">
+                                    <td class="td-main">
+                                        <div class="row-main">
+                                            <span v-if="item.unit_type" class="pos-list-label">{{ item.unit_type.name }}</span>
+                                            <el-input :value=" '-' +item.quantity" :readonly="true" class="input-qty"></el-input>
+                                            <div class="product-name">
+                                                {{item.item.name}}
+                                                <small> {{nameSets(item.item_id)}} </small>
+                                            </div>
+                                        </div>
+                                        <div class="row-secondary">
+                                            <span>{{currency.symbol}}</span>
+                                            <el-input v-model="item.sale_unit_price_with_tax" class="input-price" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity"></el-input>
+                                            <el-input :value="'-' + item.total" :readonly="true" class="input-total"></el-input>
+                                            <a class="btn btn-sm btn-default btn-trash" @click="clickDeleteItemRefund(index)">
+                                                <i class="fas fa-trash fa-wf"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Tabla tradicional SOLO en escritorio -->
+                            <table v-show="!isMobile" class="table table-sm table-borderless mb-0">
+                                <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%">
-                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class @change="onQuantityInput(item, index)"></el-input>
+                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
                                     </td>
                                     <td width="20%">
                                         <p class="m-0" style="line-height: 1em;">
                                             <span v-html="clearText(item.item.name)"></span><br>
                                             <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
                                             <template v-if="item.item.lot_code || item.item.date_of_due">
-                                                <br>
-                                                <small class="text-muted">
-                                                    {{item.item.lot_code ? 'Lote:' + item.item.lot_code : ''}}<br>
-                                                    {{item.item.date_of_due ? 'FV: ' + item.item.date_of_due : ''}}
+                                                <small class="text-muted lote-info">
+                                                    <span v-if="item.item.lot_code">Lote: {{item.item.lot_code}}</span>
+                                                    <span v-if="item.item.lot_code && item.item.date_of_due"> - </span>
+                                                    <span v-if="item.item.date_of_due">FV: {{item.item.date_of_due}}</span>
                                                 </small>
                                             </template>
                                         </p>
@@ -462,6 +513,99 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+.lote-info {
+  display: block;
+  font-size: 11px !important;
+  color: #888 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.1 !important;
+  white-space: normal !important;
+}
+
+/* --- INICIO: Responsive para listado de items --- */
+@media (max-width: 1800px) {
+  .row.pos-items > div[class^="col-"], 
+  .row.pos-items > div[class*=" col-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  .row.pos-items {
+    flex-direction: column;
+    display: flex;
+  }
+}
+@media (max-width: 1800px) {
+  /* Estilos para la tabla de productos seleccionados en modo responsive */
+  .table-pos-products .pos-product-row {
+    display: block;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 2px;
+    padding-bottom: 2px;
+  }
+  .table-pos-products .td-main {
+    display: block;
+    width: 100% !important;
+    padding: 4px 2px !important;
+    box-sizing: border-box;
+  }
+  .table-pos-products .row-main {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+  }
+  .table-pos-products .input-qty {
+    flex: 0 0 60px;
+    max-width: 60px;
+    min-width: 40px;
+    margin-right: 6px;
+  }
+  .table-pos-products .product-name {
+    flex: 1 1 auto;
+    font-size: 14px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .table-pos-products .product-name small {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-top: 0;
+    margin-bottom: 0;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .table-pos-products .row-secondary {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .table-pos-products .input-price,
+  .table-pos-products .input-total {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 13px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+  }
+  .table-pos-products .btn-trash {
+    flex: 0 0 36px;
+    max-width: 36px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+/* --- FIN: Responsive para tabla de productos seleccionados --- */
 </style>
 
 <script>
@@ -527,12 +671,16 @@ export default {
             plate_number_valid: true,
             electronic: false,
             advanced_configuration: {},
+            isMobile: window.innerWidth <= 1800,
         };
     },
 
     mounted(){
+        window.addEventListener('resize', this.handleResize);
     },
-
+    beforeDestroy() {
+        window.removeEventListener('resize', this.handleResize);
+    },
     async created() {
         try {
             // Cargar configuración avanzada antes de todo
@@ -815,8 +963,8 @@ export default {
             // console.log(this.form.items[index])
             if (this.form.items[index].item.calculate_quantity) {
                 let quantity = _.round(
-                    parseFloat(this.form.items[index].total) /
-                    parseFloat(this.form.items[index].unit_price),
+                    this.normalizeDecimal(this.form.items[index].total) /
+                    this.normalizeDecimal(this.form.items[index].unit_price),
                     4
                 );
 
@@ -1034,12 +1182,8 @@ export default {
             if (!this.type_refund && this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
                 if (item.warehouses && item.unit_type_id !== 'ZZ') {
                     const warehouse = item.warehouses.find(w => w.checked) || item.warehouses[0];
-                    const stock = warehouse ? warehouse.stock : 0;
-                    const stock_min = item.stock_min !== undefined ? item.stock_min : 0;
-                    if (Number(stock) < Number(stock_min)) {
-                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
-                        return;
-                    }
+                    const stock = this.normalizeDecimal(warehouse ? warehouse.stock : 0);
+                    const stock_min = this.normalizeDecimal(item.stock_min !== undefined ? item.stock_min : 0);
                     // Si ya existe el item, sumar la cantidad
                     let exist_item = null;
                     if(!item.presentation) {
@@ -1054,7 +1198,7 @@ export default {
                             unit_type_id: item.unit_type_id
                         })
                     }
-                    let next_quantity = exist_item ? (parseFloat(exist_item.item.aux_quantity) + (input ? 0 : 1)) : 1;
+                    let next_quantity = exist_item ? (this.normalizeDecimal(exist_item.item.aux_quantity) + (input ? 0 : 1)) : 1;
                     if (Number(next_quantity) > Number(stock)) {
                         this.$message.error('No hay stock suficiente para este producto.');
                         return;
@@ -1656,9 +1800,9 @@ export default {
                 item.item.unit_type_id !== 'ZZ'
             ) {
                 const warehouse = item.item.warehouses.find(w => w.checked) || item.item.warehouses[0];
-                const stock = warehouse ? Number(warehouse.stock) : 0;
-                const stock_min = item.item.stock_min !== undefined ? Number(item.item.stock_min) : 0;
-                let qty = Number(item.item.aux_quantity);
+                const stock = this.normalizeDecimal(warehouse ? warehouse.stock : 0);
+                const stock_min = this.normalizeDecimal(item.item.stock_min !== undefined ? item.item.stock_min : 0);
+                let qty = this.normalizeDecimal(item.item.aux_quantity);
 
                 if (stock < stock_min) {
                     this.$message.error('El stock actual es menor al stock mínimo para este producto.');
@@ -1686,7 +1830,17 @@ export default {
                 item.quantity = Number(item.item.aux_quantity);
                 this.calculateTotal();
             }
-        }
+        },
+        handleResize() {
+            this.isMobile = window.innerWidth <= 1800;
+        },
+        normalizeDecimal(value) {
+            // Convierte comas a puntos y elimina espacios
+            if (typeof value === 'string') {
+                return parseFloat(value.replace(',', '.').replace(/\s/g, ''));
+            }
+            return parseFloat(value);
+        },
     }
 };
 </script>
