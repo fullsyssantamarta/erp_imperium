@@ -525,7 +525,7 @@
 }
 
 /* --- INICIO: Responsive para listado de items --- */
-@media (max-width: 1800px) {
+@media (max-width: 1000px) {
   .row.pos-items > div[class^="col-"], 
   .row.pos-items > div[class*=" col-"] {
     flex: 0 0 100%;
@@ -963,8 +963,8 @@ export default {
             // console.log(this.form.items[index])
             if (this.form.items[index].item.calculate_quantity) {
                 let quantity = _.round(
-                    this.normalizeDecimal(this.form.items[index].total) /
-                    this.normalizeDecimal(this.form.items[index].unit_price),
+                    parseFloat(this.form.items[index].total) /
+                    parseFloat(this.form.items[index].unit_price),
                     4
                 );
 
@@ -1182,8 +1182,12 @@ export default {
             if (!this.type_refund && this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
                 if (item.warehouses && item.unit_type_id !== 'ZZ') {
                     const warehouse = item.warehouses.find(w => w.checked) || item.warehouses[0];
-                    const stock = this.normalizeDecimal(warehouse ? warehouse.stock : 0);
-                    const stock_min = this.normalizeDecimal(item.stock_min !== undefined ? item.stock_min : 0);
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = item.stock_min !== undefined ? item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
                     // Si ya existe el item, sumar la cantidad
                     let exist_item = null;
                     if(!item.presentation) {
@@ -1198,7 +1202,7 @@ export default {
                             unit_type_id: item.unit_type_id
                         })
                     }
-                    let next_quantity = exist_item ? (this.normalizeDecimal(exist_item.item.aux_quantity) + (input ? 0 : 1)) : 1;
+                    let next_quantity = exist_item ? (parseFloat(exist_item.item.aux_quantity) + (input ? 0 : 1)) : 1;
                     if (Number(next_quantity) > Number(stock)) {
                         this.$message.error('No hay stock suficiente para este producto.');
                         return;
@@ -1272,17 +1276,20 @@ export default {
                             return this.$message.error(response.message);
                         }
 
-                        exist_item.quantity = exist_item.item.aux_quantity;
+                        exist_item.quantity = Number(Number(exist_item.item.aux_quantity).toFixed(4));
                     } else {
-                        response = await this.getStatusStock(item.item_id, parseFloat(exist_item.item.aux_quantity) + 1);
+                        // Corregir suma de cantidades para evitar decimales extraños
+                        let newQty = Number(Number(exist_item.item.aux_quantity) + 1);
+                        newQty = Number(newQty.toFixed(4));
+                        response = await this.getStatusStock(item.item_id, newQty);
 
                         if (!response.success) {
                             this.loading = false;
                             return this.$message.error(response.message);
                         }
 
-                        exist_item.quantity++;
-                        exist_item.item.aux_quantity++;
+                        exist_item.quantity = newQty;
+                        exist_item.item.aux_quantity = newQty;
                     }
 
                     let search_item_bd = await _.find(this.items, {
@@ -1431,8 +1438,8 @@ export default {
                         if(!item.edited_price){
                             item.total_tax = (
                                 (item.unit_price * item.quantity -
-                                    (item.discount < item.unit_price * item.quantity ?
-                                        item.discount :
+                                    (item.discount < item.unit_price * item.quantity ? 
+                                        item.discount : 
                                         0)) *
                                 (item.tax.rate / item.tax.conversion)
                             ).toFixed(2);
@@ -1447,9 +1454,9 @@ export default {
                             item.unit_price = (item.sale_unit_price_with_tax / (1 + (item.tax.rate / item.tax.conversion)))
 //                            console.log(item.unit_price)
                             item.total_tax = (
-                                (item.unit_price * item.quantity -
-                                    (item.discount < item.sale_unit_price_with_tax * item.quantity ?
-                                        item.discount :
+                                (item.unit_price * item.quantity - 
+                                    (item.discount < item.sale_unit_price_with_tax * item.quantity ? 
+                                        item.discount : 
                                         0)) *
                                 (item.tax.rate / item.tax.conversion)
                             ).toFixed(2);
@@ -1464,6 +1471,9 @@ export default {
                     tax.total = (Number(tax.total) + Number(item.total_tax)).toFixed(2);
 //                    console.log(tax.total)
                 }
+                // Asegurar que las cantidades y totales sean números con precisión controlada
+                item.quantity = Number(Number(item.quantity).toFixed(4));
+                item.item.aux_quantity = Number(Number(item.item.aux_quantity).toFixed(4));
                 if(!item.edited_price){
                     item.subtotal = (
                         Number(item.unit_price * item.quantity) + Number(item.total_tax)
@@ -1498,16 +1508,16 @@ export default {
                     let tax = val.taxes.find(tax => tax.id == item.tax.id);
                     if (item.tax.is_fixed_value) {
                         item.total_tax = (
-                            item.tax.rate * item.quantity -
+                            item.tax.rate * item.quantity - 
                             (item.discount < item.unit_price * item.quantity ? item.discount : 0)
                         ).toFixed(2);
                     }
 
                     if (item.tax.is_percentage) {
                         item.total_tax = (
-                            (item.unit_price * item.quantity -
-                                (item.discount < item.unit_price * item.quantity ?
-                                    item.discount :
+                            (item.unit_price * item.quantity - 
+                                (item.discount < item.unit_price * item.quantity ? 
+                                    item.discount : 
                                     0)) *
                             (item.tax.rate / item.tax.conversion)
                         ).toFixed(2);
@@ -1800,9 +1810,9 @@ export default {
                 item.item.unit_type_id !== 'ZZ'
             ) {
                 const warehouse = item.item.warehouses.find(w => w.checked) || item.item.warehouses[0];
-                const stock = this.normalizeDecimal(warehouse ? warehouse.stock : 0);
-                const stock_min = this.normalizeDecimal(item.item.stock_min !== undefined ? item.item.stock_min : 0);
-                let qty = this.normalizeDecimal(item.item.aux_quantity);
+                const stock = warehouse ? Number(warehouse.stock) : 0;
+                const stock_min = item.item.stock_min !== undefined ? Number(item.item.stock_min) : 0;
+                let qty = Number(item.item.aux_quantity);
 
                 if (stock < stock_min) {
                     this.$message.error('El stock actual es menor al stock mínimo para este producto.');
@@ -1833,13 +1843,6 @@ export default {
         },
         handleResize() {
             this.isMobile = window.innerWidth <= 1800;
-        },
-        normalizeDecimal(value) {
-            // Convierte comas a puntos y elimina espacios
-            if (typeof value === 'string') {
-                return parseFloat(value.replace(',', '.').replace(/\s/g, ''));
-            }
-            return parseFloat(value);
         },
     }
 };
