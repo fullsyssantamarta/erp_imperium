@@ -225,6 +225,10 @@ class RemissionController extends Controller
         $format_pdf = ($format_pdf != null) ? $format_pdf : 'a4';
         $base_template = config('tenant.pdf_template');
 
+        // Agregar cuentas bancarias al documento
+        $bank_accounts = \App\Models\Tenant\BankAccount::where('status', 1)->get();
+        $document->bank_accounts = $bank_accounts;
+
         // Configuración inicial del PDF según formato
         $pdf_config = [];
         if ($format_pdf === 'ticket') {

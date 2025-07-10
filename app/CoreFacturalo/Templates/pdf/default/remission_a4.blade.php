@@ -247,5 +247,34 @@
         </div>
     </div>
 
+    {{-- Mostrar cuentas bancarias si existen --}}
+    @if(isset($document->bank_accounts) && $document->bank_accounts->count())
+        <br>
+        <table class="table" style="width: 100%; font-size: 11px; border: 1px solid #ccc;">
+            <thead>
+                <tr>
+                    <th colspan="2" class="text-center" style="background: #f3f3f3;"><strong>Cuentas bancarias para pago</strong></th>
+                </tr>
+                <tr>
+                    <th>Banco</th>
+                    <th>Número de Cuenta</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($document->bank_accounts as $cuenta)
+                    <tr>
+                        <td>{{ $cuenta->bank->description ?? '' }}</td>
+                        <td>{{ $cuenta->number }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        <span style="font-size: 10px;">
+            El pago debe realizarse únicamente a la cuenta bancaria indicada, no asumimos responsabilidad por consignaciones a otras cuentas.
+        </span>
+        <br>
+    @endif
+
 </body>
+</html>
 </html>
