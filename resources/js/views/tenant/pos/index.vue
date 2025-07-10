@@ -72,8 +72,8 @@
                                         {{item.name}}
                                     </p>
                                 </el-tooltip>
-                                <!-- <p class="font-weight-semibold mb-0" v-if="item.name.length < 50">{{item.name}}</p> -->
-                                <img :src="item.image_url" class="img-thumbail img-custom" />
+                                <!-- Mostrar imagen solo si la pantalla es >= 600px -->
+                                <img v-if="!hideProductImage" :src="item.image_url" class="img-thumbail img-custom product-image-responsive" />
                                 <p class="text-muted font-weight-lighter mb-0">
                                     <small>{{item.internal_id}}</small>
                                     <small style="float: right; clear">{{item.lot_code ? 'Lote:' + item.lot_code : ''}}   {{item.date_of_due ? 'FV:' + item.date_of_due : ''}}</small>
@@ -606,6 +606,15 @@
   }
 }
 /* --- FIN: Responsive para tabla de productos seleccionados --- */
+.product-image-responsive {
+  /* fallback: ocultar imagen en pantallas pequeñas */
+  display: block;
+}
+@media (max-width: 600px) {
+  .product-image-responsive {
+    display: none !important;
+  }
+}
 </style>
 
 <script>
@@ -672,6 +681,7 @@ export default {
             electronic: false,
             advanced_configuration: {},
             isMobile: window.innerWidth <= 1800,
+            windowWidth: window.innerWidth, // <-- agregar para computada
         };
     },
 
@@ -763,7 +773,10 @@ export default {
             return {
                 [`col-md-${clase}`]: true
             }
-        }
+        },
+        hideProductImage() {
+            return this.windowWidth < 600;
+        },
     },
     methods: {
         getQueryParameters() {
@@ -1843,6 +1856,7 @@ export default {
         },
         handleResize() {
             this.isMobile = window.innerWidth <= 1800;
+            this.windowWidth = window.innerWidth; // <-- actualizar para computada
         },
     }
 };
