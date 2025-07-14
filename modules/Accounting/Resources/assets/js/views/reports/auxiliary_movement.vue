@@ -46,8 +46,10 @@
                                 <th class="font-weight-bold">Número de documento</th>
                                 <th class="font-weight-bold">Nombre del tercero</th>
                                 <th class="font-weight-bold">Descripción</th>
+                                <th class="font-weight-bold">Saldo inicial</th>
                                 <th class="font-weight-bold">Débito</th>
                                 <th class="font-weight-bold">Crédito</th>
+                                <th class="font-weight-bold">Saldo final</th>
                             </tr>
                             <tbody v-if="accounts.length">
                                 <template v-for="group in accounts" >
@@ -55,21 +57,32 @@
                                         <td colspan="7">
                                             <span class="font-weight-bold">Cuenta contable:</span> {{ group.account_code }} {{ group.account_name }}
                                         </td>
+                                        <td>{{ group.balance_initial }}</td>
                                         <td>{{ group.total_debit }}</td>
                                         <td>{{ group.total_credit }}</td>
+                                        <td>{{ group.balance_final }}</td>
                                     </tr>
                                     <tr v-for="row in group.details" :key="row.id">
                                         <td>{{ row.account_code }}</td>
                                         <td>{{ row.account_name }}</td>
-                                        <td>{{ row.document_info.number }}</td>
+                                        <td>{{ row.document_info && row.document_info.number }}</td>
                                         <td>{{ row.date }}</td>
-                                        <td>{{ row.document_info.third_party_number }}</td>
-                                        <td>{{ row.document_info.third_party_name }}</td>
+                                        <td>{{ row.document_info && row.document_info.third_party_number }}</td>
+                                        <td>{{ row.document_info && row.document_info.third_party_name }}</td>
                                         <td>{{ row.description }}</td>
+                                        <td class="text-right">0</td>
                                         <td class="text-right">{{ row.debit }}</td>
                                         <td class="text-right">{{ row.credit }}</td>
+                                        <td class="text-right">0</td>
                                     </tr>
                                 </template>
+                                <tr>
+                                    <td>TOTAL</td>
+                                    <td colspan="7"></td>
+                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_debit, 0)).toFixed(2) }}</td>
+                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_credit, 0)).toFixed(2) }}</td>
+                                    <td></td>
+                                </tr>
                             </tbody>
                             <tbody v-else>
                                 <tr>
@@ -87,12 +100,16 @@
 <script>
 import DataTable from '../components/DataTableReport.vue';
 import queryString from 'query-string';
+import moment from 'moment';
 
 export default {
     components: { DataTable },
     data() {
         return {
-            dateRange: [],
+            dateRange: [
+                moment().startOf('month').format('YYYY-MM-DD'),
+                moment().endOf('month').format('YYYY-MM-DD')
+            ],
             accounts: [],
         }
     },
@@ -102,7 +119,9 @@ export default {
     methods: {
         async fetchData(params = {}) {
             const response = await this.$http.get('/accounting/auxiliary-movement/records', { params });
-            this.accounts = response.data.data;
+            if(response.data.data.length > 0) {
+                this.accounts = response.data.data;
+            }
         },
         onDateChange() {
             let params = {

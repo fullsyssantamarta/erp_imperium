@@ -45,6 +45,7 @@ use Modules\Accounting\Models\JournalPrefix;
 use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\ChartAccountSaleConfiguration;
 use Modules\Accounting\Models\AccountingChartAccountConfiguration;
+use Modules\Accounting\Helpers\AccountBalanceHelper;
 
 class PurchaseController extends Controller
 {
@@ -285,13 +286,6 @@ class PurchaseController extends Controller
             $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
         }
 
-        // $taxIva = Tax::where('name','IVA5')->first();
-        // if($taxIva){
-        //     $accountIdTax = ChartOfAccount::where('code',$taxIva->chart_account_purchase)->first();
-        // }
-        // seteo el total impuesto con un codigo general de impuesto
-        $accountIdTax = ChartOfAccount::where('code','135530')->first();
-
         if($accountConfiguration){
             $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
         }
@@ -313,6 +307,7 @@ class PurchaseController extends Controller
             'debit' => $subtotal,
             'credit' => 0,
         ]);
+        AccountBalanceHelper::applyMovementToBalance($accountIdInventory->id, Carbon::now(), $subtotal, 0);
 
         //Cuentas por pagar a proveedores (Pasivo)
         $entry->details()->create([
@@ -320,6 +315,7 @@ class PurchaseController extends Controller
             'debit' => 0,
             'credit' => $total,
         ]);
+        AccountBalanceHelper::applyMovementToBalance($accountIdLiability->id, Carbon::now(), 0, $total);
 
         //IVA descontable (Activo)
         if (!empty($document->taxes)) {
@@ -339,6 +335,7 @@ class PurchaseController extends Controller
                             'debit' => $tax->total,
                             'credit' => 0,
                         ]);
+                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), $tax->total, 0);
                     }
                 }
 
@@ -351,6 +348,7 @@ class PurchaseController extends Controller
                             'debit' => 0,
                             'credit' => $tax->retention,
                         ]);
+                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), $tax->retention, 0);
                     }
                 }
             }
@@ -393,6 +391,7 @@ class PurchaseController extends Controller
             'debit' => $total,
             'credit' => 0,
         ]);
+        AccountBalanceHelper::applyMovementToBalance($accountIdLiability->id, Carbon::now(), $total, 0);
 
         //Inventario de Mercancías (Activo | Haber)
         $entry->details()->create([
@@ -400,6 +399,7 @@ class PurchaseController extends Controller
             'debit' => 0,
             'credit' => $subtotal,
         ]);
+        AccountBalanceHelper::applyMovementToBalance($accountIdInventory->id, Carbon::now(), 0, $subtotal);
 
         //IVA descontable (Activo | Haber)
         if (!empty($document->taxes)) {
@@ -419,6 +419,7 @@ class PurchaseController extends Controller
                             'debit' => 0,
                             'credit' => $tax->total,
                         ]);
+                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), 0, $tax->total);
                     }
                 }
 
@@ -431,6 +432,7 @@ class PurchaseController extends Controller
                             'debit' => $tax->retention,
                             'credit' => 0,
                         ]);
+                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), 0, $tax->retention);
                     }
                 }
             }

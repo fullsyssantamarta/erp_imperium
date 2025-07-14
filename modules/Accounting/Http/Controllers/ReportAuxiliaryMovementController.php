@@ -8,8 +8,10 @@ use Illuminate\Routing\Controller;
 use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\JournalEntry;
 use Modules\Accounting\Models\JournalEntryDetail;
+use Modules\Accounting\Helpers\AccountBalanceHelper;
 use Modules\Factcolombia1\Models\Tenant\Company;
 use Modules\Factcolombia1\Models\Tenant\TypeIdentityDocument;
+use Carbon\Carbon;
 use Mpdf\Mpdf;
 
 class ReportAuxiliaryMovementController extends Controller
@@ -34,6 +36,7 @@ class ReportAuxiliaryMovementController extends Controller
                 $documentInfo = $this->getDocumentInfo($entry);
 
                 return [
+                    'account_id' => $account->id,
                     'account_code' => $account->code,
                     'account_name' => $account->name,
                     'document_info' => $documentInfo,
@@ -44,10 +47,13 @@ class ReportAuxiliaryMovementController extends Controller
                 ];
             })
             ->groupBy('account_code')
-                ->map(function ($items, $account_code) {
+                ->map(function ($items, $account_code) use ($request) {
                 $totalDebit = $items->sum('debit');
                 $totalCredit = $items->sum('credit');
                 $accountName = $items->first()['account_name'] ?? '';
+                $date = Carbon::parse($request->date_start)->format('Y-m-d');
+                $accountId = $items->first()['account_id'];
+                $balanceInitial = AccountBalanceHelper::getBalanceUpTo($accountId, $date);
 
                 return [
                     'account_code' => $account_code,
@@ -55,6 +61,8 @@ class ReportAuxiliaryMovementController extends Controller
                     'total_debit' => $totalDebit,
                     'total_credit' => $totalCredit,
                     'details' => $items->values(),
+                    'balance_initial' => $balanceInitial ?? 0,
+                    'balance_final' => ($balanceInitial ?? 0) + $totalDebit - $totalCredit,
                 ];
             })
             ->values();
@@ -162,18 +170,25 @@ class ReportAuxiliaryMovementController extends Controller
         $sheet->setCellValue('D7', 'Número de documento');
         $sheet->setCellValue('E7', 'Nombre del tercero');
         $sheet->setCellValue('F7', 'Descripción');
-        $sheet->setCellValue('G7', 'Débito');
-        $sheet->setCellValue('H7', 'Crédito');
-
+        $sheet->setCellValue('G7', 'Saldo inicial');
+        $sheet->setCellValue('H7', 'Débito');
+        $sheet->setCellValue('I7', 'Crédito');
+        $sheet->setCellValue('J7', 'Saldo final');
 
         // Agregar datos de cuentas
+        $totalDebit = 0;
+        $totalCredit = 0;
         $row = 8;
         foreach ($data['data'] as $group) {
             $row++;
             $sheet->setCellValue('A' . $row, 'Cuenta contable:');
             $sheet->setCellValue('B' . $row, $group['account_code']);
-            $sheet->setCellValue('G' . $row, $group['total_debit']);
-            $sheet->setCellValue('H' . $row, $group['total_credit']);
+            $sheet->setCellValue('G' . $row, $group['balance_initial']);
+            $sheet->setCellValue('H' . $row, $group['total_debit']);
+            $sheet->setCellValue('I' . $row, $group['total_credit']);
+            $sheet->setCellValue('J' . $row, $group['balance_final']);
+            $totalDebit += $group['total_debit'];
+            $totalCredit += $group['total_credit'];
             foreach($group['details'] as $detail) {
                 $row++;
                 $sheet->setCellValue('A' . $row, $detail['account_code']);
@@ -182,11 +197,17 @@ class ReportAuxiliaryMovementController extends Controller
                 $sheet->setCellValue('D' . $row, $detail['document_info']['number'] ?? '');
                 $sheet->setCellValue('E' . $row, $detail['document_info']['third_party_name'] ?? '');
                 $sheet->setCellValue('F' . $row, $detail['description']);
-                $sheet->setCellValue('G' . $row, $detail['debit']);
-                $sheet->setCellValue('H' . $row, $detail['credit']);
+                $sheet->setCellValue('G' . $row, '0');
+                $sheet->setCellValue('H' . $row, $detail['debit']);
+                $sheet->setCellValue('I' . $row, $detail['credit']);
+                $sheet->setCellValue('J' . $row, '0');
             }
         }
         $row++;
+        // Agregar última línea con suma de totales
+        $sheet->setCellValue('A' . $row, 'TOTAL');
+        $sheet->setCellValue('H' . $row, $totalDebit);
+        $sheet->setCellValue('I' . $row, $totalCredit);
 
         // Descargar el archivo Excel
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
@@ -194,17 +215,17 @@ class ReportAuxiliaryMovementController extends Controller
         $writer->save($tempFile);
 
         // debug
-        // $dataArray = $sheet->toArray();
-        // echo '<table border="1">';
-        // foreach ($dataArray as $row) {
-        //     echo '<tr>';
-        //     foreach ($row as $cell) {
-        //         echo '<td>' . htmlspecialchars($cell) . '</td>';
-        //     }
-        //     echo '</tr>';
-        // }
-        // echo '</table>';
-        // exit;
+        $dataArray = $sheet->toArray();
+        echo '<table border="1">';
+        foreach ($dataArray as $row) {
+            echo '<tr>';
+            foreach ($row as $cell) {
+                echo '<td>' . htmlspecialchars($cell) . '</td>';
+            }
+            echo '</tr>';
+        }
+        echo '</table>';
+        exit;
 
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
