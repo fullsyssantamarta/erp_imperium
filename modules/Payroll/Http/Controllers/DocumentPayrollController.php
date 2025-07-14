@@ -421,5 +421,66 @@ class DocumentPayrollController extends Controller
             ]
         ];
     }
+    public function duplicate($id)
+    {
+        $document = DocumentPayroll::findOrFail($id);
 
+        $data = [
+            'type_document_id' => $document->type_document_id,
+            'prefix' => $document->prefix,
+            'period' => $document->period,
+            'payroll_period_id' => $document->payroll_period_id,
+            'worker_id' => [$document->worker_id],
+            'payment' => $document->payment,
+            'payment_dates' => $document->payment_dates,
+            'accrued' => $document->accrued ? $document->accrued->getRowResource() : [],
+            'deduction' => $document->deduction ? $document->deduction->getRowResource() : [],
+        ];
+
+        // LIMPIA LOS CAMPOS OPCIONALES AQUÍ
+        $this->cleanOptionalFields($data);
+
+        $data = array_filter($data, function($value) {
+            return !is_null($value);
+        });
+
+        return response()->json($data); 
+    }
+
+    private function cleanOptionalFields(&$inputs)
+    {
+        // Arrays en deduction que deben ser [] si vienen null
+        $arrayFields = [
+            'labor_union', 'sanctions', 'orders', 'third_party_payments', 'advances', 'other_deductions'
+        ];
+        foreach ($arrayFields as $field) {
+            if (isset($inputs['deduction']) && array_key_exists($field, $inputs['deduction']) && is_null($inputs['deduction'][$field])) {
+                $inputs['deduction'][$field] = [];
+            }
+        }
+
+        // Opcionales en accrued
+        $accruedOptionals = [
+            'endowment', 'sustenance_support', 'telecommuting', 'withdrawal_bonus', 'compensation',
+            'salary_viatics', 'non_salary_viatics', 'refund'
+        ];
+        foreach ($accruedOptionals as $key) {
+            if (!isset($inputs['accrued'][$key]) || empty($inputs['accrued'][$key]) || $inputs['accrued'][$key] <= 0) {
+                unset($inputs['accrued'][$key]);
+            }
+        }
+
+        // Opcionales en deduction
+        $deductionOptionals = [
+            'voluntary_pension', 'withholding_at_source', 'afc', 'cooperative', 'tax_liens',
+            'supplementary_plan', 'education', 'refund', 'debt',
+            'fondossp_type_law_deductions_id', 'fondosp_deduction_SP',
+            'fondossp_sub_type_law_deductions_id', 'fondosp_deduction_sub'
+        ];
+        foreach ($deductionOptionals as $key) {
+            if (!isset($inputs['deduction'][$key]) || empty($inputs['deduction'][$key]) || $inputs['deduction'][$key] <= 0) {
+                unset($inputs['deduction'][$key]);
+            }
+        }
+    }
 }

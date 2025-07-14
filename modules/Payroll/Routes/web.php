@@ -22,6 +22,7 @@ if($hostname) {
                     Route::get('downloadFile/{filename}', 'DocumentPayrollController@downloadFile');
                     Route::post('send-email', 'DocumentPayrollController@sendEmail');
                     Route::post('query-zipkey', 'DocumentPayrollController@queryZipkey');
+                    Route::get('duplicate/{record}', 'DocumentPayrollController@duplicate');
                 });
 
 

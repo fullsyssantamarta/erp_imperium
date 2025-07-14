@@ -1625,7 +1625,25 @@
             await this.getTables()
             await this.events()
             await this.checkDocumentPayrollAdjustNote()
+            const params = new URLSearchParams(window.location.search)
+            const duplicateId = params.get('duplicate_id')
 
+            if (duplicateId) {
+                try {
+                    const response = await this.$http.get(`/payroll/document-payrolls/duplicate/${duplicateId}`)
+                    if (response.data) {
+                        this.form = {
+                            ...this.form,
+                            ...response.data
+                        }
+                        this.form.type_document_id = null
+                        this.form.resolution_number = null
+                        this.normalizeFormArrays();
+                    }
+                } catch (e) {
+                    this.$message.error('No se pudo cargar la nómina a duplicar')
+                }
+            }
             this.loading_form = true
         },
         computed: {
@@ -1649,6 +1667,27 @@
             }
         },
         methods: {
+            normalizeFormArrays() {
+                const accruedArrays = [
+                    'work_disabilities', 'service_bonus', 'severance', 'common_vacation', 'paid_vacation', 'bonuses', 'aid', 'other_concepts',
+                    'maternity_leave', 'paid_leave', 'non_paid_leave', 'commissions', 'advances', 'epctv_bonuses', 'third_party_payments',
+                    'compensations', 'legal_strike', 'heds', 'hens', 'hrns', 'heddfs', 'hrddfs', 'hendfs', 'hrndfs'
+                ];
+                accruedArrays.forEach(key => {
+                    if (!Array.isArray(this.form.accrued[key])) {
+                        this.form.accrued[key] = [];
+                    }
+                });
+
+                const deductionArrays = [
+                    'labor_union', 'sanctions', 'orders', 'third_party_payments', 'advances', 'other_deductions'
+                ];
+                deductionArrays.forEach(key => {
+                    if (!Array.isArray(this.form.deduction[key])) {
+                        this.form.deduction[key] = [];
+                    }
+                });
+            },
             async checkDocumentPayrollAdjustNote(){
 
                 if(this.isAdjustNote)

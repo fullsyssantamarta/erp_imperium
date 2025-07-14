@@ -71,7 +71,13 @@
                             </template>
 
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptions(row.id)">Opciones</button>
-
+    <button
+        type="button"
+        class="btn waves-effect waves-light btn-xs btn-secondary"
+        @click.prevent="clickDuplicatePayroll(row.id)"
+    >
+        Duplicar
+    </button>
                         </td>
                     </tr>
                 </data-table>
@@ -121,6 +127,9 @@
         created() {
         },
         methods: {
+            async clickDuplicatePayroll(recordId) {
+                window.location.href = `/${this.resource}/create?duplicate_id=${recordId}`
+            },
             clickReplacePayroll(recordId){
                 location.href = `document-payroll-adjust-notes/${recordId}`
             },
