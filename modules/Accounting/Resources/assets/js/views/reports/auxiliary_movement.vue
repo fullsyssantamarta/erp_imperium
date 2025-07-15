@@ -114,7 +114,7 @@ export default {
         }
     },
     mounted() {
-        this.fetchData();
+        this.onDateChange();
     },
     methods: {
         async fetchData(params = {}) {

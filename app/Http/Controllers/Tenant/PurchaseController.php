@@ -46,6 +46,7 @@ use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\ChartAccountSaleConfiguration;
 use Modules\Accounting\Models\AccountingChartAccountConfiguration;
 use Modules\Accounting\Helpers\AccountBalanceHelper;
+use Modules\Accounting\Helpers\AccountingEntryHelper;
 
 class PurchaseController extends Controller
 {
@@ -248,12 +249,13 @@ class PurchaseController extends Controller
                     }
                 }
 
-                // Registrar asientos contables
-                if($doc->document_type_id == '01'){
+                // Registrar asientos contables compra/debito
+                if($doc->document_type_id == '01' || $doc->document_type_id == '09') {
                     $this->registerAccountingPurchaseEntries($doc);
                 }
 
-                if($doc->document_type_id == '07'){
+                // Registrar asientos contables credito
+                if($doc->document_type_id == '07') {
                     $this->registerAccountingCreditNotePurchase($doc);
                 }
 
@@ -276,167 +278,77 @@ class PurchaseController extends Controller
         }
     }
 
-    private function registerAccountingPurchaseEntries($document) {
-        $total = $document->total;
-        $total_tax = $document->total_tax;
-        $subtotal = $document->sale; // Neto de la compra
-
+    private function registerAccountingPurchaseEntries($document)
+    {
         $accountConfiguration = AccountingChartAccountConfiguration::first();
-        if($accountConfiguration){
-            $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
-        }
+        if(!$accountConfiguration) return;
+        $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
+        $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
+        $document_type = DocumentType::find($document->document_type_id);
 
-        if($accountConfiguration){
-            $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
-        }
-
-        //1 Registrar la entrada en el libro diario
-        $entry = JournalEntry::createWithNumber([
-            'date' => date('Y-m-d'),
-            'journal_prefix_id' => 2, // Prefijo para compras
-            'description' => 'Factura de Compra #'.$document->series . '-' . $document->number,
+        AccountingEntryHelper::registerEntry([
+            'prefix_id' => 2,
+            'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
             'purchase_id' => $document->id,
-            'status' => 'posted'
+            'movements' => [
+                [
+                    'account_id' => $accountIdInventory->id,
+                    'debit' => $document->sale,
+                    'credit' => 0,
+                    'affects_balance' => true,
+                ],
+                [
+                    'account_id' => $accountIdLiability->id,
+                    'debit' => 0,
+                    'credit' => $document->total,
+                    'affects_balance' => true,
+                ],
+            ],
+            'taxes' => $document->taxes ?? [],
+            'tax_config' => [
+                'tax_field' => 'chart_account_purchase',
+                'tax_debit' => true,
+                'tax_credit' => false,
+                'retention_debit' => false,
+                'retention_credit' => true,
+            ],
         ]);
-
-        // 2 Registrar los detalles contables
-
-        //Inventario de Mercancías (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdInventory->id, // ID de cuenta de inventario
-            'debit' => $subtotal,
-            'credit' => 0,
-        ]);
-        AccountBalanceHelper::applyMovementToBalance($accountIdInventory->id, Carbon::now(), $subtotal, 0);
-
-        //Cuentas por pagar a proveedores (Pasivo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdLiability->id, // ID de cuenta de cuentas por pagar
-            'debit' => 0,
-            'credit' => $total,
-        ]);
-        AccountBalanceHelper::applyMovementToBalance($accountIdLiability->id, Carbon::now(), 0, $total);
-
-        //IVA descontable (Activo)
-        if (!empty($document->taxes)) {
-            foreach ($document->taxes as $taxData) {
-                // Si $taxData es un array, conviértelo a objeto para acceder con ->
-                $tax = is_array($taxData) ? (object)$taxData : $taxData;
-
-                // Buscar el tax en la base de datos para obtener la cuenta contable
-                $taxModel = Tax::find($tax->id);
-
-                // Si existe la cuenta contable y el total es mayor a cero
-                if ($taxModel && $taxModel->chart_account_purchase && floatval($tax->total) > 0) {
-                    $account = ChartOfAccount::where('code', $taxModel->chart_account_purchase)->first();
-                    if ($account) {
-                        $entry->details()->create([
-                            'chart_of_account_id' => $account->id,
-                            'debit' => $tax->total,
-                            'credit' => 0,
-                        ]);
-                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), $tax->total, 0);
-                    }
-                }
-
-                // retenciones
-                if ($taxModel && $taxModel->chart_account_purchase && $tax->is_retention && floatval($tax->retention) > 0) {
-                    $account = ChartOfAccount::where('code', $taxModel->chart_account_purchase)->first();
-                    if ($account) {
-                        $entry->details()->create([
-                            'chart_of_account_id' => $account->id,
-                            'debit' => 0,
-                            'credit' => $tax->retention,
-                        ]);
-                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), $tax->retention, 0);
-                    }
-                }
-            }
-        }
     }
 
-    private function registerAccountingCreditNotePurchase($document) {
-        $total = $document->total;
-        $iva = $document->total_tax;
-        $subtotal = $document->sale; // Neto de la compra
-
+    private function registerAccountingCreditNotePurchase($document)
+    {
         $accountConfiguration = AccountingChartAccountConfiguration::first();
-        if($accountConfiguration){
-            $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
-        }
+        $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
+        $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
+        $document_type = DocumentType::find($document->document_type_id);
 
-        $taxIva = Tax::where('name','IVA5')->first();
-        if($taxIva){
-            $accountIdTax = ChartOfAccount::where('code',$taxIva->chart_account_return_purchase)->first();
-        }
-
-        if($accountConfiguration){
-            $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
-        }
-
-        //1 Registrar la entrada en el libro diario
-        $entry = JournalEntry::createWithNumber([
-            'date' => date('Y-m-d'),
-            'journal_prefix_id' => 2, // Prefijo para compras
-            'description' => 'Nota de Crédito #'.$document->series . '-' . $document->number,
+        AccountingEntryHelper::registerEntry([
+            'prefix_id' => 2,
+            'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
             'purchase_id' => $document->id,
-            'status' => 'posted'
+            'movements' => [
+                [
+                    'account_id' => $accountIdInventory->id,
+                    'debit' => $document->sale,
+                    'credit' => 0,
+                    'affects_balance' => true,
+                ],
+                [
+                    'account_id' => $accountIdLiability->id,
+                    'debit' => 0,
+                    'credit' => $document->total,
+                    'affects_balance' => true,
+                ],
+            ],
+            'taxes' => $document->taxes ?? [],
+            'tax_config' => [
+                'tax_field' => 'chart_account_return_purchase',
+                'tax_debit' => false,
+                'tax_credit' => true,
+                'retention_debit' => true,
+                'retention_credit' => false,
+            ],
         ]);
-
-        // 2 Registrar los detalles contables
-
-        //proveedores (Pasivo | Debe)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdLiability->id,
-            'debit' => $total,
-            'credit' => 0,
-        ]);
-        AccountBalanceHelper::applyMovementToBalance($accountIdLiability->id, Carbon::now(), $total, 0);
-
-        //Inventario de Mercancías (Activo | Haber)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdInventory->id, // ID de cuenta de inventario
-            'debit' => 0,
-            'credit' => $subtotal,
-        ]);
-        AccountBalanceHelper::applyMovementToBalance($accountIdInventory->id, Carbon::now(), 0, $subtotal);
-
-        //IVA descontable (Activo | Haber)
-        if (!empty($document->taxes)) {
-            foreach ($document->taxes as $taxData) {
-                // Si $taxData es un array, conviértelo a objeto para acceder con ->
-                $tax = is_array($taxData) ? (object)$taxData : $taxData;
-
-                // Buscar el tax en la base de datos para obtener la cuenta contable
-                $taxModel = Tax::find($tax->id);
-
-                // Si existe la cuenta contable y el total es mayor a cero
-                if ($taxModel && $taxModel->chart_account_return_purchase && floatval($tax->total) > 0) {
-                    $account = ChartOfAccount::where('code', $taxModel->chart_account_return_purchase)->first();
-                    if ($account) {
-                        $entry->details()->create([
-                            'chart_of_account_id' => $account->id,
-                            'debit' => 0,
-                            'credit' => $tax->total,
-                        ]);
-                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), 0, $tax->total);
-                    }
-                }
-
-                // retenciones
-                if ($taxModel && $taxModel->chart_account_return_purchase && $tax->is_retention && floatval($tax->retention) > 0) {
-                    $account = ChartOfAccount::where('code', $taxModel->chart_account_return_purchase)->first();
-                    if ($account) {
-                        $entry->details()->create([
-                            'chart_of_account_id' => $account->id,
-                            'debit' => $tax->retention,
-                            'credit' => 0,
-                        ]);
-                        AccountBalanceHelper::applyMovementToBalance($account->id, Carbon::now(), 0, $tax->retention);
-                    }
-                }
-            }
-        }
     }
 
     public function update(PurchaseRequest $request)
