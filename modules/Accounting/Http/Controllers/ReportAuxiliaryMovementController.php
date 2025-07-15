@@ -215,17 +215,17 @@ class ReportAuxiliaryMovementController extends Controller
         $writer->save($tempFile);
 
         // debug
-        $dataArray = $sheet->toArray();
-        echo '<table border="1">';
-        foreach ($dataArray as $row) {
-            echo '<tr>';
-            foreach ($row as $cell) {
-                echo '<td>' . htmlspecialchars($cell) . '</td>';
-            }
-            echo '</tr>';
-        }
-        echo '</table>';
-        exit;
+        // $dataArray = $sheet->toArray();
+        // echo '<table border="1">';
+        // foreach ($dataArray as $row) {
+        //     echo '<tr>';
+        //     foreach ($row as $cell) {
+        //         echo '<td>' . htmlspecialchars($cell) . '</td>';
+        //     }
+        //     echo '</tr>';
+        // }
+        // echo '</table>';
+        // exit;
 
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
