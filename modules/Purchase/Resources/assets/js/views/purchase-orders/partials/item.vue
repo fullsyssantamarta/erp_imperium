@@ -53,7 +53,17 @@
                             <small class="form-control-feedback" v-if="errors.discount" v-text="errors.discount[0]"></small>
                         </div>
                     </div>
-
+<div class="col-md-12">
+    <div class="form-group">
+        <label class="control-label">Notas del ítem</label>
+        <el-input
+            type="textarea"
+            v-model="form.notes"
+            :rows="2"
+            placeholder="Notas para este ítem">
+        </el-input>
+    </div>
+</div>
                     <div class="col-md-12"  v-if="form.item_unit_types.length > 0">
                         <div style="margin:3px" class="table-responsive">
                             <h3>Lista de Precios</h3>
@@ -172,7 +182,7 @@
                     discount: 0,
                     unit_type_id: null,
                     lots: [],
-
+                    notes: '',
                 }
 
                 this.item_unit_type = {};

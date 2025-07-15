@@ -17,7 +17,7 @@ class PurchaseOrderItem extends ModelTenant
         'item_id',
         'item',
         'quantity',
-
+        'notes',
         'unit_price',
         'total',
         'unit_type_id',

@@ -85,6 +85,19 @@
                                 <small class="form-control-feedback" v-if="errors.currency_id" v-text="errors.currency_id[0]"></small>
                             </div>
                         </div>
+                        <div class="col-lg-12">
+                            <div class="form-group">
+                                <label class="control-label">Notas de la compra</label>
+                                <el-input
+                                    type="textarea"
+                                    v-model="form.notes"
+                                    :rows="2"
+                                    maxlength="500"
+                                    show-word-limit
+                                    placeholder="Notas generales de la compra">
+                                </el-input>
+                            </div>
+                        </div>
                         <div class="col-md-8 mt-4">
                             <div class="form-group" >
                                 <el-checkbox v-model="form.has_client" @change="changeHasClient">¿Desea agregar el cliente para esta compra?</el-checkbox>
@@ -643,9 +656,10 @@
                             this.form.total_discount = purchase_order.total_discount
                             this.form.taxes = purchase_order.taxes
                             this.currency_type = _.find(this.currencies, {'id': this.form.currency_id})
-
+                            this.form.notes = purchase_order.notes || ''
                             this.form.items.forEach((it)=>{
                                 it.warehouse_id = warehouse.id
+                                it.notes = it.notes || ''
                             })
                             // this.changeDocumentType()
 

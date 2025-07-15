@@ -66,7 +66,7 @@ if($current_hostname) {
 
                 Route::get('download-attached/{external_id}', 'PurchaseOrderController@downloadAttached');
                 Route::get('sale-opportunity/{id}', 'PurchaseOrderController@generateFromSaleOpportunity');
-
+                Route::post('send-email', 'PurchaseOrderController@sendEmailApi');
             });
 
             Route::prefix('purchase-payments')->group(function () {

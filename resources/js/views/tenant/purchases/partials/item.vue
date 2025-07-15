@@ -127,6 +127,19 @@
                             </el-input>
                         </div>
                     </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label class="control-label">Notas del ítem</label>
+                            <el-input
+                                type="textarea"
+                                v-model="form.notes"
+                                :rows="2"
+                                maxlength="250"
+                                show-word-limit
+                                placeholder="Notas para este ítem">
+                            </el-input>
+                        </div>
+                    </div>
                     <div class="col-md-12"  v-if="form.item_unit_types.length > 0">
                         <div style="margin:3px" class="table-responsive">
                             <h5 class="separator-title">
@@ -289,6 +302,7 @@
                     discount_type: 'percentage',
                     discount_percentage: 0,
                     sale_unit_price: 0,
+                    notes: '',
                 }
 
                 this.item_unit_type = {};
@@ -306,6 +320,7 @@
                     this.form.quantity = this.recordItem.quantity
                     this.form.unit_price = this.recordItem.unit_price
                     this.form.discount_type = this.recordItem.discount_type
+                    this.form.notes = this.recordItem.notes || ''
 
                     if(this.form.discount_type == 'percentage') {
                         this.form.discount = this.recordItem.discount_percentage
