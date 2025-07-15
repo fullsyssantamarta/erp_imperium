@@ -40,17 +40,29 @@
             <th>Número de documento</th>
             <th>Nombre del tercero</th>
             <th>Descripción</th>
+            <th>Saldo inicial</th>
             <th>Débito</th>
             <th>Crédito</th>
+            <th>Saldo final</th>
         </tr>
         <tbody>
+            @php
+                $total_debit = 0;
+                $total_credit = 0;
+            @endphp
             @foreach ($accounts as $group)
+                @php
+                    $total_debit += $group['total_debit'];
+                    $total_credit += $group['total_credit'];
+                @endphp
                 <tr>
                     <td colspan="7">
                         <strong>Cuenta contable:</strong> {{ $group['account_code'] }} {{ $group['account_name'] }}
                     </td>
+                    <td>{{ $group['balance_initial'] }}</td>
                     <td>{{ $group['total_debit'] }}</td>
                     <td>{{ $group['total_credit'] }}</td>
+                    <td>{{ $group['balance_final'] }}</td>
                 </tr>
                     @foreach ($group['details'] as $row)
                         <tr>
@@ -61,11 +73,26 @@
                             <td>{{ $row['document_info']['third_party_number'] }}</td>
                             <td>{{ $row['document_info']['third_party_name'] }}</td>
                             <td>{{ $row['description'] }}</td>
+                            <td class="text-right">0</td>
                             <td class="text-right">{{ $row['debit'] }}</td>
                             <td class="text-right">{{ $row['credit'] }}</td>
+                            <td class="text-right">0</td>
                         </tr>
                     @endforeach
             @endforeach
+            <tr>
+                <td>TOTAL</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="text-right"></td>
+                <td class="text-right">{{ $total_debit }}</td>
+                <td class="text-right">{{ $total_credit }}</td>
+                <td class="text-right"></td>
+            </tr>
         </tbody>
     </table>
     {{-- {{dd($accounts)}} --}}
