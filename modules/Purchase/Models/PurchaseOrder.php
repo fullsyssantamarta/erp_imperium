@@ -52,7 +52,7 @@ class PurchaseOrder extends ModelTenant
         'purchase_quotation_id',
         'payment_method_type_id',
         'sale_opportunity_id',
-
+        'notes',
         'currency_id',
         'taxes',
         'sale',

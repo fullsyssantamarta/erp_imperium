@@ -54,7 +54,7 @@ class Purchase extends ModelTenant
         'total_perception',
         'perception_number',
         'perception_date',
-
+        'notes',
         'charges',
         'discounts',
         'prepayments',

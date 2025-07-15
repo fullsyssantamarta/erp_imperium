@@ -1490,6 +1490,9 @@ class DocumentController extends Controller
             if($this->document->type_document_id == 3 ){
                 $this->registerAccountingCreditNoteEntries($this->document);
             }
+            if($this->document->type_document_id == 2 ){
+                $this->registerAccountingSaleEntries($this->document);
+            }
 
         }
         catch (\Exception $e) {

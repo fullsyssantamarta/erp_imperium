@@ -180,7 +180,10 @@
             </td>
             <td class="text-center align-top">{{ $row->item->unit_type->name }}</td>
             <td class="text-left">
-                {!!$row->item->name!!} @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
+                {!!$row->item->name!!}
+                @if (!empty($row->notes))
+                    <br><span style="font-size: 10px; color: #555;">Notas: {{ $row->notes }}</span>
+                @endif
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/><span style="font-size: 9px">{!! $attr->description !!} : {{ $attr->value }}</span>
@@ -222,7 +225,16 @@
                 </tr>
             @endif
         @endforeach
-
+        @if(isset($document->taxes))
+            @foreach($document->taxes as $tax)
+                @if(isset($tax->is_retention) && $tax->is_retention && isset($tax->retention) && $tax->retention > 0)
+                    <tr>
+                        <td colspan="5" class="text-right font-bold">{{ $tax->name }} (-): {{ optional($document->currency)->symbol }}</td>
+                        <td class="text-right font-bold">{{ number_format($tax->retention, 2) }}</td>
+                    </tr>
+                @endif
+            @endforeach
+        @endif
         <tr>
             <td colspan="5" class="text-right font-bold">SUBTOTAL: {{ $document->currency->symbol }}</td>
             <td class="text-right font-bold">{{ $document->subtotal }}</td>
@@ -233,6 +245,11 @@
             <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
         </tr>
     </tbody>
+    @if (!empty($document->notes))
+        <tr>
+            <td colspan="6" class="font-bold">Notas: {{ $document->notes }}</td>
+        </tr>
+    @endif
 </table>
 <table class="full-width">
     <tr>

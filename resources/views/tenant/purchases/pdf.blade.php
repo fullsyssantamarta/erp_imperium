@@ -158,7 +158,11 @@
                 </td>
                 <td class="text-center align-top">{{ $row->item->unit_type->name }}</td>
                 <td class="text-left">
-                    {!!$row->item->name!!}
+                    {!! $row->item->name !!}
+                    @if (!empty($row->notes))
+                        <br>
+                        <span style="font-size: 10px; color: #555;">Notas: {{ $row->notes }}</span>
+                    @endif
                 </td>
                 <td class="text-right align-top">{{ number_format($row->unit_price, 2) }}</td>
                 <td class="text-right align-top">
@@ -183,12 +187,20 @@
             <td class="text-right font-bold">{{ number_format($document->subtotal - $document->total_tax, 2) }}</td>
         </tr>
         @foreach ($document->taxes as $tax)
-            @if ((($tax->total > 0) && (!$tax->is_retention)))
-                <tr >
+            @if (($tax->total > 0) && (!$tax->is_retention))
+                <tr>
                     <td colspan="5" class="text-right font-bold">
-                        {{$tax->name}}(+): {{ $document->currency->symbol }}
+                        {{ $tax->name }} (+): {{ $document->currency->symbol }}
                     </td>
-                    <td class="text-right font-bold">{{number_format($tax->total, 2)}} </td>
+                    <td class="text-right font-bold">{{ number_format($tax->total, 2) }}</td>
+                </tr>
+            @endif
+        @endforeach
+        @foreach ($document->taxes as $tax)
+            @if (isset($tax->is_retention) && $tax->is_retention && isset($tax->retention) && $tax->retention > 0)
+                <tr>
+                    <td colspan="5" class="text-right font-bold">{{ $tax->name }} (-): {{ $document->currency->symbol }}</td>
+                    <td class="text-right font-bold">{{ number_format($tax->retention, 2) }}</td>
                 </tr>
             @endif
         @endforeach
@@ -197,6 +209,13 @@
             <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
         </tr>
     </tbody>
+    @if (!empty($document->notes))
+        <table class="full-width">
+            <tr>
+                <td colspan="6" class="font-bold">Notas: {{ $document->notes }}</td>
+            </tr>
+        </table>
+    @endif
 </table>
 <br>
 <table class="full-width">

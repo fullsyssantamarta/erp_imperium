@@ -47,7 +47,7 @@ class PurchaseItem extends ModelTenant
         // 'charges',
         'lot_code',
         'warehouse_id',
-
+        'notes',
         'unit_type_id',
         'tax_id',
         'tax',

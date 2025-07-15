@@ -30,8 +30,13 @@
                     </button>
                 </div> 
             </template>
-
-            
+            <div class="col-lg-12 col-md-12 col-sm-12 text-center font-weight-bold mt-4">
+                <div class="col-12">
+                    <el-input v-model="email_to" placeholder="Correo">
+                    <el-button  slot="append" icon="el-icon-message" @click="sendEmail" :loading="sendingEmail">Enviar</el-button>
+                    </el-input>
+                </div>
+            </div>
         </div>   
         <span slot="footer" class="dialog-footer">
             <template v-if="showClose">
@@ -57,6 +62,8 @@
                 button_text:'Nueva OC',
                 errors: {},
                 form: {},
+                email_to: '',
+                sendingEmail: false, 
             }
         },
         created() {
@@ -99,6 +106,30 @@
             clickClose() {
                 this.$emit('update:showDialog', false)
                 this.initForm()
+            },
+            sendEmail() {
+                if(!this.email_to) {
+                    this.$message.error('Debe ingresar un correo destinatario');
+                    return;
+                }
+                this.sendingEmail = true;
+                this.$http.post(`/${this.resource}/send-email`, {
+                    id: this.form.id,
+                    email_cc: this.email_to
+                })
+                .then(res => {
+                    if(res.data.success) {
+                        this.$message.success('Correo enviado correctamente');
+                    } else {
+                        this.$message.error(res.data.message || 'Error al enviar el correo');
+                    }
+                })
+                .catch(() => {
+                    this.$message.error('Error al enviar el correo');
+                })
+                .finally(() => {
+                    this.sendingEmail = false;
+                });
             },
         }
     }
