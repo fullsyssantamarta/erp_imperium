@@ -18,13 +18,41 @@
 
         @include('report::co-items-sold.partials.filters')
 
-        @if($records->count() > 0)
-            @php
-                $grouped_records = $records->groupBy(function($item) {
-                    $data = $item->getDataReportSoldItems();
-                    return $data['type_name'] . '-' . $data['internal_id'] . '-' . $data['name'];
-                });
-            @endphp
+        @php
+            // 1. Identifica los IDs de facturas anuladas (las que tienen nota de crédito de anulación)
+            $anulaciones = $records->filter(function($item) {
+                $doc = $item->document;
+                return isset($doc) && $doc->type_document_id == '3' && in_array($doc->note_concept_id, [5, 9]) && $doc->reference_id;
+            });
+
+            $facturas_anuladas_ids = $anulaciones->pluck('document.reference_id')->unique()->toArray();
+
+            // 2. Filtra los registros: excluye facturas anuladas y sus notas de crédito de anulación
+            $filtered_records = $records->filter(function($item) use ($facturas_anuladas_ids) {
+                // Excluir si es la factura anulada
+                if (in_array($item->document_id, $facturas_anuladas_ids)) {
+                    return false;
+                }
+                // Excluir si es la nota de crédito de anulación de esa factura
+                if (
+                    isset($item->document) &&
+                    $item->document->type_document_id == '3' &&
+                    in_array($item->document->note_concept_id, [5, 9]) &&
+                    in_array($item->document->reference_id, $facturas_anuladas_ids)
+                ) {
+                    return false;
+                }
+                return true;
+            });
+
+            // 3. Agrupa normalmente (por producto)
+            $grouped_records = $filtered_records->groupBy(function($item) {
+                $data = $item->getDataReportSoldItems();
+                return $data['internal_id'] . '-' . $data['name'];
+            });
+        @endphp
+
+        @if($grouped_records->count() > 0)
             <div class="">
                 <div class="">
                     <table class="">

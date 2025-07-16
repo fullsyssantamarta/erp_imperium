@@ -40,12 +40,25 @@ class ReportKardexCollection extends ResourceCollection
         switch ($row->inventory_kardexable_type) {
 
             case $models[0]: //venta
+                $isCreditNote = isset($row->inventory_kardexable->document_type_id) && $row->inventory_kardexable->document_type_id == 3;
+                $isCreditNoteConcept = isset($row->inventory_kardexable->note_concept_id) && $row->inventory_kardexable->note_concept_id == 5;
+                $isVoided = $isCreditNote && !$isCreditNoteConcept && $row->quantity > 0;
+                $type_transaction = "Venta";
+                if ($isCreditNote) {
+                    if ($isCreditNoteConcept) {
+                        $type_transaction = "Anulación Venta";
+                    } else {
+                        $type_transaction = "Devolución Venta";
+                    }
+                } elseif ($row->quantity > 0) {
+                    $type_transaction = "Anulación Venta";
+                }
                 return [
                     'id' => $row->id,
                     'item_name' => $row->item->description,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
-                    'type_transaction' => ($row->quantity < 0) ? "Venta":"Anulación Venta",
+                    'type_transaction' => $type_transaction,
                     'number' => optional($row->inventory_kardexable)->series.'-'.optional($row->inventory_kardexable)->number,
                     'input' => ($row->quantity > 0) ?  $row->quantity:"-",
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",

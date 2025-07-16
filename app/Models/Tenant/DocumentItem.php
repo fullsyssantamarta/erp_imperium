@@ -168,17 +168,43 @@ class DocumentItem extends ModelTenant
     {
         $cost = $this->generalApplyNumberFormat($this->relation_item->purchase_unit_price * $this->quantity);
 
+        $type_name = 'Factura';
+        $factor = 1;
+        $reference_number = null;
+
+        if (
+            isset($this->document) &&
+            $this->document->type_document_id == '3'
+        ) {
+            if (isset($this->document->note_concept_id) && $this->document->note_concept_id == 5) {
+                $type_name = 'Nota de Crédito (Anulación)';
+                $factor = -1;
+
+                // Buscar la factura referenciada
+                if ($this->document->reference_id) {
+                    $referenced = Document::find($this->document->reference_id);
+                    if ($referenced) {
+                        $reference_number = $referenced->prefix . '-' . $referenced->number;
+                    }
+                }
+            } else {
+                $type_name = 'Nota de Crédito';
+                $factor = -1;
+            }
+        }
+
         return [
-            'type_name' => 'FE',
+            'type_name' => $type_name,
             'internal_id' => $this->item->internal_id,
             'name' => $this->item->name,
-            'quantity' => (float) $this->quantity,
-            'cost' => $cost,
-            'net_value' => $this->net_value,
-            'discount' => $this->discount,
-            'utility' => $this->generalApplyNumberFormat($this->net_value - $cost),
-            'total_tax' => $this->total_tax,
-            'total' => $this->total,
+            'quantity' => (float) $this->quantity * $factor,
+            'cost' => $cost * $factor,
+            'net_value' => $this->net_value * $factor,
+            'discount' => $this->discount * $factor,
+            'utility' => $this->generalApplyNumberFormat(($this->net_value - $cost) * $factor),
+            'total_tax' => $this->total_tax * $factor,
+            'total' => $this->total * $factor,
+            'reference_number' => $reference_number,
         ];
     }
 
@@ -201,7 +227,10 @@ class DocumentItem extends ModelTenant
                         return $query->select([
                             'id',
                             'prefix',
-                            'number'
+                            'number',
+                            'type_document_id',
+                            'note_concept_id',
+                            'reference_id' // <-- Agrega este campo
                         ]);
                     },
                     'relation_item' => function($query){

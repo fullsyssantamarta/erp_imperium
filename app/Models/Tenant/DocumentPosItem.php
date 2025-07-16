@@ -225,12 +225,12 @@ class DocumentPosItem extends ModelTenant
         $establishment_id = $request->establishment_id ?? null;
 
         return $query->whereHas('document_pos', function($document) use ($customer_id, $user_id, $start_date, $end_date, $start_time, $end_time, $establishment_id){
-
             return $document->filterByCustomer($customer_id)
                             ->filterByUser($user_id)
                             ->filterByRangeTimeOfIssue($start_time, $end_time)
                             ->filterByRangeDateOfIssue($start_date, $end_date)
-                            ->filterByEstablishment($establishment_id);
+                            ->filterByEstablishment($establishment_id)
+                            ->where('state_type_id', '!=', '11');
         });
     }
 
