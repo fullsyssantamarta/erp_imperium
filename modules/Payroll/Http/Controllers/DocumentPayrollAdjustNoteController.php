@@ -151,55 +151,70 @@ class DocumentPayrollAdjustNoteController extends Controller
             return $this->getErrorFromException($e->getMessage(), $e);
         }
     }
+
     protected function processAccruedData($accrued)
-        {
-            $total_accrued = floatval($accrued['total_base_salary']);
+    {
+        $total_accrued = floatval($accrued['total_base_salary'] ?? 0);
 
-            $direct_fields = [
-                'transportation_allowance',
-                'total_extra_hours',
-                'total_license'
-            ];
+        $direct_fields = [
+            'transportation_allowance',
+            'total_extra_hours',
+            'total_license',
+            'endowment',
+            'sustenance_support',
+            'telecommuting',
+            'withdrawal_bonus',
+            'compensation',
+            'salary_viatics',
+            'non_salary_viatics',
+            'refund'
+        ];
 
-            $array_fields = [
-                'other_concepts' => ['salary_concept', 'non_salary_concept'],
-                'work_disabilities' => ['value'],
-                'service_bonus' => ['value'],
-                'severance' => ['value'],
-                'common_vacation' => ['value'],
-                'paid_vacation' => ['value'],
-                'bonuses' => ['value'],
-                'aid' => ['value'],
-                'commissions' => ['value'],
-                'third_party_payments' => ['value'],
-                'advances' => ['value'],
-                'compensations' => ['value'],
-                'epctv_bonuses' => ['value']
-            ];
-
-            foreach ($direct_fields as $field) {
-                if (isset($accrued[$field]) && !empty($accrued[$field])) {
-                    $total_accrued += floatval($accrued[$field]);
-                }
+        foreach ($direct_fields as $field) {
+            if (isset($accrued[$field]) && $accrued[$field] !== null && $accrued[$field] !== '') {
+                $total_accrued += floatval($accrued[$field]);
             }
+        }
 
-            foreach ($array_fields as $field => $value_keys) {
-                if (isset($accrued[$field]) && !empty($accrued[$field])) {
-                    foreach ($accrued[$field] as $item) {
-                        foreach ($value_keys as $value_key) {
-                            if (isset($item[$value_key])) {
-                                $total_accrued += floatval($item[$value_key]);
-                            }
+        $array_fields = [
+            'heds' => ['payment'],
+            'hens' => ['payment'],
+            'hrns' => ['payment'],
+            'heddfs' => ['payment'],
+            'hrddfs' => ['payment'],
+            'hendfs' => ['payment'],
+            'hrndfs' => ['payment'],
+            'work_disabilities' => ['payment'],
+            'service_bonus' => ['payment', 'paymentNS'],
+            'severance' => ['payment', 'interest_payment'],
+            'common_vacation' => ['payment'],
+            'paid_vacation' => ['payment'],
+            'bonuses' => ['salary_bonus', 'non_salary_bonus'],
+            'aid' => ['salary_assistance', 'non_salary_assistance'],
+            'other_concepts' => ['salary_concept', 'non_salary_concept'],
+            'commissions' => ['commission'],
+            'epctv_bonuses' => ['paymentS', 'paymentNS', 'salary_food_payment', 'non_salary_food_payment'],
+            'third_party_payments' => ['third_party_payment'],
+            'advances' => ['advance'],
+            'compensations' => ['ordinary_compensation', 'extraordinary_compensation'],
+            'legal_strike' => ['payment'],
+        ];
+
+        foreach ($array_fields as $field => $value_keys) {
+            if (isset($accrued[$field]) && is_array($accrued[$field])) {
+                foreach ($accrued[$field] as $item) {
+                    foreach ($value_keys as $value_key) {
+                        if (isset($item[$value_key]) && $item[$value_key] !== null && $item[$value_key] !== '') {
+                            $total_accrued += floatval($item[$value_key]);
                         }
                     }
-                } else {
-                    unset($accrued[$field]);
                 }
             }
-
-            $accrued['accrued_total'] = $total_accrued;
-
-            return $accrued;
         }
+
+        $accrued['accrued_total'] = round($total_accrued, 2);
+
+        return $accrued;
+    }
         
 }
