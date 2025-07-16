@@ -60,6 +60,7 @@ use Modules\Accounting\Models\JournalPrefix;
 use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\ChartAccountSaleConfiguration;
 use Modules\Accounting\Models\AccountingChartAccountConfiguration;
+use Modules\Accounting\Helpers\AccountingEntryHelper;
 
 
 class DocumentController extends Controller
@@ -1062,124 +1063,48 @@ class DocumentController extends Controller
         }
     }
 
-    private function registerAccountingSaleEntries($document) {
-        $total = $document->total;
-        $total_tax = $document->total_tax;
-        $subtotal = $document->sale;
+    private function registerAccountingSaleEntries($document)
+    {
+        try {
+            $saleCost = AccountingChartAccountConfiguration::first();
+            $accountIdCash = ChartOfAccount::where('code','110505')->first();
+            $accountIdIncome = ChartOfAccount::where('code','413595')->first();
+            $document_type = TypeDocument::find($document->type_document_id);
 
-        // $accountIdAsset = ChartOfAccount::where('code','13050501')->first();
-
-        $accountIdCash = ChartOfAccount::where('code','110505')->first();
-        $accountIdIncome = ChartOfAccount::where('code','413595')->first();
-
-        $saleCost = AccountingChartAccountConfiguration::first();
-        if($saleCost){
-            $accountIdSaleCost = ChartOfAccount::where('code',$saleCost->sale_cost_account)->first();
-        }
-
-        $assetInventory = ChartAccountSaleConfiguration::first();
-        if($assetInventory){
-            $accountIdInventory = ChartOfAccount::where('code',$assetInventory->income_account)->first();
-        }
-
-        // dd($accountIdCash,$accountIdIncome,$accountIdSaleCost,$accountIdInventory);
-
-        if($accountIdCash && $accountIdIncome){
-
-            $entry = JournalEntry::createWithNumber([
-                'date' => date('Y-m-d'),
-                'journal_prefix_id' => 1,
-                'description' => 'Factura de Venta #'.$document->prefix.'-'.$document->number,
+            AccountingEntryHelper::registerEntry([
+                'prefix_id' => 1,
+                'description' => $document_type->name . ' #' . $document->prefix . '-' . $document->number,
                 'document_id' => $document->id,
-                'status' => 'posted'
+                'movements' => [
+                    [
+                        'account_id' => $accountIdCash->id,
+                        'debit' => $document->total,
+                        'credit' => 0,
+                        'affects_balance' => true,
+                    ],
+                    [
+                        'account_id' => $accountIdIncome->id,
+                        'debit' => 0,
+                        'credit' => $document->sale,
+                        'affects_balance' => true,
+                    ],
+                ],
+                'taxes' => $document->taxes ?? [],
+                'tax_config' => [
+                    'tax_field' => 'chart_account_sale',
+                    'tax_debit' => false,
+                    'tax_credit' => true,
+                    'retention_debit' => true,
+                    'retention_credit' => false,
+                ],
             ]);
-
-            //Caja general (contado)
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdCash->id,
-                'debit' => $total,
-                'credit' => 0,
-            ]);
-
-            //Ingresos por ventas (Ingreso)
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdIncome->id,
-                'debit' => 0,
-                'credit' => $subtotal,
-            ]);
-
-            //Cuentas por cobrar (Activo)
-            // $entry->details()->create([
-            //     'chart_of_account_id' => $accountIdAsset->id,
-            //     'debit' => $total,
-            //     'credit' => 0,
-            // ]);
-
-            //Costo de ventas TO DO
-            // $entry->details()->create([
-            //     'chart_of_account_id' => $accountIdSaleCost->id,
-            //     'debit' => 0,
-            //     'credit' => 0,
-            // ]);
-
-            //Inventarios TO DO
-            // $entry->details()->create([
-            //     'chart_of_account_id' => $accountIdInventory->id,
-            //     'debit' => 0,
-            //     'credit' => 0,
-            // ]);
-
-            // Impuestos
-            if (!empty($document->taxes)) {
-                foreach ($document->taxes as $taxData) {
-                    // Si $taxData es un array, conviértelo a objeto para acceder con ->
-                    $tax = is_array($taxData) ? (object)$taxData : $taxData;
-
-                    // Buscar el tax en la base de datos para obtener la cuenta contable
-                    $taxModel = Tax::find($tax->id);
-
-                    if (!$taxModel) continue;
-
-                    // Si existe la cuenta contable y el total es mayor a cero
-                    if ($taxModel && $taxModel->chart_account_sale && floatval($tax->total) > 0) {
-                        $account = ChartOfAccount::where('code', $taxModel->chart_account_sale)->first();
-                        if ($account) {
-                            $entry->details()->create([
-                                'chart_of_account_id' => $account->id,
-                                'debit' => 0,
-                                'credit' => $tax->total,
-                            ]);
-                        }
-                    }
-
-                    // retenciones
-                    if ($taxModel && $taxModel->chart_account_sale && $tax->is_retention && floatval($tax->retention) > 0) {
-                        $account = ChartOfAccount::where('code', $taxModel->chart_account_sale)->first();
-                        if ($account) {
-                            $entry->details()->create([
-                                'chart_of_account_id' => $account->id,
-                                'debit' => $tax->retention,
-                                'credit' => 0,
-                            ]);
-                        }
-                    }
-                }
-            }
-
-        } else {
-            $accountingValueErrors = [
-                'accountIdCash' => $accountIdCash ? $accountIdCash->code : 'No encontrado',
-                'accountIdIncome' => $accountIdIncome ? $accountIdIncome->code : 'No encontrado',
-                'accountIdSaleCost' => isset($accountIdSaleCost) ? ($accountIdSaleCost ? $accountIdSaleCost->code : 'No encontrado') : 'No encontrado',
-                'accountIdInventory' => isset($accountIdInventory) ? ($accountIdInventory ? $accountIdInventory->code : 'No encontrado') : 'No encontrado'
-            ];
-            \Log::debug('No se pudo registrar la entrada contable'. json_encode($accountingValueErrors));
+        } catch (\Exception $e) {
+            \Log::error('insert Entry '.$e->getMessage());
         }
-
     }
 
     public function preeliminarview(DocumentRequest $request){
-//        \Log::debug($invoice_json);
+        //        \Log::debug($invoice_json);
         try {
             if(!$request->customer_id){
                 $customer = (object)$request->service_invoice['customer'];
@@ -1212,7 +1137,7 @@ class DocumentController extends Controller
             $ignore_state_document_id = true;
             $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
 
-//            \Log::debug($correlative_api);
+            //            \Log::debug($correlative_api);
 
             if(!is_numeric($correlative_api)){
                 return [
@@ -1220,7 +1145,7 @@ class DocumentController extends Controller
                     'message' => 'Error al obtener correlativo Api.'
                 ];
             }
-//            \Log::debug($invoice_json_decoded);
+            //            \Log::debug($invoice_json_decoded);
 
             $service_invoice = $request->service_invoice;
 
@@ -1229,9 +1154,9 @@ class DocumentController extends Controller
             $service_invoice['resolution_number'] = $request->resolution_number;
             $service_invoice['head_note'] = "V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R";
             $service_invoice['foot_note'] = "Modo de operación: Software Propio - by ".env('APP_NAME', 'FACTURADOR')." La presente Factura Electrónica de Venta, es un título valor de acuerdo con lo establecido en el Código de Comercio y en especial en los artículos 621,772 y 774. El Decreto 2242 del 24 de noviembre de 2015 y el Decreto Único 1074 de mayo de 2015. El presente título valor se asimila en todos sus efectos a una letra de cambio Art. 779 del Código de Comercio. Con esta el Comprador declara haber recibido real y materialmente las mercancías o prestación de servicios descritos en este título valor.";
-//\Log::debug(json_encode($service_invoice));
+            //\Log::debug(json_encode($service_invoice));
             $service_invoice['web_site'] = env('APP_NAME', 'FACTURADOR');
-//\Log::debug(json_encode($service_invoice));
+            //\Log::debug(json_encode($service_invoice));
             if(!is_null($this->company['jpg_firma_facturas']))
               if(file_exists(public_path('storage/uploads/logos/'.$this->company['jpg_firma_facturas']))){
                   $firma_facturacion = base64_encode(file_get_contents(public_path('storage/uploads/logos/'.$this->company['jpg_firma_facturas'])));
@@ -1302,12 +1227,12 @@ class DocumentController extends Controller
 
             $ch = curl_init("{$base_url}ubl2.1/invoice/preeliminar-view");
             $data_document = json_encode($service_invoice);
-//\Log::debug("{$base_url}ubl2.1/invoice");
-//\Log::debug($company->api_token);
-//\Log::debug($correlative_api);
-//\Log::debug($data_document);
-//            return $data_document;
-//return "";
+            //\Log::debug("{$base_url}ubl2.1/invoice");
+            //\Log::debug($company->api_token);
+            //\Log::debug($correlative_api);
+            //\Log::debug($data_document);
+            //            return $data_document;
+            //return "";
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
             curl_setopt($ch, CURLOPT_POSTFIELDS,($data_document));
@@ -1319,7 +1244,7 @@ class DocumentController extends Controller
                 "Authorization: Bearer {$company->api_token}"
             ));
             $response = curl_exec($ch);
-//\Log::debug($response);
+            //\Log::debug($response);
             curl_close($ch);
             $response_model = json_decode($response);
             // dd($response_model);
@@ -1427,13 +1352,13 @@ class DocumentController extends Controller
             ));
             $response = curl_exec($ch);
             curl_close($ch);
-//\Log::debug("{$base_url}ubl2.1/invoice");
-//\Log::debug($company->api_token);
-//\Log::debug($correlative_api);
-//\Log::debug($data_document);
-//            return $data_document;
-\Log::debug($response);
-//return "";
+            //\Log::debug("{$base_url}ubl2.1/invoice");
+            //\Log::debug($company->api_token);
+            //\Log::debug($correlative_api);
+            //\Log::debug($data_document);
+            //            return $data_document;
+            \Log::debug($response);
+            //return "";
 
             $response_model = json_decode($response);
             $zip_key = null;
@@ -1565,6 +1490,9 @@ class DocumentController extends Controller
             if($this->document->type_document_id == 3 ){
                 $this->registerAccountingCreditNoteEntries($this->document);
             }
+            if($this->document->type_document_id == 2 ){
+                $this->registerAccountingSaleEntries($this->document);
+            }
 
         }
         catch (\Exception $e) {
@@ -1627,83 +1555,43 @@ class DocumentController extends Controller
         ];
     }
 
-    private function registerAccountingCreditNoteEntries($document) {
-        $total = $document->total;
-        $total_tax = $document->total_tax;
-        $subtotal = $document->sale ;
-
-
-        $accountIdIncome = ChartOfAccount::where('code','41750501')->first();
-
-        $taxIva = Tax::where('name','IVA5')->first();
-        if($taxIva){
-            $accountIdLiability = ChartOfAccount::where('code',$taxIva->chart_account_return_sale)->first();
-        }
-
-        $accountConfiguration = AccountingChartAccountConfiguration::first();
-
-        if($accountConfiguration){
+    private function registerAccountingCreditNoteEntries($document)
+    {
+        try {
+            $accountConfiguration = AccountingChartAccountConfiguration::first();
             $accountIdCustomer = ChartOfAccount::where('code',$accountConfiguration->customer_returns_account)->first();
-        }
+            $accountIdIncome = ChartOfAccount::where('code','417505')->first();
+            $document_type = TypeDocument::find($document->type_document_id);
 
-        if($accountIdCustomer && $accountIdIncome && $accountIdLiability){
-
-            $entry = JournalEntry::createWithNumber([
-                'date' => date('Y-m-d'),
-                'journal_prefix_id' => 1,
-                'description' => 'Nota de Crédito #'.$document->prefix.'-'.$document->number,
+            AccountingEntryHelper::registerEntry([
+                'prefix_id' => 1,
+                'description' => $document_type->name . ' #' . $document->prefix . '-' . $document->number,
                 'document_id' => $document->id,
-                'status' => 'posted'
+                'movements' => [
+                    [
+                        'account_id' => $accountIdCustomer->id,
+                        'debit' => 0,
+                        'credit' => $document->total,
+                        'affects_balance' => true,
+                    ],
+                    [
+                        'account_id' => $accountIdIncome->id,
+                        'debit' => $document->sale,
+                        'credit' => 0,
+                        'affects_balance' => true,
+                    ],
+                ],
+                'taxes' => $document->taxes ?? [],
+                'tax_config' => [
+                    'tax_field' => 'chart_account_return_sale',
+                    'tax_debit' => true,
+                    'tax_credit' => false,
+                    'retention_debit' => false,
+                    'retention_credit' => true,
+                ],
             ]);
-
-            //ventas
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdIncome->id,
-                'debit' => $subtotal,
-                'credit' => 0,
-            ]);
-
-            //Clientes
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdCustomer->id,
-                'debit' => 0,
-                'credit' => $total,
-            ]);
-
-            //IVA descontable (Activo)
-            if (!empty($document->taxes)) {
-                foreach ($document->taxes as $taxData) {
-                    // Si $taxData es un array, conviértelo a objeto para acceder con ->
-                    $tax = is_array($taxData) ? (object)$taxData : $taxData;
-
-                    // Buscar el tax en la base de datos para obtener la cuenta contable
-                    $taxModel = Tax::find($tax->id);
-
-                    // Si existe la cuenta contable y el total es mayor a cero
-                    if ($taxModel && $taxModel->chart_account_return_sale && floatval($tax->total) > 0) {
-                        $account = ChartOfAccount::where('code', $taxModel->chart_account_return_sale)->first();
-                        if ($account) {
-                            $entry->details()->create([
-                                'chart_of_account_id' => $account->id,
-                                'debit' => $tax->total,
-                                'credit' => 0,
-                            ]);
-                        }
-                    }
-
-                    // retenciones
-                    if ($taxModel && $taxModel->chart_account_return_sale && $tax->is_retention && floatval($tax->retention) > 0) {
-                        $account = ChartOfAccount::where('code', $taxModel->chart_account_return_sale)->first();
-                        if ($account) {
-                            $entry->details()->create([
-                                'chart_of_account_id' => $account->id,
-                                'debit' => 0,
-                                'credit' => $tax->retention,
-                            ]);
-                        }
-                    }
-                }
-            }
+        } catch (\Exception $e) {
+            \Log::error('insert Entry '.$e->getMessage());
         }
     }
 
