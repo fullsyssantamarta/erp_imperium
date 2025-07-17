@@ -199,6 +199,19 @@
                             </div>
                         </div>
                     </template>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <el-checkbox v-model="show_purchase_order_number">
+                                Ingresar número de orden de compra
+                            </el-checkbox>
+                            <el-input
+                                v-if="show_purchase_order_number"
+                                v-model="form.purchase_order_number"
+                                placeholder="Número de orden de compra"
+                                maxlength="100"
+                            ></el-input>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="form-actions text-right pt-2">
@@ -283,6 +296,7 @@
                 all_taxes:[],
                 taxes:[],
                 items_aiu: [],
+                show_purchase_order_number: false,
             }
         },
         computed: {
@@ -442,6 +456,11 @@
                     this.calculateQuantity()
                 }else{
                     this.isUpdateWarehouseId = null
+                }
+                // Si el item ya tiene purchase_order_number, mostrar el campo y setear el valor
+                this.show_purchase_order_number = !!(this.recordItem && this.recordItem.purchase_order_number);
+                if (this.show_purchase_order_number && this.recordItem) {
+                    this.form.purchase_order_number = this.recordItem.purchase_order_number;
                 }
             },
             close() {
