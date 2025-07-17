@@ -36,7 +36,16 @@
                             </el-select>
                             <small class="form-control-feedback" v-if="errors.currency_id" v-text="errors.currency_id[0]"></small>
                         </div>
-                    </div> 
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group" :class="{'has-danger': errors.currency_id}">
+                            <label class="control-label">Cuenta contable</label>
+                            <el-select v-model="form.chart_of_account_id" filterable>
+                                <el-option v-for="option in chart_of_accounts" :key="option.id" :value="option.id" :label="option.code + ' - ' + option.name"></el-option>
+                            </el-select>
+                            <small class="form-control-feedback" v-if="errors.currency_id" v-text="errors.currency_id[0]"></small>
+                        </div>
+                    </div>
                     <!-- <div class="col-md-8">
                         <div class="form-group" :class="{'has-danger': errors.cci}">
                             <label class="control-label">CCI</label>
@@ -70,14 +79,16 @@
                 form: {},
                 banks: [],
                 currencies: [],
+                chart_of_accounts: [],
             }
         },
-        created() {
+        async created() {
             this.initForm()
-            this.$http.get(`/${this.resource}/tables`)
+            await this.$http.get(`/${this.resource}/tables`)
                 .then(response => {
                     this.banks = response.data.banks
                     this.currencies = response.data.currencies
+                    this.chart_of_accounts = response.data.chart_of_accounts
                 })
 //            await this.$http.get(`/${this.resource}/record`)
 //                .then(response => {
@@ -96,6 +107,7 @@
                     number: null,
                     currency_id: null,
                     cci: null,
+                    chart_of_account_id: null
                 }
             },
             create() {

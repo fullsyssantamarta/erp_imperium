@@ -20,7 +20,9 @@ class BankAccountResource extends JsonResource
             'description' => $this->description,
             'number' => $this->number,
             'cci' => $this->cci,
-            'currency_id' => $this->currency_id
+            'currency_id' => $this->currency_id,
+            'chart_of_account_id' => $this->chart_of_account_id,
+            'chart_of_account_code' => $this->chart_of_account_id ? $this->chart_of_account->code . ' - ' . $this->chart_of_account->name : null,
         ];
     }
 }

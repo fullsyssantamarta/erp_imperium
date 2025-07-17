@@ -22,6 +22,8 @@ class BankAccountCollection extends ResourceCollection
                 'number' => $row->number,
                 'cci' => $row->cci,
                 'currency_name' => $row->currency->name,
+                'chart_of_account_id' => $row->chart_of_account_id,
+                'chart_of_account_code' => $row->chart_of_account ? $row->chart_of_account->code.' - '.$row->chart_of_account->name : null,
             ];
         });
     }
