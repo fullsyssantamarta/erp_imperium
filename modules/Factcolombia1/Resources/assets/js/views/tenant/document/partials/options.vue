@@ -178,17 +178,12 @@
                     this.apiConfig = JSON.parse(config)
                 }
             },
-            async getPdfAsBase64(url) {
+            async getPdfAsBase64(filename) {
                 try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error('Error al obtener el PDF');
-                    
-                    const blob = await response.blob();
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                        reader.readAsDataURL(blob);
-                    });
+                    // Usa el endpoint backend, no la URL externa
+                    const response = await this.$http.get(`/${this.resource}/downloadFile/${this.downloadFilename(filename)}`);
+                    if (!response.data.success) throw new Error('Error al obtener el PDF');
+                    return response.data.filebase64;
                 } catch (error) {
                     console.error('Error al convertir PDF a base64:', error);
                     throw error;
