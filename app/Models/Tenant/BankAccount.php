@@ -10,6 +10,7 @@ use Modules\Finance\Models\GlobalPayment;
 use Modules\Factcolombia1\Models\Tenant\{
     Currency,
 };
+use Modules\Accounting\Models\ChartOfAccount;
 
 class BankAccount extends ModelTenant
 {
@@ -23,7 +24,8 @@ class BankAccount extends ModelTenant
         'number',
         'currency_id',
         'cci',
-        'status'
+        'status',
+        'chart_of_account_id'
     ];
 
     // protected static function boot()
@@ -58,5 +60,10 @@ class BankAccount extends ModelTenant
     {
         return $this->morphMany(GlobalPayment::class, 'destination')->with(['payment']);
     }
- 
+
+    public function chart_of_account()
+    {
+        return $this->belongsTo(ChartOfAccount::class);
+    }
+
 }

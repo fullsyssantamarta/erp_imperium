@@ -1066,10 +1066,12 @@ class DocumentController extends Controller
     private function registerAccountingSaleEntries($document)
     {
         try {
-            $saleCost = AccountingChartAccountConfiguration::first();
+            $config_accounts = AccountingChartAccountConfiguration::first();
             $accountIdCash = ChartOfAccount::where('code','110505')->first();
             $accountIdIncome = ChartOfAccount::where('code','413595')->first();
             $document_type = TypeDocument::find($document->type_document_id);
+            $accountReceibableCustomer = ChartOfAccount::where('code', $config_accounts->customer_receivable_account)->first(); // cuenta clientes
+            $is_credit = $document->payment_form_id == 2 ? true : false;
 
             AccountingEntryHelper::registerEntry([
                 'prefix_id' => 1,
@@ -1077,7 +1079,7 @@ class DocumentController extends Controller
                 'document_id' => $document->id,
                 'movements' => [
                     [
-                        'account_id' => $accountIdCash->id,
+                        'account_id' => $is_credit ? $accountReceibableCustomer->id : $accountIdCash->id,
                         'debit' => $document->total,
                         'credit' => 0,
                         'affects_balance' => true,

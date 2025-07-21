@@ -12,6 +12,7 @@ use Exception;
 use Modules\Factcolombia1\Models\Tenant\{
     Currency,
 };
+use Modules\Accounting\Models\ChartOfAccount;
 
 
 class BankAccountController extends Controller
@@ -37,8 +38,12 @@ class BankAccountController extends Controller
     {
         $banks = Bank::all();
         $currencies = Currency::all();
+        $chart_of_accounts = ChartOfAccount::where('code', 'LIKE', '1105%')
+            ->orWhere('code', 'LIKE', '1110%')
+            ->orWhere('code', 'LIKE', '1120%')
+            ->get();
 
-        return compact('banks', 'currencies');
+        return compact('banks', 'currencies', 'chart_of_accounts');
     }
 
 
@@ -65,9 +70,9 @@ class BankAccountController extends Controller
     public function destroy($id)
     {
         try {
-            
+
             $bank_account = BankAccount::findOrFail($id);
-            $bank_account->delete(); 
+            $bank_account->delete();
 
             return [
                 'success' => true,
@@ -78,6 +83,6 @@ class BankAccountController extends Controller
 
             return ($e->getCode() == '23000') ? ['success' => false,'message' => 'La Cuenta bancaria esta siendo usada por otros registros, no puede eliminar'] : ['success' => false,'message' => 'Error inesperado, no se pudo eliminar la cuenta bancaria'];
 
-        } 
+        }
     }
 }
