@@ -252,6 +252,10 @@
                 :exchange-rate-sale="form.exchange_rate_sale"
                 :typeUser="typeUser"
                 :configuration="configuration"></document-form-item>
+            <discount-code-dialog
+                :visible.sync="showDiscountCodeDialog"
+                @validated="onDiscountCodeValidated"
+            />
         </div>
     </div>
 </template>
@@ -275,9 +279,11 @@ import PersonForm from '@views/persons/form.vue'
 import { functions, exchangeRate } from '@mixins/functions'
 import DocumentOptions from './partials/options.vue'
 import DocumentFormItem from '@viewsModuleProColombia/tenant/document/partials/item.vue'
+import DiscountCodeDialog from './partials/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'configuration'],
-    components: { PersonForm, DocumentOptions, DocumentFormItem },
+    components: { PersonForm, DocumentOptions, DocumentFormItem, DiscountCodeDialog },
     mixins: [functions, exchangeRate],
     data() {
         return {
@@ -320,6 +326,8 @@ export default {
                 }
             ],
             advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
         }
     },
     async created() {
@@ -559,6 +567,16 @@ export default {
             if (!this.form.customer_id) {
                 return this.$message.error('Debe seleccionar un cliente')
             }
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                this.loading_submit = false;
+                return;
+            }
             this.loading_submit = true
             this.$http.post(`/${this.resource}`, this.form).then(response => {
                 if (response.data.success) {
@@ -580,6 +598,20 @@ export default {
                 this.loading_submit = false;
             });
         },
-    }
+        onDiscountCodeValidated(success) {
+            if (success) {
+                this.discount_code_validated = true;
+                this.showDiscountCodeDialog = false;
+                this.submit();
+            }
+        },
+    },
+    watch: {
+        'form.total_discount'(nuevo, anterior) {
+            if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                this.discount_code_validated = false;
+            }
+        }
+    },
 }
 </script>

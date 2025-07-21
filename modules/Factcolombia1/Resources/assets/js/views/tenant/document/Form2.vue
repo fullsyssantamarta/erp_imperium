@@ -410,6 +410,7 @@
                 @addHealthData="addHealthData"></document-health-data>
             <document-health-user :showDialog.sync="showDialogAddHealthUser"
                 :recordItemHealthUser="recordItemHealthUser" @add="addRowHealthUser"></document-health-user>
+            <discount-code-dialog :visible.sync="showDiscountCodeDialog" @validated="onDiscountCodeValidated"/>
         </div>
     </div>
 </template>
@@ -463,9 +464,11 @@ import DocumentOptions from './partials/options.vue'
 import DocumentOrderReference from './partials/order_reference.vue'
 import DocumentHealthData from './partials/health_fields.vue'
 import DocumentHealthUser from './partials/health_users.vue'
+import DiscountCodeDialog from '../../../components/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'configuration', 'invoice', 'is_health', 'is_edit'],
-    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DocumentOrderReference, DocumentHealthData, DocumentHealthUser },
+    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DocumentOrderReference, DocumentHealthData, DocumentHealthUser, DiscountCodeDialog },
     mixins: [functions, exchangeRate],
     data() {
         return {
@@ -518,6 +521,8 @@ export default {
             global_discount_is_amount: true,
             bank_accounts: [],
             advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
         }
     },
     //filtro de separadores de mil
@@ -899,6 +904,7 @@ export default {
             this.activePanel = 0
             this.initForm()
             this.form.currency_id = (this.currencies.length > 0) ? 170 : null
+            this.discount_code_validated = false;
             // this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
             this.form.type_invoice_id = (this.type_invoices.length > 0) ? this.type_invoices[0].id : null
             this.form.payment_form_id = (this.payment_forms.length > 0) ? this.payment_forms[0].id : null;
@@ -1237,7 +1243,15 @@ export default {
                 if (!this.form.health_fields.invoice_period_start_date || !this.form.health_fields.invoice_period_end_date)
                     return this.$message.error('Para facturas del sector salud debe incluir los datos del periodo de facturacion')
             }
-
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                return;
+            }
             // Agregar flag is_edit cuando es edición
             if (this.is_edit) {
                 this.form.is_edit = true;
@@ -1528,6 +1542,20 @@ export default {
                 return amount.toString();
             else
                 return amount.toString() + ".00";
+        },
+        onDiscountCodeValidated(success) {
+            if (success) {
+                this.discount_code_validated = true;
+                this.showDiscountCodeDialog = false;
+                this.submit(); // vuelve a intentar el submit, ahora sí pasa
+            }
+        },
+        watch: {
+            'form.total_discount'(nuevo, anterior) {
+                if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                    this.discount_code_validated = false;
+                }
+            }
         },
     }
 }

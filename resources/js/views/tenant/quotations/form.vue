@@ -306,6 +306,10 @@
             :exchange-rate-sale="form.exchange_rate_sale"
             :typeUser="typeUser">
         </document-form-item>
+        <discount-code-dialog
+            :visible.sync="showDiscountCodeDialog"
+            @validated="onDiscountCodeValidated"
+        />
     </div>
 </template>
 <script>
@@ -314,9 +318,11 @@ import PersonForm from '../persons/form.vue'
 import QuotationOptions from '../quotations/partials/options.vue'
 import Logo from '../companies/logo.vue'
 import DocumentFormItem from '@viewsModuleProColombia/tenant/document/partials/item.vue'
+import DiscountCodeDialog from '../../../components/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'saleOpportunityId'],
-    components: { PersonForm, QuotationOptions, Logo, TermsCondition, DocumentFormItem },
+    components: { PersonForm, QuotationOptions, Logo, TermsCondition, DocumentFormItem, DiscountCodeDialog },
     data() {
         return {
             resource: 'quotations',
@@ -348,6 +354,8 @@ export default {
             total_global_discount: 0,
             global_discount_is_amount: true,
             advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
         }
     },
     async created() {
@@ -667,6 +675,15 @@ export default {
                 return this.$message.error('La fecha de emisión no puede ser posterior a la de vencimiento');
             if (this.form.date_of_issue > this.form.delivery_date)
                 return this.$message.error('La fecha de emisión no puede ser posterior a la de entrega');
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                return;
+            }
             this.loading_submit = true
             await this.$http.post(`/${this.resource}`, this.form).then(response => {
                 if (response.data.success) {
@@ -706,7 +723,21 @@ export default {
             this.recordItem = null
             this.showDialogAddItem = true
         },
-    }
+        onDiscountCodeValidated(success) {
+        if (success) {
+            this.discount_code_validated = true;
+            this.showDiscountCodeDialog = false;
+            this.submit();
+        }
+    },
+    },
+    watch: {
+        'form.total_discount'(nuevo, anterior) {
+            if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                this.discount_code_validated = false;
+            }
+        }
+    },
 }
 </script>
 <style>

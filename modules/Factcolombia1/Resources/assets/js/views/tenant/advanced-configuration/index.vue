@@ -62,6 +62,37 @@
                                             <small class="form-control-feedback" v-if="errors.validate_min_stock" v-text="errors.validate_min_stock[0]"></small>
                                         </div>
                                     </div>
+                                    <div class="col-md-4 mt-4" :class="{'has-danger': errors.validate_discount_code}">
+                                        <label class="control-label">
+                                            Validar código para descuento
+                                            <el-tooltip class="item" effect="dark" content="Si está activo, se requerirá un código para aplicar descuentos" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch v-model="form.validate_discount_code" active-text="Si" inactive-text="No" @change="submit"></el-switch>
+                                            <small class="form-control-feedback" v-if="errors.validate_discount_code" v-text="errors.validate_discount_code[0]"></small>
+                                        </div>
+                                        <!-- Solo para admin: mostrar y generar el código si el switch está activado -->
+                                        <div v-if="form.validate_discount_code && user && user.type === 'admin'" class="mt-3">
+                                            <label class="control-label">Código de descuento (solo admin)</label>
+                                            <div class="form-group" style="display: flex; gap: 8px;">
+                                                <el-input v-model="form.discount_code" readonly style="max-width: 150px;"></el-input>
+                                                <!-- Botón Actualizar -->
+                                                <el-tooltip effect="dark" content="Actualizar: consulta el código actual en la base de datos" placement="top">
+                                                    <el-button type="info" size="mini" icon="el-icon-refresh" @click="refreshDiscountCode"></el-button>
+                                                </el-tooltip>
+                                                <!-- Botón Copiar -->
+                                                <el-tooltip effect="dark" content="Copiar: copia el código al portapapeles" placement="top">
+                                                    <el-button type="success" size="mini" icon="el-icon-document-copy" @click="copyDiscountCode"></el-button>
+                                                </el-tooltip>
+                                                <!-- Botón Generar -->
+                                                <el-tooltip effect="dark" content="Generar: crea un nuevo código de descuento" placement="top">
+                                                    <el-button type="primary" size="mini" @click="generateDiscountCode">Generar</el-button>
+                                                </el-tooltip>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 
@@ -213,6 +244,9 @@ import CertificatesQztray from './certificates_qztray.vue'
 
 export default {
     components: {CertificatesQztray},
+    props: {
+        user: Object
+    },
     data() {
         return {
             loading_submit: false,
@@ -249,6 +283,9 @@ export default {
                 radian_imap_user: null,
                 uvt: 0,
                 item_tax_included: false,
+                validate_min_stock: false,
+                validate_discount_code: false,
+                discount_code: '',
             }
         },
         clickSaveEmailRadian()
@@ -322,7 +359,55 @@ export default {
                 this.loading_delete = false;
                 this.openDialogDataDelete = false;
             });
-        }
+        },
+        async generateDiscountCode() {
+            try {
+                const response = await this.$http.post('/co-advanced-configuration/generate-discount-code');
+                if (response.data.success) {
+                    this.form.discount_code = response.data.discount_code;
+                    this.$message.success(response.data.message);
+                } else {
+                    this.$message.error(response.data.message);
+                }
+            } catch (error) {
+                this.$message.error('Error al generar el código');
+            }
+        },
+        async refreshDiscountCode() {
+            try {
+                const response = await this.$http.get('/co-advanced-configuration/record');
+                this.form.discount_code = response.data.data.discount_code;
+                this.$message.success('Código actualizado');
+            } catch (error) {
+                this.$message.error('No se pudo actualizar el código');
+            }
+        },
+        copyDiscountCode() {
+            if (!this.form.discount_code) return;
+            // Intentar con clipboard API
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(this.form.discount_code)
+                    .then(() => {
+                        this.$message.success('Código copiado');
+                    })
+                    .catch(() => {
+                        this.$message.error('No se pudo copiar el código');
+                    });
+            } else {
+                // Fallback para navegadores antiguos
+                const input = document.createElement('input');
+                input.value = this.form.discount_code;
+                document.body.appendChild(input);
+                input.select();
+                try {
+                    document.execCommand('copy');
+                    this.$message.success('Código copiado');
+                } catch (e) {
+                    this.$message.error('No se pudo copiar el código');
+                }
+                document.body.removeChild(input);
+            }
+        },
     }
 }
 </script>

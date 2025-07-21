@@ -122,6 +122,7 @@ if($current_hostname) {
                 Route::get('record', 'Tenant\AdvancedConfigurationController@record');
                 Route::post('', 'Tenant\AdvancedConfigurationController@store');
                 Route::post('/delete-documents', 'Tenant\AdvancedConfigurationController@deleteDocumentByResolution');
+                Route::post('/generate-discount-code', 'Tenant\AdvancedConfigurationController@generateDiscountCode'); // <-- Agrega esta línea
             });
 
             Route::prefix('co-coupon')->group(function () {

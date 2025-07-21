@@ -387,6 +387,10 @@
             :showDownload="true"
             :showClose="true"
             @triggerBack="back"></remission-options>
+        <discount-code-dialog
+            :visible.sync="showDiscountCodeDialog"
+            @validated="onDiscountCodeValidated"
+        />
     </div>
 </template>
 <style>
@@ -408,9 +412,10 @@
     import QuotationOptions from '../../quotations/partials/options.vue'
     import RemissionOptions from '@viewsModuleSale/co-remissions/partials/options.vue'
     import {functions} from '@mixins/functions'
+    import DiscountCodeDialog from '../../../../components/DiscountCodeDialog.vue'
 
     export default {
-        components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, DocumentPosOptions, QuotationOptions, RemissionOptions},
+        components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, DocumentPosOptions, QuotationOptions, RemissionOptions, DiscountCodeDialog},
         mixins: [functions],
         props:['form','customer', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'soapCompany', 'items_refund'],
         data() {
@@ -472,9 +477,13 @@
                 ],
                 service_dian_enable: false,
                 // enable_qz_tray: false,
+                advanced_configuration: {},
+                showDiscountCodeDialog: false,
+                discount_code_validated: false,
             }
         },
         async created() {
+            await this.getAdvancedConfiguration();
             // Reiniciar el descuento antes de cualquier otra operación
             await this.resetDiscount()
             
@@ -569,6 +578,14 @@
                     this.enter_amount = parseFloat(this.form.total)
                     this.enterAmount()
                     this.initFormPayment()
+                }
+            },
+            async getAdvancedConfiguration() {
+                try {
+                    const response = await this.$http.get('/co-advanced-configuration/record');
+                    this.advanced_configuration = response.data.data;
+                } catch (e) {
+                    this.advanced_configuration = {};
                 }
             },
             async inputDiscountPercentage() {
@@ -913,6 +930,15 @@
                     this.redirectCreateDocument()
                     return
                 }
+                if (
+                    this.advanced_configuration &&
+                    this.advanced_configuration.validate_discount_code &&
+                    Number(this.discount_amount) > 0 &&
+                    !this.discount_code_validated
+                ) {
+                    this.showDiscountCodeDialog = true;
+                    return;
+                }
                 //this.form.prefix = "NV";
                 this.form.paid = 1;
                 // this.resource_documents = resources[this.form.document_type_id];
@@ -1248,7 +1274,20 @@
                 // Reiniciar formulario de pago
                 this.initFormPayment()
             },
-        }
-
+            onDiscountCodeValidated(success) {
+                if (success) {
+                    this.discount_code_validated = true;
+                    this.showDiscountCodeDialog = false;
+                    this.clickPayment();
+                }
+            },
+        },
+        watch: {
+            discount_amount(nuevo, anterior) {
+                if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                    this.discount_code_validated = false;
+                }
+            }
+        },
     }
 </script>
