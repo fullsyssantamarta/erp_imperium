@@ -154,7 +154,7 @@
                     const payload = {
                         number: this.form.whatsapp_number,
                         message: `Documento: ${this.form.number_full}`,
-                        file: pdfBase64,
+                        pdf_base64: pdfBase64,
                         filename: `documento_${this.form.number_full}.pdf`
                     };
 
