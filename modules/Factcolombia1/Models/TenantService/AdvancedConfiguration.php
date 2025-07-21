@@ -34,6 +34,8 @@ class AdvancedConfiguration extends Model
         'digital_certificate_qztray',
         'private_certificate_qztray',
         'enable_qz_tray',
+        'validate_discount_code',
+        'discount_code',
     ];
 
     protected $casts = [
@@ -41,6 +43,7 @@ class AdvancedConfiguration extends Model
         'item_tax_included' => 'bool',
         'enable_qz_tray' => 'bool',
         'validate_min_stock' => 'bool',
+        'validate_discount_code' => 'bool',
     ];
 
 
@@ -64,6 +67,8 @@ class AdvancedConfiguration extends Model
             'uvt' => $this->uvt,
             'item_tax_included' => $this->item_tax_included,
             'validate_min_stock' => $this->validate_min_stock,
+            'validate_discount_code' => $this->validate_discount_code,
+            'discount_code' => $this->discount_code,
         ];
 
     }

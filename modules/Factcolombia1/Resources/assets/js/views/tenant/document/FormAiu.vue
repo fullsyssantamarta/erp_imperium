@@ -262,6 +262,7 @@
             <document-order-reference :showDialog.sync="showDialogOrderReference"
                 :order_reference="form.order_reference"
                 @addOrderReference="addOrderReference"></document-order-reference>
+            <discount-code-dialog :visible.sync="showDiscountCodeDialog" @validated="onDiscountCodeValidated"/>
         </div>
     </div>
 </template>
@@ -291,9 +292,11 @@ import { functions, exchangeRate } from '@mixins/functions'
 import DocumentOptions from './partials/options.vue'
 import DetailAiu from './partials/detailAiu.vue'
 import DocumentOrderReference from './partials/order_reference.vue'
+import DiscountCodeDialog from '../../../components/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'configuration'],
-    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DetailAiu, DocumentOrderReference },
+    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DetailAiu, DocumentOrderReference, DiscountCodeDialog },
     mixins: [functions, exchangeRate],
     data() {
         return {
@@ -339,7 +342,9 @@ export default {
                 note: null
             },
             resolutions: [],
-            advanced_configuration: {}
+            advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
         }
     },
     computed: {
@@ -527,6 +532,7 @@ export default {
         resetForm() {
             this.activePanel = 0
             this.initForm()
+            this.discount_code_validated = false;
             this.form.currency_id = 170
             this.form.type_invoice_id = (this.type_invoices.length > 0) ? this.type_invoices[0].id : null
             this.form.payment_form_id = (this.payment_forms.length > 0) ? this.payment_forms[0].id : null
@@ -794,6 +800,15 @@ export default {
         async submit() {
             if (!this.form.customer_id) {
                 return this.$message.error('Debe seleccionar un cliente')
+            }
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                return;
             }
             this.form.service_invoice = await this.createInvoiceService();
             this.loading_submit = true
@@ -1085,6 +1100,20 @@ export default {
                 this.$message.error('Ocurrió un error al generar la vista preliminar')
             } finally {
                 this.loading_preview = false // Reset loading_preview
+            }
+        },
+        onDiscountCodeValidated(success) {
+            if (success) {
+                this.discount_code_validated = true;
+                this.showDiscountCodeDialog = false;
+                this.submit();
+            }
+        },
+        watch: {
+            'form.total_discount'(nuevo, anterior) {
+                if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                    this.discount_code_validated = false;
+                }
             }
         },
     }

@@ -70,4 +70,25 @@ class AdvancedConfigurationController extends Controller
             'message' => 'Han sido eliminado los documentos'
         ];
     }
+
+    public function generateDiscountCode(Request $request)
+    {
+        // Verifica si el usuario es admin
+        if (!$request->user() || $request->user()->type !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $record = AdvancedConfiguration::firstOrFail();
+        // Genera un código aleatorio de 8 caracteres
+        $code = strtoupper(bin2hex(random_bytes(4)));
+
+        $record->discount_code = $code;
+        $record->save();
+
+        return [
+            'success' => true,
+            'discount_code' => $code,
+            'message' => 'Código generado correctamente'
+        ];
+    }
 }
