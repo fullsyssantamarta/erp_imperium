@@ -97,10 +97,14 @@ trait FinanceTrait
         $destination = $this->getDestinationRecord($row);
         $company = Company::active();
 
-        // se crea el asiento de pagos si el documento es una factura a credito
-        $document = $model->document;
-        $is_credit = $document->payment_form_id == 2 ? true : false;
-        if($is_credit) {
+        $document = null;
+        if ($model instanceof PurchasePayment) {
+            $document = $model->purchase;
+        } elseif ($model instanceof DocumentPayment) {
+            $document = $model->document;
+        }
+
+        if ($document && $document->payment_form_id == 2) {
             $this->generateJournalEntry($model, $document, $destination);
         }
 
@@ -113,45 +117,98 @@ trait FinanceTrait
 
     public function generateJournalEntry($model, $document, $destination)
     {
-        $config_accounts = AccountingChartAccountConfiguration::first();
-        $accountIdCash = ChartOfAccount::where('code','110505')->first(); // Caja General
-        $accountIdBank = ChartOfAccount::where('code','111005')->first(); // Banco defecto
-        $accountReceibableCustomer = ChartOfAccount::where('code', $config_accounts->customer_receivable_account)->first();
-        $document_type = TypeDocument::find($document->type_document_id);
+        $config = AccountingChartAccountConfiguration::first();
+
+        // Cuentas fijas
+        $accountCash = ChartOfAccount::where('code', '110505')->first(); // Caja
+        $accountBank = ChartOfAccount::where('code', '111005')->first(); // Banco
+        $accountReceivable = ChartOfAccount::where('code', $config->customer_receivable_account)->first();
+        $accountPayable = ChartOfAccount::where('code', $config->supplier_payable_account)->first();
+
+        // Tipo de destino
         $destinationType = $destination['destination_type'];
         $destinationId = $destination['destination_id'];
 
+        // movimiento de destino (caja/banco)
         if ($destinationType === Cash::class) {
-            $destination_movement = [
-                'account_id' => $accountIdCash->id,
-                'debit' => $model->payment,
-                'credit' => 0,
-                'affects_balance' => true,
-            ];
+            $accountDestinationID = $accountCash->id;
         } elseif ($destinationType === BankAccount::class) {
             $bank = BankAccount::find($destinationId);
-            $destination_movement = [
-                'account_id' => $bank->chart_of_account_id != null ? $bank->chart_of_account_id : $accountIdBank->id,
+            $accountDestinationID = $bank && $bank->chart_of_account_id
+                ? $bank->chart_of_account_id
+                : $accountBank->id;
+        }
+
+        // Detectar tipo de modelo y configurar el asiento
+        $typeConfig = $this->getPaymentTypeConfig($model, $accountReceivable, $accountPayable);
+
+        // Armar movimientos
+        $movements = [
+            [
+                'account_id' => $accountDestinationID,
+                'debit' => $typeConfig['debit'],
+                'credit' => $typeConfig['credit'],
+                'affects_balance' => true,
+            ],
+            [
+                'account_id' => $typeConfig['counter_account_id'],
+                'debit' => $typeConfig['counter_debit'],
+                'credit' => $typeConfig['counter_credit'],
+                'affects_balance' => false,
+            ],
+        ];
+
+        // Descripción
+        $documentType = TypeDocument::find($document->type_document_id);
+        $description = 'Pago de ' . $documentType->name . ' #' . $document->prefix . '-' . $document->number;
+
+        // Identificador dinámico (document_id o purchase_id, o el que toque)
+        $referenceField = $typeConfig['reference_field'];
+
+        AccountingEntryHelper::registerEntry([
+            'prefix_id' => $typeConfig['prefix_id'],
+            'description' => $description,
+            $referenceField => $document->id,
+            'movements' => $movements,
+        ]);
+    }
+
+    private function getPaymentTypeConfig($model, $accountReceivable, $accountPayable)
+    {
+        if ($model instanceof DocumentPayment) {
+            return [
+                'prefix_id' => 3,
                 'debit' => $model->payment,
                 'credit' => 0,
-                'affects_balance' => true,
+                'counter_account_id' => $accountReceivable->id,
+                'counter_debit' => 0,
+                'counter_credit' => $model->payment,
+                'reference_field' => 'document_id',
             ];
         }
 
-        AccountingEntryHelper::registerEntry([
-            'prefix_id' => 3, // RC
-            'description' => 'Pago de' . $document_type->name . ' #' . $document->prefix . '-' . $document->number,
-            'document_id' => $document->id,
-            'movements' => [
-                $destination_movement,
-                [
-                    'account_id' => $accountReceibableCustomer->id,
-                    'debit' => 0,
-                    'credit' => $model->payment,
-                    'affects_balance' => false,
-                ],
-            ]
-        ]);
+        if ($model instanceof PurchasePayment) {
+            return [
+                'prefix_id' => 4,
+                'debit' => 0,
+                'credit' => $model->payment,
+                'counter_account_id' => $accountPayable->id,
+                'counter_debit' => $model->payment,
+                'counter_credit' => 0,
+                'reference_field' => 'purchase_id',
+            ];
+        }
+
+        // Aquí puedes agregar nuevos tipos, por ejemplo:
+        /*
+        if ($model instanceof CreditNotePayment) {
+            return [
+                ...
+            ];
+        }
+        */
+
+        throw new \Exception('Tipo de modelo de pago no soportado: ' . get_class($model));
     }
 
     public function getDestinationRecord($row){
