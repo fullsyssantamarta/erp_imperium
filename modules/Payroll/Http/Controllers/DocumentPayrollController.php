@@ -52,6 +52,9 @@ class DocumentPayrollController extends Controller
         return [
             'consecutive' => 'Número',
             'date_of_issue' => 'Fecha de emisión',
+            'date_of_issue_range' => 'Rango de fechas',
+            'worker_full_name' => 'Empleado',
+            'state_document_id' => 'Estado',
         ];
     }
 
@@ -98,21 +101,45 @@ class DocumentPayrollController extends Controller
     {
         if ($request->column == 'date_of_issue') {
             if (strlen($request->value) == 7) {
-                // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
                 $year_month = explode('-', $request->value);
                 $year = $year_month[0];
                 $month = $year_month[1];
-                
                 $records = DocumentPayroll::whereYear('date_of_issue', $year)
-                                       ->whereMonth('date_of_issue', $month)
-                                       ->latest();
+                                         ->whereMonth('date_of_issue', $month)
+                                         ->latest();
             } else {
-                // Si es una fecha específica (YYYY-MM-DD)
                 $records = DocumentPayroll::whereDate('date_of_issue', $request->value)
-                                       ->latest();
+                                         ->latest();
             }
+        } elseif ($request->column == 'date_of_issue_range' && !empty($request->value)) {
+            // Espera un string "YYYY-MM-DD,YYYY-MM-DD"
+            $dates = explode(',', $request->value);
+            $start = $dates[0] ?? null;
+            $end = $dates[1] ?? null;
+            $records = DocumentPayroll::query();
+            if ($start && $end) {
+                $records = $records->whereBetween('date_of_issue', [$start, $end]);
+            } elseif ($start) {
+                $records = $records->where('date_of_issue', '>=', $start);
+            } elseif ($end) {
+                $records = $records->where('date_of_issue', '<=', $end);
+            }
+            $records = $records->latest();
+        } elseif ($request->column == 'worker_full_name') {
+            $records = DocumentPayroll::whereHas('model_worker', function($q) use ($request) {
+                $q->where(DB::raw("CONCAT(first_name, ' ', surname, ' ', second_surname)"), 'like', "%{$request->value}%");
+            })->latest();
+        // } elseif ($request->column == 'type_document_id') {
+        //     $records = DocumentPayroll::where('type_document_id', $request->value)->latest();
+        } elseif ($request->column == 'state_document_id') {
+            $records = DocumentPayroll::where('state_document_id', $request->value)->latest();
         } else {
-            $records = DocumentPayroll::whereFilterRecords($request)->latest();
+            // Si no hay filtro, mostrar solo las nóminas del mes actual
+            $year = date('Y');
+            $month = date('m');
+            $records = DocumentPayroll::whereYear('date_of_issue', $year)
+                                     ->whereMonth('date_of_issue', $month)
+                                     ->latest();
         }
 
         return new DocumentPayrollCollection($records->paginate(config('tenant.items_per_page')));
