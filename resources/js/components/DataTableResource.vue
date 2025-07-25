@@ -164,9 +164,15 @@
         async mounted () {
             await this.$http.get(`/${this.resource}/columns`).then((response) => {
                 this.columns = response.data
-                // Siempre filtrar por mes actual al cargar
-                this.search.column = 'date_of_issue'
-                this.search.value = this.getCurrentMonth()
+                // Inicializar filtro solo para payroll/document-payrolls
+                if (this.resource === 'payroll/document-payrolls') {
+                    this.search.column = 'date_of_issue'
+                    this.search.value = this.getCurrentMonth()
+                } else {
+                    // Para otros recursos, no filtrar por fecha
+                    this.search.column = Object.keys(this.columns)[0] || ''
+                    this.search.value = ''
+                }
             });
             // No cargar typeDocuments
             if (this.resource === 'payroll/document-payrolls') {
