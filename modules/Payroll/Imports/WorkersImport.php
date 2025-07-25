@@ -28,6 +28,10 @@ class WorkersImport implements ToModel, WithHeadingRow
 
     public function model(array $row)
     {
+        if (!isset($row['nro_identificacion']) || empty($row['nro_identificacion'])) {
+            // Puedes registrar el error o simplemente saltar la fila
+            return null;
+        }
         $existingUser = Worker::where('code', $row['codigo'])
                             ->orWhere('identification_number', $row['nro_identificacion'])
                             ->first();
@@ -54,7 +58,7 @@ class WorkersImport implements ToModel, WithHeadingRow
             'identification_number' => $row['nro_identificacion'],
             'first_name' => $row['nombre'],
             'surname' => $row['primer_apellido'],
-            'second_surname' => $row['segundo_apellido'],
+            'second_surname' => $row['segundo_apellido'] ?? null,
             'cellphone' => $row['nro_celular'] ?? null,
             'email' => $row['correo'] ?? null,
             'municipality_id' => $municipalidad_id,
@@ -64,7 +68,7 @@ class WorkersImport implements ToModel, WithHeadingRow
             'type_contract_id' => $tipo_contrato_id,
             'salary' => $row['salario'],
             'payroll_period_id' => $frecuencia_pago_id,
-            'position' => $row['cargo'],
+            'position' => $row['cargo'] ?? null,
             'work_start_date' => $fecha_contrato,
             'high_risk_pension' => $row['pension'] == 's' ? true : false,
             'integral_salarary' => $row['salario_integral'] == 's' ? true : false,

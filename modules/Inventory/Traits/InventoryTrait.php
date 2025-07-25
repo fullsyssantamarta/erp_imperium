@@ -104,6 +104,7 @@ trait InventoryTrait
         $records = Item::where([['item_type_id', '01'], ['unit_type_id', '!=','ZZ'], ['active', 1]])->whereNotIsSet()->get();
 
         return collect($records)->transform(function($row) {
+            $stock = $row->warehouses->sum('stock');
             return  [
                 'id' => $row->id,
                 'description' => ($row->internal_id) ? "{$row->internal_id} - {$row->name}" :$row->name,
@@ -128,7 +129,8 @@ trait InventoryTrait
                         'date_of_due' => $row->date_of_due,
                         'checked'  => false
                     ];
-                })
+                }),
+                'stock' => $stock,
             ];
         });
     }

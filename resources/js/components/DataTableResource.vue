@@ -49,6 +49,19 @@
                                 </template>
                             </div>
                         </template>
+                        <template v-else-if="search.column=='date_of_issue_range'">
+                            <el-date-picker
+                                v-model="dateRange"
+                                type="daterange"
+                                unlink-panels
+                                range-separator="a"
+                                start-placeholder="Fecha inicio"
+                                end-placeholder="Fecha fin"
+                                value-format="yyyy-MM-dd"
+                                style="width: 100%;"
+                                @change="onDateRangeChange">
+                            </el-date-picker>
+                        </template>
                         <template v-else-if="search.column=='date_of_due' || search.column=='date_of_payment' || search.column=='delivery_date'">
                             <el-date-picker
                                 v-model="search.value"
@@ -58,6 +71,15 @@
                                 value-format="yyyy-MM-dd"
                                 @change="getRecords">
                             </el-date-picker>
+                        </template>
+                        <template v-else-if="search.column=='state_document_id'">
+                            <el-select
+                                v-model="search.value"
+                                placeholder="Estado"
+                                style="width: 100%;"
+                                @change="getRecords">
+                                <el-option v-for="item in stateDocuments" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                            </el-select>
                         </template>
                         <template v-else>
                             <el-input placeholder="Buscar"
@@ -122,12 +144,14 @@
             return {
                 filterType: 'month',
                 search: {
-                    column: null,
+                    column: 'date_of_issue',
                     value: null
                 },
                 columns: [],
                 records: [],
-                pagination: {}
+                pagination: {},
+                stateDocuments: [],
+                dateRange: null, // Para el rango de fechas
             }
         },
         computed: {
@@ -140,12 +164,25 @@
         async mounted () {
             await this.$http.get(`/${this.resource}/columns`).then((response) => {
                 this.columns = response.data
-                if (this.initSearch) {
-                    this.search = this.initSearch;
+                // Inicializar filtro solo para payroll/document-payrolls
+                if (this.resource === 'payroll/document-payrolls') {
+                    this.search.column = 'date_of_issue'
+                    this.search.value = this.getCurrentMonth()
                 } else {
-                    this.search.column = _.head(Object.keys(this.columns))
+                    // Para otros recursos, no filtrar por fecha
+                    this.search.column = Object.keys(this.columns)[0] || ''
+                    this.search.value = ''
                 }
             });
+            // No cargar typeDocuments
+            if (this.resource === 'payroll/document-payrolls') {
+                // this.typeDocuments = []
+                this.stateDocuments = [
+                    { id: 1, name: 'Registrado' },
+                    { id: 5, name: 'Aceptado' },
+                    { id: 6, name: 'Rechazado' }
+                ]
+            }
             await this.getRecords()
 
         },
@@ -167,8 +204,19 @@
                     ...this.search
                 })
             },
+            onDateRangeChange(val) {
+                if (val && val.length === 2) {
+                    this.search.value = `${val[0]},${val[1]}`
+                } else {
+                    this.search.value = ''
+                }
+                this.getRecords()
+            },
             changeClearInput(){
                 this.search.value = ''
+                if(this.search.column === 'date_of_issue_range') {
+                    this.dateRange = null
+                }
                 this.getRecords()
             },
             onDateChange(date) {
@@ -189,6 +237,12 @@
                     this.search.value = this.getCurrentMonth();
                 }
                 this.getRecords();
+            },
+            'search.column'(val) {
+                // Limpiar el rango si se cambia de columna
+                if(val !== 'date_of_issue_range') {
+                    this.dateRange = null
+                }
             }
         }
     }

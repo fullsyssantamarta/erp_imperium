@@ -35,43 +35,50 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }" :class="{ disable_color : !row.active}">
-                        <td>{{ index }}</td>
-                        <td>{{ row.internal_id }}</td>
-                        <td>{{ row.unit_type_id }}</td>
-                        <td>{{ row.name }}</td>
-                        <td>{{ row.description }}</td>
+                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td>{{ index }}</td>
+                        </el-tooltip>
+                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td>{{ row.internal_id }}</td>
+                        </el-tooltip>
+                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td>{{ row.unit_type_id }}</td>
+                        </el-tooltip>
+                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td>{{ row.name }}</td>
+                        </el-tooltip>
+                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td>{{ row.description }}</td>
+                        </el-tooltip>
                         <!-- <td>{{ row.item_code }}</td> -->
-                        <td>
-                            <div v-if="config.product_only_location == true">
-                                {{ row.stock }}
-                            </div>
-                            <div v-else>
-                                <template v-if="typeUser=='seller' && row.unit_type_id !='ZZ'">{{ row.stock }}</template>
-                                <template v-else-if="typeUser!='seller' && row.unit_type_id !='ZZ'">
-                                    <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickWarehouseDetail(row.warehouses)"><i class="fa fa-search"></i></button>
-                                </template>
-                            </div>
-                            <!-- <template v-for="item in row.warehouses">
-                                <template>{{item.stock}} - {{item.warehouse_description}}</template><br>
-                            </template> -->
-
-                            <!-- <br/>Mín:{{ row.stock_min }} -->
-
-                        </td>
-                        <td class="text-right">{{ getFormatDecimal(row.sale_unit_price) }}</td>
-                        <td v-if="typeUser != 'seller'" class="text-right">{{ getFormatDecimal(row.purchase_unit_price) }}</td>
+                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td>
+                                <div v-if="config.product_only_location == true">
+                                    {{ row.stock }}
+                                </div>
+                                <div v-else>
+                                    <template v-if="typeUser=='seller' && row.unit_type_id !='ZZ'">{{ row.stock }}</template>
+                                    <template v-else-if="typeUser!='seller' && row.unit_type_id !='ZZ'">
+                                        <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickWarehouseDetail(row.warehouses)"><i class="fa fa-search"></i></button>
+                                    </template>
+                                </div>
+                            </td>
+                        </el-tooltip>
+                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td class="text-right">{{ getFormatDecimal(row.sale_unit_price) }}</td>
+                        </el-tooltip>
+                        <el-tooltip v-if="typeUser != 'seller'" effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td class="text-right">{{ getFormatDecimal(row.purchase_unit_price) }}</td>
+                        </el-tooltip>
                         <!-- <td class="text-center">{{ row.has_igv_description }}</td> -->
                         <td class="text-right">
                             <template v-if="typeUser === 'admin'">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-warning" @click.prevent="duplicate(row.id)">Duplicar</button>
-
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDisable(row.id)" v-if="row.active">Inhabilitar</button>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickEnable(row.id)" v-else>Habilitar</button>
-
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickBarcode(row)">Cod. Barras</button>
-
                             </template>
                         </td>
                     </tr>

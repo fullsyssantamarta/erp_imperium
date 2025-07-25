@@ -1,4 +1,3 @@
-
 <template>
     <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create">
         <form autocomplete="off" @submit.prevent="submit">
@@ -8,7 +7,15 @@
                         <div class="form-group" :class="{'has-danger': errors.item_id}">
                             <label class="control-label">Producto</label>
                             <el-select v-model="form.item_id" filterable @change="changeItem">
-                                <el-option v-for="option in items" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                <el-tooltip
+                                    v-for="option in items"
+                                    :key="option.id"
+                                    effect="dark"
+                                    :content="'Stock: ' + (option.stock !== undefined ? option.stock : 0)"
+                                    placement="top"
+                                >
+                                    <el-option :value="option.id" :label="option.description"></el-option>
+                                </el-tooltip>
                             </el-select>
                             <small class="form-control-feedback" v-if="errors.item_id" v-text="errors.item_id[0]"></small>
                         </div>
