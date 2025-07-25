@@ -93,7 +93,6 @@ trait FinanceTrait
 
     public function createGlobalPayment($model, $row)
     {
-
         $destination = $this->getDestinationRecord($row);
         $company = Company::active();
 
