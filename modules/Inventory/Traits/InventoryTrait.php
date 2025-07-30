@@ -100,8 +100,11 @@ trait InventoryTrait
     }
 
 
-    public function optionsItemFull() {
-        $records = Item::where([['item_type_id', '01'], ['unit_type_id', '!=','ZZ'], ['active', 1]])->whereNotIsSet()->get();
+    public function optionsItemFull($limit = 20) {
+        $records = Item::where([['item_type_id', '01'], ['unit_type_id', '!=','ZZ'], ['active', 1]])
+            ->whereNotIsSet()
+            ->limit($limit)
+            ->get();
 
         return collect($records)->transform(function($row) {
             $stock = $row->warehouses->sum('stock');

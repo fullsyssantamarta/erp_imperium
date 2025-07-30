@@ -88,7 +88,7 @@ class InventoryController extends Controller
     public function tables_transaction($type)
     {
         return [
-            'items' => $this->optionsItemFull(),
+            'items' => $this->optionsItemFull(20),
             'warehouses' => $this->optionsWarehouse(),
             'inventory_transactions' => $this->optionsInventoryTransaction($type),
         ];

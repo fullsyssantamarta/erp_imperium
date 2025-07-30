@@ -55,6 +55,7 @@ class ReportKardexController extends Controller
         $items = Item::query()->whereNotIsSet()
             ->where([['item_type_id', '01'], ['unit_type_id', '!=','ZZ']])
             ->latest()
+            ->limit(10)
             ->get()->transform(function($row) {
                 $full_description = $this->getFullDescription($row);
                 return [
