@@ -252,14 +252,14 @@
                                                 <i class="fa fa-info-circle"></i>
                                             </el-tooltip>
                                         </label>
-                                        <el-input 
+                                        <el-input
                                             v-if="is_percentage"
-                                            v-model="discount_percentage"  
+                                            v-model="discount_percentage"
                                             :disabled="!enabled_discount"
                                             @input="inputDiscountPercentage">
                                             <template slot="append">%</template>
                                         </el-input>
-                                        <el-input 
+                                        <el-input
                                             v-else
                                             v-model="discount_amount"
                                             :disabled="!enabled_discount"
@@ -486,7 +486,7 @@
             await this.getAdvancedConfiguration();
             // Reiniciar el descuento antes de cualquier otra operación
             await this.resetDiscount()
-            
+
             await this.initLStoPayment()
             await this.getTables()
             this.initFormPayment()
@@ -552,7 +552,7 @@
             changeEnabledDiscount() {
                 if (!this.form.hasOwnProperty('total_without_discount')) {
                     this.form.total_without_discount = parseFloat(this.form.total)
-                }                
+                }
                 if (!this.enabled_discount) {
                     this.discount_amount = 0
                     this.discount_percentage = 0
@@ -600,7 +600,7 @@
 
                 if (this.discount_percentage && !isNaN(this.discount_percentage) && parseFloat(this.discount_percentage) > 0) {
                     const percentage = parseFloat(this.discount_percentage)
-                    
+
                     if (percentage > 100) {
                         this.$message.error("El porcentaje de descuento no puede ser mayor a 100%")
                         this.discount_percentage = 0
@@ -613,7 +613,7 @@
 
                     // Actualizar el monto de descuento para mantener la consistencia
                     this.discount_amount = discount.toFixed(2)
-                    
+
                     this.form.allowance_charges = []
                     this.form.allowance_charges = await this.createAllowanceCharge(
                         discount,
@@ -642,7 +642,7 @@
                 }
                 if (this.discount_amount && !isNaN(this.discount_amount) && parseFloat(this.discount_amount) > 0) {
                     const discount = parseFloat(this.discount_amount)
-                    
+
                     if (discount >= this.form.total_without_discount) {
                         this.$message.error("El monto de descuento debe ser menor al total de venta")
                         this.discount_amount = 0
@@ -650,7 +650,7 @@
                     }
                     this.form.allowance_charges = []
                     this.form.allowance_charges = await this.createAllowanceCharge(
-                        discount, 
+                        discount,
                         this.form.total_without_discount
                     )
                     this.form.total = parseFloat(this.form.total_without_discount - discount)
@@ -671,7 +671,7 @@
                 this.resetDiscount()
                 this.initFormPayment()
                 this.cleanLocalStoragePayment()
-                
+
                 // Force parent component to reload data
                 this.$nextTick(() => {
                     this.$emit('update:is_payment', false)
@@ -1233,25 +1233,25 @@
                 this.discount_amount = 0
                 this.is_percentage = false
                 this.discount_percentage = 0
-                
+
                 // Restaurar total original si existe descuento previo
                 if (this.form.hasOwnProperty('total_without_discount')) {
                     this.form.total = parseFloat(this.form.total_without_discount)
                     delete this.form.total_without_discount
                 }
-                
+
                 // Limpiar cargos y descuentos
                 this.form.allowance_charges = []
-                
+
                 // Inicializar todo en 0
                 this.enter_amount = 0
                 this.amount = 0
                 this.difference = -this.form.total
-                
+
                 // Reiniciar pagos
                 this.form.payments = []
                 this.payments = []
-                
+
                 // Pago por defecto en 0
                 const defaultPayment = {
                     payment_method_type_id: '01',
@@ -1260,17 +1260,17 @@
                 }
                 this.form.payments.push(defaultPayment)
                 this.payments.push(defaultPayment)
-                
+
                 // Actualizar button_payment según la diferencia
                 this.button_payment = true
-                
+
                 // Recalcular totales
                 await this.enterAmount()
-                
+
                 // Actualizar localStorage
                 this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
                 await this.lStoPayment()
-                
+
                 // Reiniciar formulario de pago
                 this.initFormPayment()
             },
