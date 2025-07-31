@@ -93,6 +93,23 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="col-md-4 mt-4" :class="{'has-danger': errors.custom_remission_footer_enabled}">
+                                        <label class="control-label">
+                                            Footer personalizado en remisiones
+                                            <el-tooltip class="item" effect="dark" content="Activa un mensaje personalizado en el pie de página de las remisiones" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch v-model="form.custom_remission_footer_enabled" active-text="Si" inactive-text="No" @change="submit"></el-switch>
+                                            <small class="form-control-feedback" v-if="errors.custom_remission_footer_enabled" v-text="errors.custom_remission_footer_enabled[0]"></small>
+                                        </div>
+                                        <div class="form-group mt-2" v-if="form.custom_remission_footer_enabled">
+                                            <label class="control-label">Mensaje de footer</label>
+                                            <el-input type="textarea" v-model="form.custom_remission_footer_message" maxlength="250" show-word-limit @change="submit"></el-input>
+                                            <small class="form-control-feedback" v-if="errors.custom_remission_footer_message" v-text="errors.custom_remission_footer_message[0]"></small>
+                                        </div>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 
@@ -286,6 +303,8 @@ export default {
                 validate_min_stock: false,
                 validate_discount_code: false,
                 discount_code: '',
+                custom_remission_footer_enabled: false,
+                custom_remission_footer_message: '',
             }
         },
         clickSaveEmailRadian()

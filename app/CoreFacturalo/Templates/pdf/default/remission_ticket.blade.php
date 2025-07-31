@@ -6,6 +6,7 @@ $payments = $document->payments;
 $tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
 $total_payments = $payments->sum('payment');
 $is_paid = $total_payments == $document->total;
+$advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
 @endphp
 
 <html>
@@ -223,6 +224,13 @@ $is_paid = $total_payments == $document->total;
             El pago debe realizarse únicamente a la cuenta bancaria indicada, no asumimos responsabilidad por consignaciones a otras cuentas.
         </span>
         <br>
+    @endif
+
+    {{-- Footer personalizado --}}
+    @if($advanced_configuration && $advanced_configuration->custom_remission_footer_enabled && $advanced_configuration->custom_remission_footer_message)
+        <div style="width:100%;text-align:center;margin-top:10px;font-size:11px;">
+            {{ $advanced_configuration->custom_remission_footer_message }}
+        </div>
     @endif
 
 </body>
