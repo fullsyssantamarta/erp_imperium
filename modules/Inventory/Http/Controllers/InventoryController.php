@@ -3,6 +3,7 @@
 namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant\Item;
 //use App\Models\Tenant\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -419,5 +420,49 @@ class InventoryController extends Controller
             'success' => true,
             'message' => 'Importación exítosa.'
         ];
+    }
+
+    public function searchItems(Request $request)
+    {
+        $query = $request->input('query');
+        $items = Item::where([['item_type_id', '01'], ['unit_type_id', '!=','ZZ'], ['active', 1]])
+            ->whereNotIsSet()
+            ->where(function($q) use ($query) {
+                $q->where('description', 'like', "%{$query}%")
+                  ->orWhere('internal_id', 'like', "%{$query}%");
+            })
+            ->limit(20)
+            ->get();
+
+        return collect($items)->transform(function($row) {
+            $stock = $row->warehouses->sum('stock');
+            return  [
+                'id' => $row->id,
+                'description' => ($row->internal_id) ? "{$row->internal_id} - {$row->name}" :$row->name,
+                'lots_enabled' => (bool) $row->lots_enabled,
+                'series_enabled' => (bool) $row->series_enabled,
+                'lots' => $row->item_lots->where('has_sale', false)->transform(function($row) {
+                    return [
+                        'id' => $row->id,
+                        'series' => $row->series,
+                        'date' => $row->date,
+                        'item_id' => $row->item_id,
+                        'warehouse_id' => $row->warehouse_id,
+                        'has_sale' => (bool)$row->has_sale,
+                        'lot_code' => ($row->item_loteable_type) ? (isset($row->item_loteable->lot_code) ? $row->item_loteable->lot_code:null):null
+                    ];
+                }),
+                'lots_group' => collect($row->lots_group)->transform(function($row){
+                    return [
+                        'id'  => $row->id,
+                        'code' => $row->code,
+                        'quantity' => $row->quantity,
+                        'date_of_due' => $row->date_of_due,
+                        'checked'  => false
+                    ];
+                }),
+                'stock' => $stock,
+            ];
+        });
     }
 }
