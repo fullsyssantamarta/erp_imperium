@@ -197,7 +197,11 @@
                                 <div class="col-lg-6">
                                     <div class="form-group">
                                         <label class="control-label">Ingrese monto</label>
-                                        <el-input v-model="enter_amount" @input="enterAmount()" class="input-text-right">
+                                        <el-input
+                                            :value="formattedEnterAmount"
+                                            @input="onEnterAmountInput"
+                                            class="input-text-right"
+                                        >
                                             <template slot="prepend">{{currencyTypeActive.symbol}}</template>
                                         </el-input>
                                     </div>
@@ -504,6 +508,22 @@
             await this.getFormPosLocalStorage()
         },
         mounted(){
+        },
+        computed: {
+            formattedEnterAmount() {
+                let val = this.enter_amount;
+                if (val === null || val === undefined || val === '') return '';
+                val = val.toString().replace(/[^0-9.,]/g, '');
+                val = val.replace(/,/g, '');
+                let num = parseFloat(val);
+                if (isNaN(num)) return val;
+                let parts = val.split('.');
+                if (parts.length > 1) {
+                    return parseInt(parts[0]).toLocaleString('en-US') + '.' + parts[1];
+                } else {
+                    return parseInt(val).toLocaleString('en-US');
+                }
+            }
         },
         methods: {
             // async getConfigPrint() {
@@ -1280,6 +1300,12 @@
                     this.showDiscountCodeDialog = false;
                     this.clickPayment();
                 }
+            },
+            onEnterAmountInput(value) {
+                let clean = value.replace(/,/g, '');
+                clean = clean.replace(/[^0-9.]/g, '');
+                this.enter_amount = clean;
+                this.enterAmount();
             },
         },
         watch: {
