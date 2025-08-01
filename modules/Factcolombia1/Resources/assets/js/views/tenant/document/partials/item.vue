@@ -121,7 +121,11 @@
                                     <i class="fas fa-exclamation-circle" ></i>
                                 </el-tooltip>
                             </label>
-                            <el-input v-model="form.price" @input="calculateQuantity" :readonly="typeUser === ''">
+                            <el-input
+                                :value="formattedPrice"
+                                @input="onPriceInput"
+                                @blur="onPriceBlur"
+                                :readonly="typeUser === ''">
                                 <template slot="prepend" v-if="currencyTypeSymbolActive">{{ currencyTypeSymbolActive }}</template>
                             </el-input>
                             <small class="form-control-feedback" v-if="errors.price" v-text="errors.unit_price[0]"></small>
@@ -317,7 +321,21 @@
             },
             typeNoteDocuments() {
                 return this.typeDocuments.filter(row => row.id != 1);
-            }
+            },
+            formattedPrice() {
+                let val = this.form.price;
+                if (val === null || val === undefined || val === '') return '';
+                val = val.toString().replace(/[^0-9.,]/g, '');
+                val = val.replace(/,/g, '');
+                let num = parseFloat(val);
+                if (isNaN(num)) return val;
+                let parts = val.split('.');
+                if (parts.length > 1) {
+                    return parseInt(parts[0]).toLocaleString('en-US') + '.' + parts[1];
+                } else {
+                    return parseInt(val).toLocaleString('en-US');
+                }
+            },
         },
         created() {
             this.initForm()
@@ -689,6 +707,21 @@
             },
             addRowSelectLot(lots){
                 this.lots = lots
+            },
+            onPriceInput(value) {
+                let clean = value.replace(/,/g, '');
+                clean = clean.replace(/[^0-9.]/g, '');
+                this.form.price = clean;
+                this.calculateQuantity();
+            },
+            onPriceBlur() {
+                if (this.form.price !== null && this.form.price !== undefined && this.form.price !== '') {
+                    let val = this.form.price.toString().replace(/[^0-9.,]/g, '').replace(/,/g, '');
+                    let num = parseFloat(val);
+                    if (!isNaN(num)) {
+                        this.form.price = num;
+                    }
+                }
             },
         }
     }

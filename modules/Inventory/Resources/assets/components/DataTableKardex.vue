@@ -8,8 +8,14 @@
                          
                         <div class="col-md-6">
                             <label class="control-label">Producto</label>
-                            <el-select  v-model="form.item_id"
-                                    filterable clearable>
+                            <el-select
+                                    v-model="form.item_id"
+                                    filterable
+                                    clearable
+                                    remote
+                                    :remote-method="searchItems"
+                                    :loading="loading_items"
+                            >
                                 <el-option v-for="option in items"  :key="option.id" :value="option.id" :label="option.full_description"></el-option>
                             </el-select>
                         </div>
@@ -94,7 +100,8 @@
                 search: {}, 
                 totals: {}, 
                 establishment: null,
-                items: [],       
+                items: [],
+                loading_items: false, // nuevo estado para loading
                 form: {}, 
                 pickerOptionsDates: {
                     disabledDate: (time) => {
@@ -177,6 +184,26 @@
                     limit: this.limit,
                     ...this.form
                 })
+            },
+            async searchItems(query) {
+                if (!query) {
+                    await this.$http.get(`/${this.resource}/filter`)
+                        .then(response => {
+                            this.items = response.data.items;
+                        });
+                    return;
+                }
+                this.loading_items = true;
+                await this.$http.get(`/inventory/search-items`, { params: { query } })
+                    .then(response => {
+                        this.items = response.data.map(item => ({
+                            ...item,
+                            full_description: item.description
+                        }));
+                    })
+                    .finally(() => {
+                        this.loading_items = false;
+                    });
             },
              
         }

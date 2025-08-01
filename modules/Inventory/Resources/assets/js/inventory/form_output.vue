@@ -6,7 +6,14 @@
                     <div class="col-md-8">
                         <div class="form-group" :class="{'has-danger': errors.item_id}">
                             <label class="control-label">Producto</label>
-                            <el-select v-model="form.item_id" filterable @change="changeItem">
+                            <el-select
+                                v-model="form.item_id"
+                                filterable
+                                remote
+                                :remote-method="searchItems"
+                                :loading="loading_items"
+                                @change="changeItem"
+                            >
                                 <el-tooltip
                                     v-for="option in items"
                                     :key="option.id"
@@ -119,6 +126,7 @@
                 items: [],
                 warehouses: [],
                 inventory_transactions: [],
+                loading_items: false, // nuevo estado para loading
             }
         },
         created() {
@@ -262,6 +270,21 @@
             },
             addRowSelectLot(lots){
                 this.form.lots = lots
+            },
+            async searchItems(query) {
+                if (!query) {
+                    // Si no hay texto, carga los 20 iniciales
+                    await this.create();
+                    return;
+                }
+                this.loading_items = true;
+                await this.$http.get(`/${this.resource}/search-items`, { params: { query } })
+                    .then(response => {
+                        this.items = response.data;
+                    })
+                    .finally(() => {
+                        this.loading_items = false;
+                    });
             },
         }
     }

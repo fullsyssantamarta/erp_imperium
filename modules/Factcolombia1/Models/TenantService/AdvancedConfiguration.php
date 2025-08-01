@@ -36,6 +36,8 @@ class AdvancedConfiguration extends Model
         'enable_qz_tray',
         'validate_discount_code',
         'discount_code',
+        'custom_remission_footer_enabled',
+        'custom_remission_footer_message',
     ];
 
     protected $casts = [
@@ -44,6 +46,7 @@ class AdvancedConfiguration extends Model
         'enable_qz_tray' => 'bool',
         'validate_min_stock' => 'bool',
         'validate_discount_code' => 'bool',
+        'custom_remission_footer_enabled' => 'bool',
     ];
 
 
@@ -69,6 +72,8 @@ class AdvancedConfiguration extends Model
             'validate_min_stock' => $this->validate_min_stock,
             'validate_discount_code' => $this->validate_discount_code,
             'discount_code' => $this->discount_code,
+            'custom_remission_footer_enabled' => $this->custom_remission_footer_enabled,
+            'custom_remission_footer_message' => $this->custom_remission_footer_message,
         ];
 
     }
