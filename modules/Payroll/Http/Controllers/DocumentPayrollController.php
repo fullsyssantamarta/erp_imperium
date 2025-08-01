@@ -30,6 +30,9 @@ use Exception;
 use Modules\Payroll\Helpers\DocumentPayrollHelper;
 use Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController;
 use Modules\Payroll\Traits\UtilityTrait;
+use Modules\Accounting\Models\ChartOfAccount;
+use Modules\Accounting\Helpers\AccountingEntryHelper;
+use Modules\Accounting\Models\JournalPrefix;
 
 
 class DocumentPayrollController extends Controller
@@ -248,10 +251,10 @@ class DocumentPayrollController extends Controller
 
                 foreach ($workers as $worker_id) {
                     $worker_model = Worker::find($worker_id);
-                    
+
                     // Clonar datos base del request para cada trabajador
                     $worker_request = $base_request;
-                    
+
                     // Actualizar datos específicos del trabajador
                     $worker_request['worker_id'] = $worker_id;
                     $worker_request['payment'] = [
@@ -268,7 +271,7 @@ class DocumentPayrollController extends Controller
 
                     $worker_request['accrued']['total_base_salary'] = $proportional_salary;
                     $worker_request['accrued']['salary'] = $proportional_salary;
-                                        
+
                     // Recalcular total de devengados basado en el salario del trabajador actual
                     $transportation_allowance = $worker_request['accrued']['transportation_allowance'] ?? 0;
                     $worker_request['accrued']['accrued_total'] = $proportional_salary + $transportation_allowance;
@@ -299,6 +302,8 @@ class DocumentPayrollController extends Controller
                         'response_api' => $send_to_api
                     ]);
                     $documents[] = $document->id;
+
+                    $this->registerAccountingEntry($document);
                 }
 
                 return [
@@ -318,6 +323,134 @@ class DocumentPayrollController extends Controller
             return $this->getErrorFromException($e->getMessage(), $e);
         }
 
+    }
+
+    private function makeMovement($account, $debit = 0, $credit = 0, $affects_balance = true)
+    {
+        // Si la cuenta no existe o ambos valores son <= 0, no retorna nada
+        if (!$account || (floatval($debit) <= 0 && floatval($credit) <= 0)) {
+            return null;
+        }
+        return [
+            'account_id' => $account->id,
+            'debit' => $debit,
+            'credit' => $credit,
+            'affects_balance' => $affects_balance,
+        ];
+    }
+
+    private function registerAccountingEntry($document)
+    {
+        try {
+            $movements = [];
+            $journal = JournalPrefix::where('prefix', 'NM')->first();
+            $document_type = TypeDocument::where('id', $document->type_document_id)->first();
+
+            // Sueldos
+            $salary = $document->accrued->salary ?? 0;
+            if ($salary > 0) {
+                $accountSalary = ChartOfAccount::where('code','510506')->first();
+                if ($movement = $this->makeMovement($accountSalary, $salary, 0)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // EPS salud
+            $eps_deduction = $document->deduction->eps_deduction ?? 0;
+            if ($eps_deduction > 0) {
+                $accountHealth = ChartOfAccount::where('code','237005')->first();
+                if ($movement = $this->makeMovement($accountHealth, 0, $eps_deduction)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // AFP pension
+            $pension_deduction = $document->deduction->pension_deduction ?? 0;
+            if ($pension_deduction > 0) {
+                $accountPension = ChartOfAccount::where('code','238030')->first();
+                if ($movement = $this->makeMovement($accountPension, 0, $pension_deduction)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // subdidio de transporte
+            $transportation_allowance = $document->accrued->transportation_allowance ?? 0;
+            if ($transportation_allowance > 0) {
+                $accountPayment = ChartOfAccount::where('code','510527')->first(); // auxilio de transporte
+                if ($movement = $this->makeMovement($accountPayment, $transportation_allowance, 0)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // vacaciones
+            // field json
+            if ($document->accrued->common_vacation !== null) {
+                $totalPaymentVacaciones = array_sum(array_column($document->accrued->common_vacation, 'payment'));
+                if($totalPaymentVacaciones > 0) {
+                    $accountVacation = ChartOfAccount::where('code', '510539')->first();
+                    if ($movement = $this->makeMovement($accountVacation, $totalPaymentVacaciones, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+            }
+
+            // prima salarial
+            if ($document->accrued->service_bonus !== null) {
+                $totalPaymentSB = array_sum(array_column($document->accrued->service_bonus, 'payment'));
+                if($totalPaymentSB > 0) {
+                    $accountSB = ChartOfAccount::where('code', '510536')->first(); // prima de servicio
+                    if ($movement = $this->makeMovement($accountSB, $totalPaymentSB, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+                $totalPaymentSBNS = array_sum(array_column($document->accrued->service_bonus, 'paymentNS'));
+                if($totalPaymentSBNS > 0) {
+                    $accountSB = ChartOfAccount::where('code', '510542')->first(); // prima extralegales
+                    if ($movement = $this->makeMovement($accountSB, $totalPaymentSBNS, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+            }
+
+            // cesantias
+            if ($document->accrued->severance !== null) {
+                $totalPaymentSeverance = array_sum(array_column($document->accrued->severance, 'payment'));
+                if($totalPaymentSeverance > 0) {
+                    $accountSeverance = ChartOfAccount::where('code', '510530')->first();
+                    if ($movement = $this->makeMovement($accountSeverance, $totalPaymentSeverance, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+                $totalPaymentSeverancePctg = array_sum(array_column($document->accrued->severance, 'interest_payment'));
+                if($totalPaymentSeverancePctg > 0) {
+                    $accountSP = ChartOfAccount::where('code', '510533')->first(); // intereses de cesantias
+                    if ($movement = $this->makeMovement($accountSP, $totalPaymentSeverancePctg, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+            }
+
+            // Pago neto | saldo total a pagar al empleado
+            $net_payment = ($document->accrued->accrued_total ?? 0) - ($document->deduction->deductions_total ?? 0);
+            if ($net_payment > 0) {
+                $accountPayment = ChartOfAccount::where('code','110505')->first(); // TO DO: no se estable forma de pago de nomina
+                if ($movement = $this->makeMovement($accountPayment, 0, $net_payment)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            AccountingEntryHelper::registerEntry([
+                'prefix_id' => $journal->id,
+                'description' => $document_type->name . ' #' . $document->prefix . '-' . $document->consecutive,
+                'document_payroll_id' => $document->id,
+                'movements' => $movements,
+                'taxes' => [],
+                'tax_config' => [],
+            ]);
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            \Log::error('insert Entry '.$e->getMessage());
+        }
     }
 
 
@@ -356,7 +489,7 @@ class DocumentPayrollController extends Controller
 
             $worker_id = is_array($request->worker_id) ? $request->worker_id[0] : $request->worker_id;
             $worker = Worker::findOrFail($worker_id);
-            
+
             // Obtener resolución
             $resolution = TypeDocument::where('id', $request->type_document_id)
                                     ->where('code', 9)
@@ -383,7 +516,7 @@ class DocumentPayrollController extends Controller
         }
     }
 
-    private function preparePreviewData($worker, $resolution, $request) 
+    private function preparePreviewData($worker, $resolution, $request)
     {
         $helper = new DocumentPayrollHelper();
         $next_consecutive = $helper->getConsecutive(9, true, $resolution->prefix);
@@ -418,7 +551,7 @@ class DocumentPayrollController extends Controller
             'payment' => $request->payment ?? [
                 'payment_method_id' => (int)($worker->payment->payment_method_id ?? 1),
                 'bank_name' => $worker->payment->bank_name ?? null,
-                'account_type' => $worker->payment->account_type ?? null, 
+                'account_type' => $worker->payment->account_type ?? null,
                 'account_number' => $worker->payment->account_number ?? null
             ],
             'period' => $request->period ?? [
@@ -485,7 +618,7 @@ class DocumentPayrollController extends Controller
             return !is_null($value);
         });
 
-        return response()->json($data); 
+        return response()->json($data);
     }
 
     private function cleanOptionalFields(&$inputs)

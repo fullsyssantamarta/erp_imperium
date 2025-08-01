@@ -2054,7 +2054,7 @@
             },
             salaryValidation(){
 
-                
+
 
                 return {
                     success : true
@@ -2454,7 +2454,7 @@
                     //autocompletar campos
                     await this.autocompleteDataFromWorker(this.form.select_worker)
 
-                    
+
                     //recalcular campos que utilizan el salario base del empleado para calculos, estos se ven afectados por el mismo
                     await this.recalculateData()
 
@@ -2500,7 +2500,7 @@
 
                 this.form.period.admision_date = worker.work_start_date
                 this.form_disabled.admision_date = worker.work_start_date ? true : false
-             
+
                 this.calculateWorkedTime()
 
                 this.autocompleteDataSalary(worker.salary)
@@ -2675,13 +2675,13 @@
             async preeliminarView() {
                 try {
                     if (!this.form.worker_id?.length) {
-                        return this.$message.error('Debe seleccionar al menos un empleado')  
+                        return this.$message.error('Debe seleccionar al menos un empleado')
                     }
-                    
-                    // Crear una copia del formulario 
+
+                    // Crear una copia del formulario
                     const formData = _.cloneDeep(this.form);
                     const worker = await _.find(this.workers, {id: this.form.worker_id[0]});
-                    
+
                     // Asegurar que todos los campos del trabajador estén presentes
                     formData.worker = {
                         type_worker_id: worker.type_worker_id || 1,
@@ -2704,7 +2704,7 @@
                     formData.period = formData.period || {};
                     formData.accrued = formData.accrued || {};
                     formData.deduction = formData.deduction || {};
-                    
+
                     this.loading_preview = true;
                     const response = await this.$http.post(`/${this.resource}/preeliminar-view`, formData);
 
@@ -2712,11 +2712,11 @@
                         const base64 = response.data.base64payrollpdf;
                         const byteCharacters = atob(base64);
                         const byteNumbers = new Array(byteCharacters.length);
-                        
+
                         for (let i = 0; i < byteCharacters.length; i++) {
                             byteNumbers[i] = byteCharacters.charCodeAt(i);
                         }
-                        
+
                         const byteArray = new Uint8Array(byteNumbers);
                         const file = new Blob([byteArray], { type: 'application/pdf' });
                         const fileURL = URL.createObjectURL(file);

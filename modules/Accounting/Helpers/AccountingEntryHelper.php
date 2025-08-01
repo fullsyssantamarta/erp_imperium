@@ -21,6 +21,7 @@ class AccountingEntryHelper
             'document_id' => $document['document_id'] ?? null,
             'purchase_id' => $document['purchase_id'] ?? null,
             'document_pos_id' => $document['document_pos_id'] ?? null,
+            'document_payroll_id' => $document['document_payroll_id'] ?? null,
             'status' => 'posted',
         ]);
 

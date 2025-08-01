@@ -8,6 +8,7 @@ use Hyn\Tenancy\Traits\UsesTenantConnection;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Purchase;
 use App\Models\Tenant\DocumentPos;
+use Modules\Payroll\Models\DocumentPayroll;
 
 
 class JournalEntry extends ModelTenant
@@ -22,6 +23,7 @@ class JournalEntry extends ModelTenant
         'document_id',
         'purchase_id',
         'document_pos_id',
+        'document_payroll_id',
         'status',
         'number',
     ];
@@ -102,6 +104,11 @@ class JournalEntry extends ModelTenant
     public function document_pos()
     {
         return $this->belongsTo(DocumentPos::class, 'document_pos_id');
+    }
+
+    public function document_payroll()
+    {
+        return $this->belongsTo(DocumentPayroll::class, 'document_payroll_id');
     }
 
     /**

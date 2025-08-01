@@ -30,7 +30,7 @@ class DocumentPayroll extends PayrollBaseModel
      *
      * @var array
      */
-    protected $fillable = [ 
+    protected $fillable = [
 
         'external_id',
         'user_id',
@@ -47,16 +47,16 @@ class DocumentPayroll extends PayrollBaseModel
         'novelty',
 
         'period',
-        
+
         'prefix',
         'consecutive',
 
         'payroll_period_id',
         'notes',
-        
+
         'worker_id',
         'worker',
-        
+
         'payment',
         'payment_dates',
         'response_api',
@@ -65,7 +65,7 @@ class DocumentPayroll extends PayrollBaseModel
         'response_message_query_zipkey',
 
     ];
-        
+
     protected $casts = [
         'date_of_issue' => 'date',
     ];
@@ -130,7 +130,7 @@ class DocumentPayroll extends PayrollBaseModel
     {
         $this->attributes['payment_dates'] = (is_null($value))?null:json_encode($value);
     }
-    
+
     public function getResponseApiAttribute($value)
     {
         return (is_null($value))?null:(object) json_decode($value);
@@ -141,7 +141,7 @@ class DocumentPayroll extends PayrollBaseModel
         $this->attributes['response_api'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function state_document() 
+    public function state_document()
     {
         return $this->belongsTo(StateDocument::class);
     }
@@ -151,37 +151,37 @@ class DocumentPayroll extends PayrollBaseModel
         return $this->belongsTo(TypeEnvironment::class, 'payroll_type_environment_id');
     }
 
-    public function type_document() 
+    public function type_document()
     {
         return $this->belongsTo(TypeDocument::class);
     }
 
-    public function establishment() 
+    public function establishment()
     {
         return $this->belongsTo(Establishment::class);
     }
 
-    public function payroll_period() 
+    public function payroll_period()
     {
         return $this->belongsTo(PayrollPeriod::class);
     }
-    
+
     public function affected_adjust_notes()
     {
         return $this->hasMany(DocumentPayrollAdjustNote::class, 'affected_document_payroll_id');
     }
 
-    public function adjust_note() 
+    public function adjust_note()
     {
         return $this->hasOne(DocumentPayrollAdjustNote::class, 'co_document_payroll_id');
     }
-    
-    public function user() 
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function model_worker() 
+    public function model_worker()
     {
         return $this->belongsTo(Worker::class, 'worker_id');
     }
@@ -191,12 +191,12 @@ class DocumentPayroll extends PayrollBaseModel
         return $this->belongsTo(Worker::class, 'worker_id');
     }
 
-    public function accrued() 
+    public function accrued()
     {
         return $this->hasOne(DocumentPayrollAccrued::class, 'co_document_payroll_id');
     }
 
-    public function deduction() 
+    public function deduction()
     {
         return $this->hasOne(DocumentPayrollDeduction::class, 'co_document_payroll_id');
     }
@@ -205,10 +205,10 @@ class DocumentPayroll extends PayrollBaseModel
     {
         return $this->prefix.'-'.$this->consecutive;
     }
-        
+
 
     /**
-     * 
+     *
      * Filtros para listado de nóminas
      *
      * @param $query
@@ -223,7 +223,7 @@ class DocumentPayroll extends PayrollBaseModel
             {
                 return $query->where('consecutive', $request->value);
             }
-    
+
             return $query->where($request->column, 'like', "%{$request->value}%");
         }
 
@@ -240,7 +240,7 @@ class DocumentPayroll extends PayrollBaseModel
     {
         return !is_null($this->adjust_note);
     }
-    
+
 
     public function getTypeDocumentName()
     {
@@ -272,7 +272,7 @@ class DocumentPayroll extends PayrollBaseModel
 
         $filename_xml = null;
         $filename_pdf = null;
-        
+
         if($this->response_api)
         {
             $response = $this->response_api;
@@ -292,8 +292,8 @@ class DocumentPayroll extends PayrollBaseModel
         // nomina eliminacion y reemplazo
         $btn_adjust_note_elimination = false;
         $btn_adjust_note_replace = false;
-        
-        // si es aceptada y no es nomina de ajuste 
+
+        // si es aceptada y no es nomina de ajuste
         if($this->state_document_id === 5 && !$this->is_payroll_adjust_note)
         {
             //solo puede tener 1 nómina de eliminación
@@ -332,13 +332,13 @@ class DocumentPayroll extends PayrollBaseModel
             'btn_adjust_note_elimination' => $btn_adjust_note_elimination,
             'btn_adjust_note_replace' => $btn_adjust_note_replace,
             'affected_adjust_notes' => $affected_adjust_notes,
-            
+
         ];
 
     }
-    
+
     /**
-     * 
+     *
      * Obtener nóminas relacionados (individuales o de ajuste)
      *
      * @return array
@@ -372,7 +372,7 @@ class DocumentPayroll extends PayrollBaseModel
 
         $filename_xml = null;
         $filename_pdf = null;
-        
+
         if($this->response_api)
         {
             $response = $this->response_api;
@@ -423,9 +423,9 @@ class DocumentPayroll extends PayrollBaseModel
 
     }
 
-    
+
     /**
-     * 
+     *
      * Retorna data de nómina afectada, usado cuando se genera nómina de reemplazo
      *
      * @return array
@@ -436,19 +436,19 @@ class DocumentPayroll extends PayrollBaseModel
 
             'date_of_issue' => $this->date_of_issue,
             'time_of_issue' => $this->time_of_issue,
-    
+
             'number_full' => $this->number_full,
-    
+
             'head_note' => $this->head_note,
             'foot_note' => $this->foot_note,
-    
+
             'novelty' => $this->novelty,
-    
+
             'period' => $this->period,
-            
+
             'payroll_period_id' => $this->payroll_period_id,
             'notes' => $this->notes,
-            
+
             'worker_id' => $this->worker_id,
             'worker_total_base_salary' => $this->worker->salary,
             'payment' => $this->payment,
@@ -458,6 +458,6 @@ class DocumentPayroll extends PayrollBaseModel
 
         ];
     }
-    
+
 
 }
