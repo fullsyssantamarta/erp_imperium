@@ -429,7 +429,9 @@ class InventoryController extends Controller
             ->whereNotIsSet()
             ->where(function($q) use ($query) {
                 $q->where('description', 'like', "%{$query}%")
-                  ->orWhere('internal_id', 'like', "%{$query}%");
+                  ->orWhere('internal_id', 'like', "%{$query}%")
+                  ->orWhere('name', 'like', "%{$query}%")
+                  ->orWhere('second_name', 'like', "%{$query}%");
             })
             ->limit(20)
             ->get();
