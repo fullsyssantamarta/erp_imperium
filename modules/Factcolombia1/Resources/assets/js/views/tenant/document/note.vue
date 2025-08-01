@@ -869,7 +869,12 @@
                 this.noteService.resolution_number = typeDocument ? typeDocument.resolution_number : '';
 
                 if(!this.note){
-                    this.noteService.type_operation_id = "8"
+                    if (this.form.type_document_id == 2) {
+                        this.noteService.type_operation_id = "5";
+                    }
+                    else if (this.form.type_document_id == 3) {
+                        this.noteService.type_operation_id = "8";
+                    }
                     this.noteService.invoice_period = {
                         start_date: moment(this.form.start_invoice_period).format('YYYY-MM-DD'),
                         end_date: moment(this.form.end_invoice_period).format('YYYY-MM-DD')
