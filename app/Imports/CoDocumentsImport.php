@@ -246,6 +246,7 @@ class CoDocumentsImport implements ToCollection, WithMultipleSheets
                     ],
                     'head_note' => $row[25] ?? '',
                     'foot_note' => $row[26] ?? '',
+                    'total' => $row[20],
                 ];
 
                 // Campos de impuestos totales si están presentes
@@ -306,13 +307,21 @@ class CoDocumentsImport implements ToCollection, WithMultipleSheets
                 ]];
             }
 
-            // Descuentos/cargos de línea si están presentes
-            if (!empty($row[39]) || !empty($row[40]) || !empty($row[41])) {
+            $amount = isset($row[41]) ? (float)$row[41] : 0;
+            $base_amount = isset($row[42]) ? (float)$row[42] : 0;
+            $reason = isset($row[40]) ? trim($row[40]) : '';
+            $hasAllowanceCharge = (
+                (!empty($row[39]) && $row[39] !== 'false') ||
+                $amount > 0 ||
+                $base_amount > 0 ||
+                $reason !== ''
+            );
+            if ($hasAllowanceCharge) {
                 $invoice_line['allowance_charges'] = [[
                     'charge_indicator' => ($row[39] ?? 'false') === 'true',
-                    'allowance_charge_reason' => $row[40] ?? null,
-                    'amount' => $row[41] ?? 0,
-                    'base_amount' => $row[42] ?? 0,
+                    'allowance_charge_reason' => $reason !== '' ? $reason : 'Sin motivo',
+                    'amount' => $amount,
+                    'base_amount' => $base_amount,
                 ]];
             }
 
