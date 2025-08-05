@@ -34,7 +34,13 @@
                     <el-table :data="form.details" border show-summary :summary-method="getSummaries">
                         <el-table-column prop="account_id" label="Cuenta Contable">
                             <template slot-scope="{ row }">
-                                <el-select v-model="row.chart_of_account_id	" placeholder="Seleccionar cuenta">
+                                <el-select v-model="row.chart_of_account_id"
+                                    placeholder="Seleccionar cuenta"
+                                    filterable
+                                    clearable
+                                    remote
+                                    :remote-method="loadAccounts"
+                                    :loading="loadingAccounts">
                                     <el-option v-for="account in accounts" :key="account.id" :label="account.code + ' - ' + account.name" :value="account.id"></el-option>
                                 </el-select>
                             </template>
@@ -42,7 +48,7 @@
 
                         <el-table-column prop="debit" label="Débito">
                             <template slot-scope="{ row }">
-                                <el-input type="number" 
+                                <el-input type="number"
                                     v-model="row.debit"
                                     :disabled="row.credit > 0"
                                     step="0.01"
@@ -52,7 +58,7 @@
 
                         <el-table-column prop="credit" label="Crédito">
                             <template slot-scope="{ row }">
-                                <el-input type="number" 
+                                <el-input type="number"
                                     v-model="row.credit"
                                     :disabled="row.debit > 0"
                                     step="0.01"
@@ -78,11 +84,11 @@
         </form>
     </el-dialog>
 
-    <journal-entry-prefix 
-        :showDialog.sync="showDialogPrefix" 
+    <journal-entry-prefix
+        :showDialog.sync="showDialogPrefix"
         >
     </journal-entry-prefix>
-    
+
     </div>
 
 </template>
@@ -103,6 +109,7 @@ export default {
             prefixes: [],
             accounts: [],
             showDialogPrefix: false,
+            loadingAccounts: false
         };
     },
     created() {
@@ -124,10 +131,17 @@ export default {
                 this.prefixes = response.data;
             });
         },
-        async loadAccounts() {
-            await this.$http.get("/accounting/charts/records?column=level&value=4").then((response) => {
-                this.accounts = response.data.data;
-            });
+        async loadAccounts(query = null) {
+            this.loadingAccounts = true;
+
+            const params = {
+                column: query ? 'code' : 'level',
+                value: query || 4
+            };
+
+            await this.$http.get(`/accounting/charts/records`, { params })
+                .then(response => this.accounts = response.data.data)
+                .finally(() => this.loadingAccounts = false);
         },
         addDetail() {
             this.form.details.push({ chart_of_account_id: null, debit: 0, credit: 0 });
