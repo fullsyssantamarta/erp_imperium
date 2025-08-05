@@ -1374,10 +1374,6 @@ class DocumentPosController extends Controller
             'number' => $data_consecutive->number,
             'date' => Carbon::now()->format('Y-m-d'),
             'time' => Carbon::now()->format('H:i:s'),
-//            'establishment_name' => $company->name,
-//            'establishment_address' => $document->establishment->address,
-//            'establishment_phone' => $document->establishment->telephone,
-//            'establishment_municipality' => $document->establishment->department_id,
             'billing_reference' => [
                 'number' => $request_api->prefix.$request_api->number,
                 'issue_date' => $request_api->date,
@@ -1395,7 +1391,8 @@ class DocumentPosController extends Controller
             'customer' => $request_api->customer,
             'tax_totals' => $request_api->tax_totals,
             'legal_monetary_totals' => $request_api->legal_monetary_totals,
-            'credit_note_lines' => $request_api->invoice_lines
+            'credit_note_lines' => $request_api->invoice_lines,
+            'allowance_charges' => $request_api->allowance_charges ?? [],
         ];
         return $json;
     }
