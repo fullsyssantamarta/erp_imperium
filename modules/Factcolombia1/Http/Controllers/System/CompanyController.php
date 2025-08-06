@@ -348,6 +348,22 @@ class CompanyController extends Controller
         ];
     }
 
+    public function changePassword(Request $request, $id)
+    {
+        $company = Company::findOrFail($id);
+        $tenancy = app(Environment::class);
+        $tenancy->tenant($company->hostname->website);
+
+        $user = \Modules\Factcolombia1\Models\Tenant\User::firstOrFail();
+        $user->password = bcrypt($request->password);
+        $user->save();
+
+        return [
+            'success' => true,
+            'message' => 'Contraseña actualizada correctamente.'
+        ];
+    }
+
     /**
      * Remove the specified resource from storage.
      *
