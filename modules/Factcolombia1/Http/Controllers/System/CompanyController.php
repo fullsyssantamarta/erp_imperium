@@ -61,6 +61,16 @@ class CompanyController extends Controller
     use CompanyTrait;
 
     public function store(CompanyRequest $request) {
+
+        $limite = config('app.limite_reseller');
+        $totalEmpresas = Company::count();
+        if ($totalEmpresas >= $limite) {
+            return [
+                'success' => false,
+                'message' => 'Has alcanzado el límite de empresas permitidas.'
+            ];
+        }
+
         $response = $this->createCompanyApiDian($request);
         if(!property_exists( $response, 'password' ) || !property_exists( $response, 'token' )){
             return [
