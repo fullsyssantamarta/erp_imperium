@@ -93,7 +93,7 @@
                                             <span style="font-size:16px;">&#9998;</span>
                                         </button>
                                         {{currency.symbol}} 
-                                        <span v-if="advanced_configuration.item_tax_included">
+                                        <span v-if="!advanced_configuration.item_tax_included">
                                             {{ getFormatDecimal(item.sale_unit_price) }}
                                         </span>
                                         <span v-else>
@@ -910,12 +910,12 @@ export default {
         clickOpenInputEditUP(index) {
             this.items[index].edit_unit_price = true;
             // Inicializa el valor editable según la configuración
-            this.items[index].edit_sale_unit_price = this.advanced_configuration.item_tax_included
+            this.items[index].edit_sale_unit_price = !this.advanced_configuration.item_tax_included
                 ? this.items[index].sale_unit_price
                 : this.items[index].sale_unit_price_with_tax;
         },
         clickEditUnitPriceItem(index) {
-            if (this.advanced_configuration.item_tax_included) {
+            if (!this.advanced_configuration.item_tax_included) {
                 // El precio editado ya incluye impuesto
                 this.items[index].sale_unit_price = this.items[index].edit_sale_unit_price;
                 this.items[index].sale_unit_price_with_tax = this.items[index].edit_sale_unit_price;
@@ -1245,7 +1245,7 @@ export default {
             if (this.type_refund) {
 //                console.log("Aqui devolucion...")
                 this.form_item.item = item;
-                if (this.advanced_configuration.item_tax_included) {
+                if (!this.advanced_configuration.item_tax_included) {
                     // El precio mostrado incluye impuesto, pero internamente debe ser sin impuesto
                     if (item.tax && item.tax.rate && item.tax.conversion) {
                         this.form_item.unit_price_value = item.sale_unit_price / (1 + (item.tax.rate / item.tax.conversion));
@@ -1366,7 +1366,7 @@ export default {
 
                     this.form_item.item = { ...item }
                     // this.form_item.item = item;
-                    if (this.advanced_configuration.item_tax_included) {
+                    if (!this.advanced_configuration.item_tax_included) {
                         if (item.tax && item.tax.rate && item.tax.conversion) {
                             this.form_item.unit_price_value = item.sale_unit_price / (1 + (item.tax.rate / item.tax.conversion));
                         } else {
