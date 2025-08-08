@@ -34,6 +34,7 @@ class Company extends Model
         'locked_tenant',
         'locked_users',
         'limit_users',
+        'plan_id',
         'start_billing_cycle'
     ];
 

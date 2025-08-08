@@ -35,9 +35,8 @@ class PlanController extends Controller
 
     public function tables()
     {
-        $plan_documents = PlanDocument::all(); 
-
-        return compact('plan_documents');
+        $plans = Plan::all();
+        return compact('plans');
     }
 
 

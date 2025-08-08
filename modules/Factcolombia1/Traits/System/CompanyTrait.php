@@ -28,6 +28,7 @@ trait CompanyTrait
             'hostname_id' => $hostname->id,
             'economic_activity_code' => $request->economic_activity_code,
             'ica_rate' => $request->ica_rate,
+            'plan_id' => $request->plan_id,
             'type_identity_document_id' => $request->type_document_identification_id,
         ]);
 

@@ -99,6 +99,21 @@
                     </div>
 
                     <div class="col-md-3">
+                        <div class="form-group" :class="{'has-danger': (errors.plan_id)}">
+                            <label class="control-label">Plan</label>
+                                <el-select v-model="form.plan_id" placeholder="Seleccione un plan" @change="setPlanLimits">
+                                    <el-option
+                                        v-for="plan in plans"
+                                        :key="plan.id"
+                                        :label="plan.name"
+                                        :value="plan.id">
+                                    </el-option>
+                                </el-select>
+                            <small class="form-control-feedback" v-if="errors.plan_id" v-text="errors.plan_id[0]"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': (errors.limit_documents)}">
                             <label class="control-label">Límite de documentos</label>
                             <el-input  v-model="form.limit_documents"></el-input>
@@ -112,7 +127,7 @@
                             <el-input  v-model="form.limit_users"></el-input>
                             <small class="form-control-feedback" v-if="errors.limit_users" v-text="errors.limit_users[0]"></small>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': (errors.economic_activity_code)}">
@@ -261,6 +276,7 @@
                 type_regimes: [],
                 toggle: false,
                 type_liabilities: [],
+                plans: [],
             }
         },
         async created() {
@@ -275,7 +291,10 @@
                     this.url_base = response.data.url_base
                     this.type_liabilities = response.data.type_liabilities
                 })
-
+            await this.$http.get('/plans/tables')
+                .then(response => {
+                    this.plans = response.data.plans
+                })
             await this.initForm()
         },
 
@@ -423,7 +442,17 @@
                 } else {
                     this.$message.error(response.message)
                 }
-            }
+            },
+            setPlanLimits() {
+                const selectedPlan = this.plans.find(plan => plan.id === this.form.plan_id);
+                if (selectedPlan) {
+                    this.form.limit_documents = selectedPlan.limit_documents;
+                    this.form.limit_users = selectedPlan.limit_users;
+                } else {
+                    this.form.limit_documents = null;
+                    this.form.limit_users = null;
+                }
+            },
         }
     }
 </script>
