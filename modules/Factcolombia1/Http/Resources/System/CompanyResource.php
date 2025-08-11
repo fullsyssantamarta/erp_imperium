@@ -43,6 +43,7 @@ class CompanyResource extends JsonResource
             'subdomain' => $this->subdomain,
             'limit_documents' => $this->limit_documents,
             'limit_users' => $this->limit_users,
+            'plan_id' => $this->plan_id,
             'hostname_id' => $this->hostname_id,
             'ica_rate' => $this->ica_rate,
             'economic_activity_code' => $this->economic_activity_code,

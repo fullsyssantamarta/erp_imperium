@@ -217,24 +217,12 @@
                                     <template v-if="!row.locked">
                                         <el-dropdown trigger="click">
                                             <span class="el-dropdown-link" style="cursor:pointer;">
-                                                <!-- 3 puntos verticales -->
-                                                <span
-                                                    style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 24px;">
-                                                    <span
-                                                        style="width:5px;height:5px;border-radius:50%;background:#333;margin:2px 0;"></span>
-                                                    <span
-                                                        style="width:5px;height:5px;border-radius:50%;background:#333;margin:2px 0;"></span>
-                                                    <span
-                                                        style="width:5px;height:5px;border-radius:50%;background:#333;margin:2px 0;"></span>
-                                                </span>
+                                                <i class="fa fa-ellipsis-v" style="font-size: 20px;"></i>
                                             </span>
                                             <el-dropdown-menu slot="dropdown">
-                                                <el-dropdown-item
-                                                    @click.native="clickEdit(row.id)">Editar</el-dropdown-item>
-                                                <el-dropdown-item @click.native="openPasswordDialog(row.id)">Cambiar
-                                                    contraseña</el-dropdown-item>
-                                                <el-dropdown-item divided
-                                                    @click.native="clickDelete(row.id)">Eliminar</el-dropdown-item>
+                                                <el-dropdown-item @click.native="clickEdit(row.id)">Editar</el-dropdown-item>
+                                                <el-dropdown-item @click.native="openPasswordDialog(row.id)">Cambiar contraseña</el-dropdown-item>
+                                                <el-dropdown-item divided @click.native="clickDelete(row.id)">Eliminar</el-dropdown-item>
                                             </el-dropdown-menu>
                                         </el-dropdown>
                                     </template>

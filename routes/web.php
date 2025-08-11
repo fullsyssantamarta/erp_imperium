@@ -108,7 +108,7 @@ if ($hostname) {
             Route::get('users/create', 'Tenant\UserController@create')->name('tenant.users.create');
             Route::get('users/tables', 'Tenant\UserController@tables');
             Route::get('users/record/{user}', 'Tenant\UserController@record');
-            Route::post('users', 'Tenant\UserController@store');
+            Route::post('users', 'Tenant\UserController@store')->middleware('check.tenant.limits');
             Route::get('users/records', 'Tenant\UserController@records');
             Route::delete('users/{user}', 'Tenant\UserController@destroy');
             Route::get('users/search', 'Tenant\UserController@searchData');
@@ -411,7 +411,7 @@ if ($hostname) {
             Route::get('sale-notes/dispatches', 'Tenant\SaleNoteController@dispatches');
             Route::delete('sale-notes/destroy_sale_note_item/{sale_note_item}', 'Tenant\SaleNoteController@destroy_sale_note_item');
 
-            Route::post('document-pos', 'Tenant\DocumentPosController@store');
+            Route::post('document-pos', 'Tenant\DocumentPosController@store')->middleware('check.tenant.limits');
             Route::get('document-pos/record/{salenote}', 'Tenant\DocumentPosController@record');
             Route::get('document-pos/print/{external_id}/{format?}', 'Tenant\DocumentPosController@toPrint');
             Route::get('document-pos/records', 'Tenant\DocumentPosController@records');

@@ -25,7 +25,7 @@ if($current_hostname) {
                 Route::get('search/customers', 'Tenant\DocumentController@searchCustomers');
                 Route::get('search/customer/{id}', 'Tenant\DocumentController@searchCustomerById');
                 Route::get('tables', 'Tenant\DocumentController@tables');
-                Route::post('', 'Tenant\DocumentController@store');
+                Route::post('', 'Tenant\DocumentController@store')->middleware('check.tenant.limits');
                 Route::post('preeliminar-view', 'Tenant\DocumentController@preeliminarview');
                 Route::get('item/tables', 'Tenant\DocumentController@item_tables');
                 Route::get('health/tables', 'Tenant\DocumentController@health_tables');

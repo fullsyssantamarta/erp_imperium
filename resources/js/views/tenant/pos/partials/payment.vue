@@ -5,7 +5,7 @@
 
                 <div class="row pl-3 py-2 border-bottom m-0 p-0 bg-white">
                     <div class="col-12 px-0 py-3">
-                        <h4 class="font-weight-semibold m-0">{{customer.description}}</h4>
+                        <h4 class="font-weight-semibold m-0">{{ customer ? customer.description : '' }}</h4>
                     </div>
                 </div>
 

@@ -12,7 +12,7 @@ if($current_hostname) {
             Route::prefix('co-remissions')->group(function() {
 
                 Route::get('', 'RemissionController@index')->name('tenant.co-remissions.index');
-                Route::post('', 'RemissionController@store');
+                Route::post('', 'RemissionController@store')/*->middleware('check.tenant.limits')*/;
                 Route::get('columns', 'RemissionController@columns');
                 Route::get('records', 'RemissionController@records');
                 Route::get('record/{id}', 'RemissionController@record');
@@ -21,7 +21,7 @@ if($current_hostname) {
                 Route::get('item/tables', 'RemissionController@item_tables');
                 Route::get('download/{external_id}/{format?}', 'RemissionController@download');
                 Route::get('print/{external_id}/{format?}', 'RemissionController@toPrint');
-                Route::get('voided/{id}', 'RemissionController@voided'); // <-- Añadido
+                Route::get('voided/{id}', 'RemissionController@voided');
 
             });
 

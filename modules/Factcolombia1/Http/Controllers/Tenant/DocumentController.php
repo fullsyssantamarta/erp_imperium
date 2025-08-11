@@ -619,11 +619,11 @@ class DocumentController extends Controller
             // $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix);
             $this->company = Company::query()->with('country', 'version_ubl', 'type_identity_document')->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
-                return [
-                    'success' => false,
-                    'message' => '"Has excedido el límite de documentos de tu cuenta."'
-                ];
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
+            //     return [
+            //         'success' => false,
+            //         'message' => '"Has excedido el límite de documentos de tu cuenta."'
+            //     ];
 
             $company = ServiceTenantCompany::firstOrFail();
 
@@ -937,8 +937,8 @@ class DocumentController extends Controller
                 $nextConsecutive = FacadeDocument::nextConsecutive($resolution[0]->id);
             }
             $this->company = Company::query()->with('country', 'version_ubl', 'type_identity_document')->firstOrFail();
-            if(($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
-                throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            // if(($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
+            //     throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
             if($invoice_json !== NULL){
                 $request = new Request();
                 $request->type_document_id = $resolution[0]->id;
@@ -1284,11 +1284,11 @@ class DocumentController extends Controller
                 ->with('country', 'version_ubl', 'type_identity_document')
                 ->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
-                return [
-                        'success' => false,
-                        'message' => '"Has excedido el límite de documentos de tu cuenta."'
-                ];
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
+            //     return [
+            //             'success' => false,
+            //             'message' => '"Has excedido el límite de documentos de tu cuenta."'
+            //     ];
 
                 // $correlative_api = $this->getCorrelativeInvoice($type_document_service);
             $company = ServiceTenantCompany::firstOrFail();
@@ -1471,7 +1471,7 @@ class DocumentController extends Controller
                 ->with('country', 'version_ubl', 'type_identity_document')
                 ->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
 
 
             if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
@@ -2748,7 +2748,7 @@ class DocumentController extends Controller
                 ->with('country', 'version_ubl', 'type_identity_document')
                 ->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
 
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
