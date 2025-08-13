@@ -3,19 +3,19 @@
 ### Instalación de PRO2 (con api incluido)
 
  Linux - Docker - SSL opcional <br>
-* [ajustes necesarios de dominio](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#dominio) <br>
-* [pasos para ejecución de script](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#pasos) <br>
-* [script para ubuntu 20](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#L1) <br>
-* [script para ubuntu 22](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#L1) <br>
+* [ajustes necesarios de dominio](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#dominio) <br>
+* [pasos para ejecución de script](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#pasos) <br>
+* [script para ubuntu 20](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#L1) <br>
+* [script para ubuntu 22](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/26#L1) <br>
 
 ### Instalación de PRO2 (sin api incluido)
 
 * Linux - Ubuntu 20 - Docker - SSL opcional<br>
-[ver pasos y script](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/2 "ver")
+[ver pasos y script](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/2 "ver")
 [Video Aquí](https://www.youtube.com/watch?v=X8b5DwlWnao "ver")
 
 * Windows - Laragon - entorno local<br>
-[ver pasos](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/5#instalacion-de-entorno "ver")
+[ver pasos](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/5#instalacion-de-entorno "ver")
 [Video Aquí](https://www.youtube.com/watch?v=kNaDz0BC4Qo "ver")
 
 ### Configuración, Habilitación y producción
@@ -41,14 +41,14 @@
 ### Actualización del PRO 2
 
 * Linux - Ubuntu 20 -Docker<br>
-[ver pasos](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/blob/master/proceso_de_actualizacion_docker.md "ver")
+[ver pasos](https://git.buho.la/facturalatam/co-facturadorpro2/-/blob/master/proceso_de_actualizacion_docker.md "ver")
 * Windows - Laragon - entorno local<br>
-[ver pasos](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/5#user-content-pasos-para-actualizar "ver")
+[ver pasos](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/5#user-content-pasos-para-actualizar "ver")
 
 ### Actualización del SSL
 
 * Docker<br>
-[ver pasos y script](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/snippets/1 "ver")
+[ver pasos y script](https://git.buho.la/facturalatam/co-facturadorpro2/-/snippets/1 "ver")
 
 
 
@@ -78,7 +78,7 @@ Acceso red local - laragon: [Guía](https://docs.google.com/document/d/13kOE5N5L
 
 ### Impresión directa con QzTray
 
-Ver los pasos en la [wiki](https://gitlab.buho.la/facturalatam/co-facturadorpro2/-/wikis/qztray-instalacion) <br>
+Ver los pasos en la [wiki](https://git.buho.la/facturalatam/co-facturadorpro2/-/wikis/qztray-instalacion) <br>
 
 ### APP Android
 
