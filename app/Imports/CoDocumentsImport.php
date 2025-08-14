@@ -153,8 +153,9 @@ class CoDocumentsImport implements ToCollection, WithMultipleSheets
 
     public function collection(Collection $rows)
     {
-        $filteredRows = $rows->filter(fn($value, $key) => $key > 0 && !empty(array_filter($value->toArray())));
-
+        $filteredRows = $rows->filter(function($value, $key) {
+            return $key > 0 && !empty(array_filter($value->toArray()));
+        });
         // Primera pasada: validación
         $rowNumber = 1;
         foreach ($filteredRows as $row) {
