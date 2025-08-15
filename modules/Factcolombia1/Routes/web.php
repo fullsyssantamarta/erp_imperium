@@ -135,6 +135,18 @@ if($current_hostname) {
                 Route::delete('{id}', 'Tenant\CouponController@destroy');
             });
 
+            Route::prefix('co-sellers')->group(function () {
+                Route::get('', 'Tenant\SellerController@index')->name('tenant.co-sellers.index');
+                Route::get('records', 'Tenant\SellerController@records');
+                Route::get('create', 'Tenant\SellerController@create')->name('tenant.co-sellers.create');
+                Route::post('', 'Tenant\SellerController@store');
+                Route::get('edit/{id}', 'Tenant\SellerController@edit')->name('tenant.co-sellers.edit');
+                Route::put('{id}', 'Tenant\SellerController@update');
+                Route::delete('{id}', 'Tenant\SellerController@destroy');
+                Route::get('type-documents', 'Tenant\SellerController@typeDocuments');
+                Route::put('{id}/change-status', 'Tenant\SellerController@changeStatus');
+            });
+
         });
     });
 

@@ -104,7 +104,7 @@ Vue.component('tenant-client-client', require('@viewsModuleProColombia/tenant/cl
 Vue.component('tenant-import-import', require('@viewsModuleProColombia/tenant/import/Import.vue'));
 
 Vue.component('tenant-coupon-co', require('@viewsModuleProColombia/tenant/coupon/index.vue'));
-
+Vue.component('tenant-seller-index', require('@viewsModuleProColombia/tenant/seller/index.vue'));
 
 //components colombia
 // Vue.component('tenant-document-form', require('@viewsModuleProColombia/tenant/configuration/Configuration.vue'));
@@ -245,6 +245,9 @@ Vue.component('tenant-report-order-notes-general-index', require('../../modules/
 Vue.component('tenant-report-sales-consolidated-index', require('../../modules/Report/Resources/assets/js/views/sales_consolidated/index.vue'));
 
 Vue.component('tenant-report-user-commissions-index', require('../../modules/Report/Resources/assets/js/views/user_commissions/index.vue'));
+
+//report seller
+Vue.component('tenant-report-sellers-index', require('../../modules/Report/Resources/assets/js/views/sellers/index.vue'));
 
 Vue.component('tenant-report-tax-index', require('../../modules/Report/Resources/assets/js/views/taxes/index.vue'));
 

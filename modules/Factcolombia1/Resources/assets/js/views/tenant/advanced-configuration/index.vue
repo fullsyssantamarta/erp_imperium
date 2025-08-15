@@ -110,6 +110,17 @@
                                             <small class="form-control-feedback" v-if="errors.custom_remission_footer_message" v-text="errors.custom_remission_footer_message[0]"></small>
                                         </div>
                                     </div>
+                                    <div class="col-md-4 mt-4">
+                                        <label class="control-label">
+                                            Activar vistas de vendedores
+                                            <el-tooltip class="item" effect="dark" content="Muestra el módulo de vendedores en el menú" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch v-model="form.enable_seller_views" active-text="Sí" inactive-text="No" @change="submit"></el-switch>
+                                        </div>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 

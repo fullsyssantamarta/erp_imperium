@@ -335,6 +335,18 @@
                                     </a>
                                 </li>
 
+                                @php
+                                    $advanced_config = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
+                                @endphp
+
+                                @if($advanced_config && $advanced_config->enable_seller_views)
+                                    <li class="{{ ($path[0] === 'co-sellers')?'nav-active':'' }}">
+                                        <a class="nav-link" href="{{route('tenant.co-sellers.index')}}">
+                                            Vendedores
+                                        </a>
+                                    </li>
+                                @endif
+
                             @endif
 
                         </ul>
@@ -741,6 +753,13 @@
                                         </ul>
                                     </li>
 
+                                    @if($advanced_config && $advanced_config->enable_seller_views)
+                                    <li class="{{(($path[0] === 'reports') && ($path[1] === 'sellers')) ? 'nav-active' : ''}}">
+                                        <a class="nav-link" href="{{route('tenant.reports.sellers.index')}}">
+                                            Vendedores
+                                        </a>
+                                    </li>
+                                    @endif
 
                                     {{-- <li class="{{(($path[0] === 'reports') && ($path[1] == 'sales-consolidated')) ? 'nav-active' : ''}}">
                                         <a class="nav-link" href="{{route('tenant.reports.sales_consolidated.index')}}">

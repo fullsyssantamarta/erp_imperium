@@ -38,6 +38,7 @@ class Document extends ModelTenant
 
     protected $fillable = [
         'user_id',
+        'seller_id',
         'external_id',
         'establishment_id',
         'establishment',
@@ -469,6 +470,11 @@ class Document extends ModelTenant
     public function transport()
     {
         return $this->hasOne(DocumentTransport::class);
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class, 'seller_id');
     }
 
     // public function getNumberFullAttribute()

@@ -15,6 +15,7 @@ class DocumentPos extends ModelTenant
 
     protected $fillable = [
         'user_id',
+        'seller_id',
         'external_id',
         'establishment_id',
         'establishment',
@@ -151,6 +152,11 @@ class DocumentPos extends ModelTenant
     public function payments()
     {
         return $this->hasMany(DocumentPosPayment::class, 'document_pos_id');
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class, 'seller_id');
     }
 
    /* public function documents()

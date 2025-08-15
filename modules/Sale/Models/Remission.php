@@ -16,6 +16,7 @@ use App\Models\Tenant\{
     Establishment,
     Quotation,
     Document,
+    Seller,
 };
 use App\Models\Tenant\ModelTenant;
 use Modules\Inventory\Models\InventoryKardex;
@@ -29,6 +30,7 @@ class Remission extends ModelTenant
     protected $fillable = [
 
         'user_id',
+        'seller_id',
         'external_id',
         'establishment_id',
         'establishment',
@@ -177,6 +179,11 @@ class Remission extends ModelTenant
     public function payments()
     {
         return $this->hasMany(RemissionPayment::class);
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class, 'seller_id');
     }
 
     public function scopeWhereCurrency($query, $currency_id)
