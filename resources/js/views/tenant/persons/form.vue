@@ -5,7 +5,7 @@
                 <div class="row">
                     <div class="col-md-5">
                         <div class="form-group" :class="{'has-danger': errors.number}">
-                            <label class="control-label">N° Identificación  </label>
+                            <label class="control-label">N° Identificación <span style="color:red">*</span></label>
                             <el-input v-model="form.number" :maxlength="maxLength" dusk="number">
                                 <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="changeNumberIdentification">
                                 </el-button>
@@ -15,7 +15,7 @@
                     </div>
                     <div class="col-md-2">
                         <div class="form-group" :class="{'has-danger': errors.dv}">
-                            <label class="control-label">Dv  </label>
+                            <label class="control-label">Dv <span style="color:red">*</span></label>
                             <el-input v-model="form.dv" ></el-input>
                             <small class="form-control-feedback" v-if="errors.dv" v-text="errors.dv[0]"></small>
                         </div>
@@ -23,7 +23,7 @@
 
                      <div class="col-md-5">
                         <div class="form-group" :class="{'has-danger': errors.name}">
-                            <label class="control-label">Nombre  </label>
+                            <label class="control-label">Nombre <span style="color:red">*</span></label>
                             <el-input v-model="form.name" ></el-input>
                             <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
                         </div>
@@ -33,7 +33,7 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <div class="form-group" :class="{'has-danger': errors.email}">
-                            <label class="control-label">Correo electrónico</label>
+                            <label class="control-label">Correo electrónico <span style="color:red">*</span></label>
                             <el-input v-model="form.email" dusk="email"></el-input>
                             <small class="form-control-feedback" v-if="errors.email" v-text="errors.email[0]"></small>
                         </div>
@@ -124,7 +124,7 @@
                     <div class="row">
                          <div class="col-md-6">
                             <div class="form-group" :class="{'has-danger': errors.telephone}">
-                                <label class="control-label">Teléfono</label>
+                                <label class="control-label">Teléfono <span style="color:red">*</span></label>
                                 <el-input type="tel" maxlength="10" v-model="form.telephone" onkeydown="return ( event.ctrlKey || event.altKey
                                                                                                         || (47<event.keyCode && event.keyCode<58 && event.shiftKey==false)
                                                                                                         || (95<event.keyCode && event.keyCode<106)
@@ -136,7 +136,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group" :class="{'has-danger': errors.address}">
-                                <label class="control-label">Dirección</label>
+                                <label class="control-label">Dirección <span style="color:red">*</span></label>
                                 <el-input v-model="form.address" dusk="address"></el-input>
                                 <small class="form-control-feedback" v-if="errors.address" v-text="errors.address[0]"></small>
                             </div>
@@ -144,7 +144,7 @@
 
                         <div class="col-md-6">
                             <div class="form-group" :class="{'has-danger': errors.code}">
-                                <label class="control-label">Código interno  </label>
+                                <label class="control-label">Código interno <span style="color:red">*</span></label>
                                 <el-input v-model="form.code" ></el-input>
                                 <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
                             </div>
