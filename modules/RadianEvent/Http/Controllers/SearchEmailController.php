@@ -352,11 +352,13 @@ class SearchEmailController extends Controller
             'xml_document' => base64_encode($xml_content),
             'company_idnumber' => $company->identification_number,
         ];
-
-        $response = $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
         
-        // Validar si es documento de crédito usando la lógica de RadianEventController
-        if(!$this->isCreditFromXml($xml_content)) {
+        $advancedConfig = AdvancedConfiguration::first();
+        $showCreditAndContado = $advancedConfig ? $advancedConfig->radian_show_credit_only : true; // true por defecto
+        $isCredit = $this->isCreditFromXml($xml_content);
+
+        // Solo filtrar si la configuración es true (solo crédito)
+        if (!$showCreditAndContado && !$isCredit) {
             return [
                 'success' => false,
                 'message' => 'Documento omitido: No es un documento de crédito',
@@ -364,8 +366,19 @@ class SearchEmailController extends Controller
             ];
         }
 
+        $response = $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
+        
+        // Validar si es documento de crédito usando la lógica de RadianEventController
+        // if(!$this->isCreditFromXml($xml_content)) {
+        //     return [
+        //         'success' => false,
+        //         'message' => 'Documento omitido: No es un documento de crédito',
+        //         'skip_document' => true
+        //     ];
+        // }
+
         return $response;
-    }
+    }   
 
     /**
      * Validar si el XML corresponde a un comprobante de crédito (igual que en RadianEventController)

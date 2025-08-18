@@ -199,6 +199,26 @@
                                     </div>
 
                                 </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-4">
+                                        <label class="control-label">
+                                            Mostrar documentos por
+                                            <el-tooltip class="item" effect="dark" content="Elija si desea mostrar documentos por crédito o al contado" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch
+                                                v-model="form.radian_show_credit_only"
+                                                :active-value="true"
+                                                :inactive-value="false"
+                                                active-text="Crédito y Contado"
+                                                inactive-text="Solo Crédito"
+                                                @change="submit"
+                                            ></el-switch>
+                                        </div>
+                                    </div>
+                                </div>
                             </el-tab-pane>
 
                             <el-tab-pane class="mb-3" name="dataDelete">
@@ -316,6 +336,7 @@ export default {
                 discount_code: '',
                 custom_remission_footer_enabled: false,
                 custom_remission_footer_message: '',
+                radian_show_credit_only: true,
             }
         },
         clickSaveEmailRadian()
