@@ -40,6 +40,7 @@ class AdvancedConfiguration extends Model
         'custom_remission_footer_message',
         'enable_seller_views',
         'radian_show_credit_only',
+        'default_format_print',
     ];
 
     protected $casts = [
@@ -51,6 +52,7 @@ class AdvancedConfiguration extends Model
         'custom_remission_footer_enabled' => 'bool',
         'enable_seller_views' => 'bool',
         'radian_show_credit_only' => 'bool',
+        'default_format_print' => 'integer',
     ];
 
 
@@ -80,6 +82,7 @@ class AdvancedConfiguration extends Model
             'custom_remission_footer_message' => $this->custom_remission_footer_message,
             'enable_seller_views' => $this->enable_seller_views,
             'radian_show_credit_only' => $this->radian_show_credit_only,
+            'default_format_print' => $this->default_format_print,
         ];
 
     }

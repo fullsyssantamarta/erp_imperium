@@ -121,6 +121,22 @@
                                             <el-switch v-model="form.enable_seller_views" active-text="Sí" inactive-text="No" @change="submit"></el-switch>
                                         </div>
                                     </div>
+                                    <div class="col-md-4 mt-4" :class="{'has-danger': errors.default_format_print}">
+                                        <label class="control-label">
+                                            Formato de impresión por defecto
+                                            <el-tooltip class="item" effect="dark" content="Este formato se seleccionará automáticamente al crear un comprobante, pero puedes cambiarlo en cada documento." placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-select v-model="form.default_format_print" placeholder="Seleccione formato" @change="submit">
+                                                <el-option label="Media Carta" :value="1"></el-option>
+                                                <el-option label="Carta" :value="2"></el-option>
+                                                <el-option label="Tirilla" :value="3"></el-option>
+                                            </el-select>
+                                            <small class="form-control-feedback" v-if="errors.default_format_print" v-text="errors.default_format_print[0]"></small>
+                                        </div>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 
@@ -186,7 +202,11 @@
                                     </div>
 
                                     <div class="col-md-4 mt-2">
-                                        <label class="control-label">Contraseña</label>
+                                        <label class="control-label">Contraseña
+                                            <el-tooltip class="item" effect="dark" content="La contraseña se obtiene como clave de aplicación en Gmail u otros servicios de correo." placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
                                         <div class="form-group">
                                             <el-input v-model="form.radian_imap_password" show-password></el-input>
                                         </div>
@@ -337,6 +357,7 @@ export default {
                 custom_remission_footer_enabled: false,
                 custom_remission_footer_message: '',
                 radian_show_credit_only: true,
+                default_format_print: 1,
             }
         },
         clickSaveEmailRadian()
