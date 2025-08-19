@@ -757,6 +757,7 @@ class DocumentPosController extends Controller
             'prefix' => $config->prefix,
             'electronic' => (bool)$config->electronic,
             'total_discount' => $total_discount,
+            'seller_id' => $inputs['seller_id'] ?? null,
         ];
         unset($inputs['series_id']);
         $inputs->merge($values);

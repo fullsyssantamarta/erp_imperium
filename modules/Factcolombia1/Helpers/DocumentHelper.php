@@ -31,6 +31,7 @@ class DocumentHelper
         $document->prefix = $nextConsecutive->prefix;
         $document->number = $correlative_api;
         $document->user_id = auth()->id();
+        $document->seller_id = $request->seller_id ?? null;
         $document->external_id = Str::uuid()->toString();
         $document->establishment_id = auth()->user()->establishment_id;
         $document->establishment = $establishment;

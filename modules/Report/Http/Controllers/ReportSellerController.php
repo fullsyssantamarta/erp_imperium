@@ -7,8 +7,13 @@ use Illuminate\Http\Request;
 use App\Models\Tenant\Seller;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentPos;
+use Carbon\Carbon;
 use Modules\Factcolombia1\Models\TenantService\TypeDocument;
 use Modules\Sale\Models\Remission;
+use Barryvdh\DomPDF\Facade as PDF;
+use Illuminate\Support\Facades\View;
+use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportSellerController extends Controller
 {
@@ -48,6 +53,10 @@ class ReportSellerController extends Controller
     {
         $seller_id = $request->seller_id;
         $document_type_id = $request->document_type_id;
+        $month = $request->month;
+
+        $sort_by = $request->get('sort_by', 'date_of_issue');
+        $sort_order = $request->get('sort_order', 'desc');
 
         if (!$seller_id) {
             return response()->json([
@@ -56,6 +65,10 @@ class ReportSellerController extends Controller
                     'total' => 0,
                     'per_page' => 20,
                     'current_page' => 1
+                ],
+                'progress' => [
+                    'total' => 0,
+                    'goal' => 0,
                 ]
             ]);
         }
@@ -66,10 +79,17 @@ class ReportSellerController extends Controller
         $page = (int) ($request->page ?? 1);
         $all = collect();
 
+        $filterByMonth = function($query) use ($month) {
+            if ($month) {
+                $query->whereRaw("DATE_FORMAT(date_of_issue, '%Y-%m') = ?", [$month]);
+            }
+        };
+
         // Documentos electrónicos
         if (!$document_type_id || $document_type_id === 'document') {
             $documents = Document::with('items.relation_item')
                 ->where('seller_id', $seller_id)
+                ->when($month, $filterByMonth)
                 ->orderBy('date_of_issue', 'desc')
                 ->get()
                 ->map(function($doc) use ($seller) {
@@ -111,6 +131,7 @@ class ReportSellerController extends Controller
         if (!$document_type_id || $document_type_id === 'document_pos') {
             $documents_pos = DocumentPos::with('items.relation_item')
                 ->where('seller_id', $seller_id)
+                ->when($month, $filterByMonth)
                 ->orderBy('date_of_issue', 'desc')
                 ->get()
                 ->map(function($doc) use ($seller) {
@@ -150,6 +171,7 @@ class ReportSellerController extends Controller
         if (!$document_type_id || $document_type_id === 'remission') {
             $remissions = Remission::with('items.relation_item')
                 ->where('seller_id', $seller_id)
+                ->when($month, $filterByMonth)
                 ->orderBy('date_of_issue', 'desc')
                 ->get()
                 ->map(function($doc) use ($seller) {
@@ -185,9 +207,20 @@ class ReportSellerController extends Controller
             $all = $all->merge($remissions);
         }
 
-        $all = $all->sortByDesc('date_of_issue')->values();
+        $all = $all->sortBy(function($item) use ($sort_by) {
+            if ($sort_by === 'date_of_issue') {
+                return Carbon::parse($item[$sort_by]);
+            }
+            return $item[$sort_by];
+        }, SORT_REGULAR, $sort_order === 'desc')->values();
         $total = $all->count();
         $data = $all->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $monthly_goal = $seller ? (float) $seller->monthly_goal : 0;
+        $progress = [
+            'total' => $total,
+            'goal' => $monthly_goal,
+        ];
 
         return response()->json([
             'data' => $data,
@@ -195,7 +228,71 @@ class ReportSellerController extends Controller
                 'total' => $total,
                 'per_page' => $perPage,
                 'current_page' => $page
-            ]
+            ],
+            'progress' => $progress,
         ]);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $seller_id = $request->seller_id;
+        $seller = Seller::find($seller_id);
+
+        $request->merge(['per_page' => 10000, 'page' => 1]);
+
+        $response = $this->records($request);
+        $records = $response->getData(true)['data'] ?? [];
+
+        $pdf = PDF::loadView('report::sellers.report_pdf', [
+            'records' => $records,
+            'seller' => $seller,
+            'progress' => [
+                'total' => count($records),
+                'goal' => $seller ? (float) $seller->monthly_goal : 0,
+            ],
+        ])->setPaper('a4', 'landscape');
+
+        $filename = 'Reporte_Vendedor_' . ($seller ? $seller->full_name : 'todos') . '_' . date('YmdHis') . '.pdf';
+       
+        return $pdf->stream($filename);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $seller_id = $request->seller_id;
+        $document_type_id = $request->document_type_id;
+
+        // Convertir string "null" a null real (por si acaso)
+        if ($document_type_id === 'null') {
+            $request->merge(['document_type_id' => null]);
+        }
+
+        $seller = Seller::find($seller_id);
+
+        // Forzar sin paginación
+        $request->merge(['per_page' => 10000, 'page' => 1]);
+
+        $response = $this->records($request);
+        $records = $response->getData(true)['data'] ?? [];
+
+        $filename = 'Reporte_Vendedor_' . ($seller ? $seller->full_name : 'todos') . '_' . date('YmdHis') . '.xlsx';
+
+        return Excel::download(new class($records, $seller) implements \Maatwebsite\Excel\Concerns\FromView {
+            private $records, $seller;
+            public function __construct($records, $seller) {
+                $this->records = $records;
+                $this->seller = $seller;
+            }
+            public function view(): \Illuminate\Contracts\View\View {
+                return View::make('report::sellers.report_excel', [
+                    'records' => $this->records,
+                    'seller' => $this->seller,
+                    'progress' => [
+                        'total' => count($this->records),
+                        'goal' => $this->seller ? (float) $this->seller->monthly_goal : 0,
+                    ],
+                ]);
+            }
+        }, $filename);
     }
 }

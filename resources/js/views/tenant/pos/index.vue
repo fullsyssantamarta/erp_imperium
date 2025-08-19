@@ -1137,6 +1137,7 @@ export default {
                 payment_method_id: 1,
                 payments: [],
                 electronic: false,
+                seller_id: null,
             }
             this.initFormItem();
             this.changeDateOfIssue();
