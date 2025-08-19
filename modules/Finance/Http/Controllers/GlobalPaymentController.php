@@ -43,7 +43,23 @@ class GlobalPaymentController extends Controller
         // dd($request->all());
         $records = $this->getRecords($request->all(), GlobalPayment::class);
 
-        return new GlobalPaymentCollection($records->paginate(config('tenant.items_per_page')));
+        // Obtener todos los registros y ordenarlos por fecha de pago en PHP
+        $collection = $records->get()->sortByDesc(function($item) {
+            return $item->payment->date_of_payment ?? null;
+        })->values();
+
+        // Paginar manualmente la colección ordenada
+        $perPage = config('tenant.items_per_page');
+        $page = request('page', 1);
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $collection->forPage($page, $perPage),
+            $collection->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return new GlobalPaymentCollection($paginated);
 
     }
 
