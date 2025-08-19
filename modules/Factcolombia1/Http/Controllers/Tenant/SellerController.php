@@ -35,6 +35,9 @@ class SellerController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+        if ($request->filled('commission_type')) {
+            $query->where('commission_type', $request->commission_type);
+        }
 
         // Paginación
         $sellers = $query->paginate(10);
@@ -49,6 +52,7 @@ class SellerController extends Controller
                 'email' => $seller->email,
                 'phone' => $seller->phone,
                 'status' => $seller->status,
+                'commission_type' => $seller->commission_type,
             ];
         });
 
@@ -108,5 +112,16 @@ class SellerController extends Controller
         $seller->status = $request->status;
         $seller->save();
         return response()->json(['success' => true]);
+    }
+
+    public function activeSellers(Request $request)
+    {
+        $query = Seller::where('status', 'Activo');
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('full_name', 'like', "%{$search}%");
+        }
+        $sellers = $query->get(['id', 'full_name']);
+        return response()->json(['data' => $sellers]);
     }
 }

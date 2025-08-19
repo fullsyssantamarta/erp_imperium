@@ -145,6 +145,7 @@ if($current_hostname) {
                 Route::delete('{id}', 'Tenant\SellerController@destroy');
                 Route::get('type-documents', 'Tenant\SellerController@typeDocuments');
                 Route::put('{id}/change-status', 'Tenant\SellerController@changeStatus');
+                Route::get('/active', 'Tenant\SellerController@activeSellers');
             });
 
         });

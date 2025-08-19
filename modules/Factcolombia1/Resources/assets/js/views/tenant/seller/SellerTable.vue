@@ -13,6 +13,7 @@
                         <el-option label="N° documento" value="document_number"></el-option>
                         <el-option label="Teléfono" value="phone"></el-option>
                         <el-option label="Estado" value="status"></el-option>
+                        <el-option label="Tipo de comisión" value="commission_type"></el-option>
                     </el-select>
                 </div>
             </div>
@@ -37,6 +38,7 @@
                         <th>Número Doc.</th>
                         <th>Correo</th>
                         <th>Teléfono</th>
+                        <th>Tipo comisión</th>
                         <th>Estado</th>
                         <th class="text-right">Acciones</th>
                     </tr>
@@ -50,6 +52,12 @@
                         <td>{{ row.document_number }}</td>
                         <td>{{ row.email }}</td>
                         <td>{{ row.phone }}</td>
+                        <td>
+                            <span v-if="row.commission_type === 'total'">Sobre venta total</span>
+                            <span v-else-if="row.commission_type === 'utilidad'">Sobre utilidad</span>
+                            <span v-else-if="row.commission_type === 'producto'">Por producto</span>
+                            <span v-else>-</span>
+                        </td>
                         <td>
                             <el-switch
                                 v-model="row.status"

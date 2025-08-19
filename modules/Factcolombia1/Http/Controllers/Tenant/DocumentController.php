@@ -981,6 +981,10 @@ class DocumentController extends Controller
 
             $request->merge(['state_document_id' => $state_document_id]);
 
+            if ($request->has('seller_id')) {
+                $request->merge(['seller_id' => $request->seller_id]);
+            }
+
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
 
@@ -1482,6 +1486,10 @@ class DocumentController extends Controller
 
             $request->merge(['state_document_id' => $state_document_id]);
 
+            if ($request->has('seller_id')) {
+                $request->merge(['seller_id' => $request->seller_id]);
+            }
+            
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $this->document->update([
                 'xml' => $this->getFileName(),

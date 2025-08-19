@@ -171,6 +171,7 @@ class RemissionController extends Controller
             'state_type_id' => '01',
             'number' => $this->getNumber($inputs->prefix),
             'items' => $items,
+            'seller_id' => $inputs['seller_id'] ?? null,
         ];
 
         $inputs->merge($values);
