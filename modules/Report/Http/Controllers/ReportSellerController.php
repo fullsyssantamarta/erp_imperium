@@ -53,8 +53,16 @@ class ReportSellerController extends Controller
     {
         $seller_id = $request->seller_id;
         $document_type_id = $request->document_type_id;
-        $month = $request->month;
-
+        $date_filter_type = $request->get('date_filter_type');
+        $month = $request->get('month');
+        $day = $request->get('day');
+        $date_range = $request->get('date_range');
+        if (is_string($date_range)) {
+            $decoded = json_decode($date_range, true);
+            if (is_array($decoded)) {
+                $date_range = $decoded;
+            }
+        }
         $sort_by = $request->get('sort_by', 'date_of_issue');
         $sort_order = $request->get('sort_order', 'desc');
 
@@ -69,7 +77,11 @@ class ReportSellerController extends Controller
                 'progress' => [
                     'total' => 0,
                     'goal' => 0,
-                ]
+                ],
+                'totals' => [
+                    'total_sum' => 0,
+                    'commission_sum' => 0,
+                ],
             ]);
         }
 
@@ -79,9 +91,13 @@ class ReportSellerController extends Controller
         $page = (int) ($request->page ?? 1);
         $all = collect();
 
-        $filterByMonth = function($query) use ($month) {
-            if ($month) {
+        $filterByDate = function($query) use ($date_filter_type, $month, $day, $date_range) {
+            if ($date_filter_type === 'month' && $month) {
                 $query->whereRaw("DATE_FORMAT(date_of_issue, '%Y-%m') = ?", [$month]);
+            } elseif ($date_filter_type === 'day' && $day) {
+                $query->whereDate('date_of_issue', $day);
+            } elseif ($date_filter_type === 'range' && is_array($date_range) && count($date_range) === 2) {
+                $query->whereBetween('date_of_issue', [$date_range[0], $date_range[1]]);
             }
         };
 
@@ -89,7 +105,7 @@ class ReportSellerController extends Controller
         if (!$document_type_id || $document_type_id === 'document') {
             $documents = Document::with('items.relation_item')
                 ->where('seller_id', $seller_id)
-                ->when($month, $filterByMonth)
+                ->when($date_filter_type, $filterByDate)
                 ->orderBy('date_of_issue', 'desc')
                 ->get()
                 ->map(function($doc) use ($seller) {
@@ -131,7 +147,7 @@ class ReportSellerController extends Controller
         if (!$document_type_id || $document_type_id === 'document_pos') {
             $documents_pos = DocumentPos::with('items.relation_item')
                 ->where('seller_id', $seller_id)
-                ->when($month, $filterByMonth)
+                ->when($date_filter_type, $filterByDate)
                 ->orderBy('date_of_issue', 'desc')
                 ->get()
                 ->map(function($doc) use ($seller) {
@@ -171,7 +187,7 @@ class ReportSellerController extends Controller
         if (!$document_type_id || $document_type_id === 'remission') {
             $remissions = Remission::with('items.relation_item')
                 ->where('seller_id', $seller_id)
-                ->when($month, $filterByMonth)
+                ->when($date_filter_type, $filterByDate)
                 ->orderBy('date_of_issue', 'desc')
                 ->get()
                 ->map(function($doc) use ($seller) {
@@ -209,7 +225,7 @@ class ReportSellerController extends Controller
 
         $all = $all->sortBy(function($item) use ($sort_by) {
             if ($sort_by === 'date_of_issue') {
-                return Carbon::parse($item[$sort_by]);
+                return \Carbon\Carbon::parse($item[$sort_by]);
             }
             return $item[$sort_by];
         }, SORT_REGULAR, $sort_order === 'desc')->values();
@@ -222,6 +238,9 @@ class ReportSellerController extends Controller
             'goal' => $monthly_goal,
         ];
 
+        $total_sum = $all->sum('total');
+        $commission_sum = $all->sum('commission');
+
         return response()->json([
             'data' => $data,
             'meta' => [
@@ -230,6 +249,10 @@ class ReportSellerController extends Controller
                 'current_page' => $page
             ],
             'progress' => $progress,
+            'totals' => [
+                'total_sum' => $total_sum,
+                'commission_sum' => $commission_sum,
+            ],
         ]);
     }
 
@@ -242,6 +265,8 @@ class ReportSellerController extends Controller
 
         $response = $this->records($request);
         $records = $response->getData(true)['data'] ?? [];
+        $total_sum = collect($records)->sum('total');
+        $commission_sum = collect($records)->sum('commission');
 
         $pdf = PDF::loadView('report::sellers.report_pdf', [
             'records' => $records,
@@ -249,6 +274,10 @@ class ReportSellerController extends Controller
             'progress' => [
                 'total' => count($records),
                 'goal' => $seller ? (float) $seller->monthly_goal : 0,
+            ],
+            'totals' => [
+                'total_sum' => $total_sum,
+                'commission_sum' => $commission_sum,
             ],
         ])->setPaper('a4', 'landscape');
 

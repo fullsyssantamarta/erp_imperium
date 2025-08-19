@@ -56,8 +56,8 @@
             <td>{{ $row['type'] }}</td>
             <td>{{ $row['number_full'] }}</td>
             <td>{{ $row['customer_name'] }}</td>
-            <td>{{ number_format($row['total'], 2) }}</td>
-            <td>{{ number_format($row['commission'], 2) }}</td>
+            <td>{{ $row['total'] }}</td>
+            <td>{{ $row['commission'] }}</td>
         </tr>
     @empty
         <tr>

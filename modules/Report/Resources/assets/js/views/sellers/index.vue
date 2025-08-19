@@ -5,31 +5,53 @@
         </div>
         <div class="card-body">
             <div class="row mb-3">
-                <div class="col-md-3">
+                <div class="col-12 col-md-3 mb-2 mb-md-0">
                     <label>Vendedor</label>
                     <el-select v-model="form.seller_id" filterable remote reserve-keyword placeholder="Buscar vendedor"
                         :remote-method="searchSellers" :loading="loading_sellers" @visible-change="onSellerDropdown"
-                        :clearable="true">
+                        :clearable="true" style="width: 100%;">
                         <el-option v-for="seller in sellers" :key="seller.id" :label="seller.full_name"
                             :value="seller.id"></el-option>
                     </el-select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-md-3 mb-2 mb-md-0">
                     <label>Tipo de documento</label>
-                    <el-select v-model="form.document_type_id" clearable placeholder="Todos">
+                    <el-select v-model="form.document_type_id" clearable placeholder="Todos" style="width: 100%;">
                         <el-option :value="null" label="Todos"></el-option>
                         <el-option v-for="type in document_types" :key="type.id" :label="type.description"
                             :value="type.id"></el-option>
                     </el-select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-md-3 mb-2 mb-md-0">
+                    <label>Filtrar por</label>
+                    <el-select v-model="form.date_filter_type" placeholder="Tipo de filtro" style="width: 100%;">
+                        <el-option label="Mes" value="month"></el-option>
+                        <el-option label="Día específico" value="day"></el-option>
+                        <el-option label="Rango de fechas" value="range"></el-option>
+                    </el-select>
+                </div>
+                <div class="col-12 col-md-3 mb-2 mb-md-0" v-if="form.date_filter_type === 'month'">
                     <label>Mes</label>
                     <el-date-picker v-model="form.month" type="month" placeholder="Seleccionar mes" format="yyyy-MM"
-                        value-format="yyyy-MM" clearable>
-                    </el-date-picker>
+                        value-format="yyyy-MM" clearable style="width: 100%;"
+                        :key="'month-' + form.date_filter_type"></el-date-picker>
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <el-button type="primary" icon="el-icon-search" @click="getRecords" :loading="loading_records">
+                <div class="col-12 col-md-3 mb-2 mb-md-0" v-if="form.date_filter_type === 'day'">
+                    <label>Día</label>
+                    <el-date-picker v-model="form.day" type="date" placeholder="Seleccionar día" format="yyyy-MM-dd"
+                        value-format="yyyy-MM-dd" clearable style="width: 100%;"
+                        :key="'day-' + form.date_filter_type"></el-date-picker>
+                </div>
+                <div class="col-12 col-md-6 mb-2 mb-md-0" v-if="form.date_filter_type === 'range'">
+                    <label>Rango de fechas</label>
+                    <el-date-picker v-model="form.date_range" type="daterange" range-separator="a"
+                        start-placeholder="Inicio" end-placeholder="Fin" format="yyyy-MM-dd" value-format="yyyy-MM-dd"
+                        clearable style="width: 100%;" :key="'range-' + form.date_filter_type"></el-date-picker>
+                </div>
+                <div class="col-12 col-md-3 d-flex align-items-end">
+                    <br></br>
+                    <el-button type="primary" icon="el-icon-search" @click="getRecords" :loading="loading_records"
+                        style="width: 100%;">
                         Buscar
                     </el-button>
                 </div>
@@ -48,7 +70,8 @@
             </div>
             <div v-if="monthlyProgress.goal > 0" class="mb-3">
                 <label>Progreso mensual: {{ monthlyProgress.total }} / {{ monthlyProgress.goal }}</label>
-                <el-progress :percentage="Math.min(100, Math.round((monthlyProgress.total / monthlyProgress.goal) * 100))"></el-progress>
+                <el-progress
+                    :percentage="Math.min(100, Math.round((monthlyProgress.total / monthlyProgress.goal) * 100))"></el-progress>
                 <div class="mt-2 font-weight-bold" :style="{ color: motivatorColor }">
                     {{ motivatorMessage }}
                 </div>
@@ -70,6 +93,10 @@
                     </template>
                 </el-table-column>
             </el-table>
+            <div v-if="records.length" class="mt-2 text-right font-weight-bold">
+                Total general: {{ formatNumber(totals.total_sum) }} &nbsp; | &nbsp; Comisión total: {{
+                formatNumber(totals.commission_sum) }}
+            </div>
             <el-pagination v-if="pagination.total > pagination.per_page" class="mt-3" background
                 layout="total, prev, pager, next" :total="pagination.total" :page-size="pagination.per_page"
                 :current-page.sync="pagination.current_page" @current-change="getRecords"></el-pagination>
@@ -106,6 +133,10 @@ export default {
             monthlyProgress: {
                 total: 0,
                 goal: 0,
+            },
+            totals: {
+                total_sum: 0,
+                commission_sum: 0,
             },
         }
     },
@@ -171,7 +202,10 @@ export default {
                 params: {
                     seller_id: this.form.seller_id,
                     document_type_id: this.form.document_type_id,
+                    date_filter_type: this.form.date_filter_type,
                     month: this.form.month,
+                    day: this.form.day,
+                    date_range: this.form.date_range,
                     page: page,
                     sort_by: this.sort.prop,
                     sort_order: this.sort.order === 'ascending' ? 'asc' : 'desc'
@@ -180,6 +214,7 @@ export default {
                 this.records = resp.data.data
                 this.pagination = resp.data.meta || { total: resp.data.data.length, per_page: 20, current_page: page }
                 this.monthlyProgress = resp.data.progress || { total: 0, goal: 0 }
+                this.totals = resp.data.totals || { total_sum: 0, commission_sum: 0 }
                 this.loading_records = false
             }).catch(() => {
                 this.loading_records = false
@@ -193,11 +228,14 @@ export default {
             const paramsObj = {
                 seller_id: this.form.seller_id,
                 sort_by: this.sort.prop,
-                sort_order: this.sort.order === 'ascending' ? 'asc' : 'desc'
+                sort_order: this.sort.order === 'ascending' ? 'asc' : 'desc',
+                document_type_id: this.form.document_type_id,
+                date_filter_type: this.form.date_filter_type,
+                month: this.form.month,
+                day: this.form.day,
+                date_range: this.form.date_range ? JSON.stringify(this.form.date_range) : null,
             }
-            if (this.form.document_type_id !== null) {
-                paramsObj.document_type_id = this.form.document_type_id
-            }
+            Object.keys(paramsObj).forEach(k => (paramsObj[k] == null) && delete paramsObj[k])
             const params = new URLSearchParams(paramsObj).toString()
             window.open(`/reports/sellers/export-excel?${params}`, '_blank')
         },
@@ -209,11 +247,14 @@ export default {
             const paramsObj = {
                 seller_id: this.form.seller_id,
                 sort_by: this.sort.prop,
-                sort_order: this.sort.order === 'ascending' ? 'asc' : 'desc'
+                sort_order: this.sort.order === 'ascending' ? 'asc' : 'desc',
+                document_type_id: this.form.document_type_id,
+                date_filter_type: this.form.date_filter_type,
+                month: this.form.month,
+                day: this.form.day,
+                date_range: this.form.date_range ? JSON.stringify(this.form.date_range) : null,
             }
-            if (this.form.document_type_id !== null) {
-                paramsObj.document_type_id = this.form.document_type_id
-            }
+            Object.keys(paramsObj).forEach(k => (paramsObj[k] == null) && delete paramsObj[k])
             const params = new URLSearchParams(paramsObj).toString()
             window.open(`/reports/sellers/export-pdf?${params}`, '_blank')
         },

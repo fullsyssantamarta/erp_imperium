@@ -83,6 +83,13 @@ if($seller && $seller->monthly_goal > 0) {
                 <td colspan="6" style="text-align:center;">No se encontraron registros.</td>
             </tr>
         @endforelse
+        @if(count($records) > 0)
+        <tr>
+            <td colspan="4" style="text-align:right; font-weight:bold;">Totales:</td>
+            <td style="font-weight:bold;">{{ number_format($totals['total_sum'], 2) }}</td>
+            <td style="font-weight:bold;">{{ number_format($totals['commission_sum'], 2) }}</td>
+        </tr>
+        @endif
         </tbody>
     </table>
 </body>
