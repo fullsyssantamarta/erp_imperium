@@ -118,7 +118,7 @@
                                     <a :href="`http://${row.hostname}`" 
                                         target="_blank" 
                                         rel="noopener"
-                                        style="color:black"
+                                        style="color:#0056b3; text-decoration: none;"
                                         >{{ row.hostname }}
                                     </a>
                                 </td>
