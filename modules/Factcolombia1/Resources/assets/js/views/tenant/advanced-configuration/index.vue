@@ -267,6 +267,17 @@
                                 <certificates-qztray></certificates-qztray>
                             </el-tab-pane>
 
+                            <el-tab-pane class="mb-3" name="whatsapp">
+                                <span slot="label">WhatsApp Api</span>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="card card-dashboard border">
+                                            <whatsapp-api-config />
+                                        </div>
+                                    </div>
+                                </div>
+                            </el-tab-pane>
+
                         </el-tabs>
                     </form>
                 </template>
@@ -309,9 +320,10 @@
 
 <script>
 import CertificatesQztray from './certificates_qztray.vue'
+import WhatsappApiConfig from '../configuration/WhatsappApiConfig.vue'
 
 export default {
-    components: {CertificatesQztray},
+    components: {CertificatesQztray, WhatsappApiConfig},
     props: {
         user: Object
     },
