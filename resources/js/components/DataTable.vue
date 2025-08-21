@@ -83,9 +83,20 @@
                             </el-input>
                         </template>
                     </div>
+                    <div class="col-lg-4 col-md-4 col-sm-12 pb-2" v-if="extraFilters">
+                        <el-button 
+                            @click="showExtraFilters = !showExtraFilters" 
+                            type="primary" 
+                            plain 
+                            icon="el-icon-setting"
+                            size="mini"
+                            style="margin-left: 10px;">
+                            {{ showExtraFilters ? 'Ocultar filtros adicionales' : 'Mostrar filtros adicionales' }}
+                        </el-button>
+                    </div>
                 </div>
                 <template v-if="search.column=='date_of_issue'">
-                    <template v-if="extraFilters">
+                    <template v-if="extraFilters && showExtraFilters" >
                         <div class="row" v-if="applyFilter">
                             <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
                                 <div class="d-flex">
@@ -111,7 +122,7 @@
                                     </el-select>
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-md-4 col-sm-12 pb-2">
+                            <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
                                 <div class="d-flex">
                                     <div style="width:100px">
                                         Cliente:
@@ -245,6 +256,7 @@
                 selectedCustomer: null,
                 states: [],
                 selectedState: null,
+                showExtraFilters: false
             }
         },
         computed: {
