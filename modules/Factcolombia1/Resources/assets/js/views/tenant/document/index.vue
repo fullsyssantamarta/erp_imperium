@@ -29,7 +29,7 @@
                 </el-dropdown> -->
             </div>
             <div class="card-body ">
-                <data-table :resource="resource" :init-search="initSearch">
+                <data-table :resource="resource" :init-search="initSearch" :extra-filters="true">
                     <tr slot="heading">
                         <th>#</th>
                         <th class="text-center">Fecha Emisión</th>
