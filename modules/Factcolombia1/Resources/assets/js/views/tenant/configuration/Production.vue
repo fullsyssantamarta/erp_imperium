@@ -112,10 +112,13 @@
                         this.loadingEqDocsP = false;
                     });
 
-                if(environment == 'P'){
+                if(environment == 'P' || environment === 'payrollP' || environment === 'eqdocsP'){
                     this.loadingCompany = true;
+                    let type = 'invoice';
+                    if(environment === 'payrollP') type = 'payroll';
+                    if(environment === 'eqdocsP') type = 'eqdocs';
                     axios
-                        .post(`${this.route}/queryTechnicalKey`)
+                        .post(`${this.route}/queryTechnicalKey`, { type })
                         .then(response => {
     //                        this.$setLaravelMessage(response.data);
                             if(response.data.success){
@@ -126,7 +129,7 @@
                             }
                         })
                         .catch(error => {
-                        // this.$setLaravelValidationErrorsFromResponse(error.response.data);
+                            // this.$setLaravelValidationErrorsFromResponse(error.response.data);
                             //this.$setLaravelErrors(error.response.data);
                             this.$message.error(error.response.data)
                         })
