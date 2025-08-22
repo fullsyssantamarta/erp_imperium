@@ -930,6 +930,18 @@ export default {
                 health_fields: {},
                 health_users: []
             }
+            this.form.head_note = this.invoice && this.invoice.head_note !== undefined
+                ? this.invoice.head_note
+                : (this.advanced_configuration.head_note || '');
+
+            this.form.foot_note = this.invoice && this.invoice.foot_note !== undefined
+                ? this.invoice.foot_note
+                : (this.advanced_configuration.foot_note || '');
+
+            // this.form.notes = this.invoice && this.invoice.notes !== undefined
+            //     ? this.invoice.notes
+            //     : (this.advanced_configuration.notes || '');
+            
             if (this.is_edit)
                 this.form.number = this.invoice ? this.invoice.number : null
             this.errors = {}
@@ -1301,6 +1313,12 @@ export default {
 
             // Agregar las cuentas bancarias al form antes de enviar
             this.form.bank_accounts = this.bank_accounts;
+
+            ['foot_note', 'head_note'].forEach(key => {
+                if (this.form[key] === null || this.form[key] === undefined || this.form[key] === '') {
+                    delete this.form[key];
+                }
+            });
 
             this.form.service_invoice = await this.createInvoiceService();
             // return

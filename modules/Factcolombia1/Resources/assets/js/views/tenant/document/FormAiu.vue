@@ -517,7 +517,9 @@ export default {
                 service_invoice: {},
                 payment_form_id: null,
                 payment_method_id: null,
-                order_reference: {}
+                order_reference: {},
+                head_note: this.advanced_configuration.head_note || '',
+                foot_note: this.advanced_configuration.foot_note || '',
             }
             this.errors = {}
             this.$eventHub.$emit('eventInitForm')
@@ -810,6 +812,11 @@ export default {
                 this.showDiscountCodeDialog = true;
                 return;
             }
+            ['foot_note', 'head_note'].forEach(key => {
+                if (this.form[key] === null || this.form[key] === undefined || this.form[key] === '') {
+                    delete this.form[key];
+                }
+            });
             this.form.service_invoice = await this.createInvoiceService();
             this.loading_submit = true
             this.$http.post(`/${this.resource}/store_aiu`, this.form).then(response => {

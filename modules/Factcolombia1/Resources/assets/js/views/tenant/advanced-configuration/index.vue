@@ -121,6 +121,58 @@
                                             <el-switch v-model="form.enable_seller_views" active-text="Sí" inactive-text="No" @change="submit"></el-switch>
                                         </div>
                                     </div>
+                                    <div class="col-12">
+                                        <hr style="border-top: 3px solid #e0e0e0;">
+                                        <h4 class="mt-3 mb-2">Campos personalizados para plantilla</h4>
+                                    </div>
+                                    <div class="col-md-4 mt-3">
+                                        <label class="control-label">
+                                            Nota de encabezado
+                                            <el-tooltip class="item" effect="dark" content="Este campo se mostrara antes de los datos del cliente" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-input
+                                            type="textarea"
+                                            v-model="form.head_note"
+                                            maxlength="120"
+                                            show-word-limit
+                                            placeholder="Ingrese una nota de encabezado"
+                                            @change="submit"
+                                        ></el-input>
+                                    </div>
+                                    <!-- <div class="col-md-4 mt-3">
+                                        <label class="control-label">
+                                            Notas en plantilla
+                                            <el-tooltip class="item" effect="dark" content="Este campo se mostrará antes del footer y después de la tabla de productos" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-input
+                                            type="textarea"
+                                            v-model="form.notes"
+                                            maxlength="120"
+                                            show-word-limit
+                                            placeholder="Ingrese notas adicionales"
+                                            @change="submit"
+                                        ></el-input>
+                                    </div> -->
+                                    <div class="col-md-4 mt-3">
+                                        <label class="control-label">
+                                            Nota de pie de página
+                                            <el-tooltip class="item" effect="dark" content="Este campo se mostrará en el pie de página de la factura" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-input
+                                            type="textarea"
+                                            v-model="form.foot_note"
+                                            maxlength="120"
+                                            show-word-limit
+                                            placeholder="Ingrese una nota de pie de página"
+                                            @change="submit"
+                                        ></el-input>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 
@@ -316,6 +368,9 @@ export default {
                 discount_code: '',
                 custom_remission_footer_enabled: false,
                 custom_remission_footer_message: '',
+                foot_note: '',
+                head_note: '',
+                // notes: '',
             }
         },
         clickSaveEmailRadian()

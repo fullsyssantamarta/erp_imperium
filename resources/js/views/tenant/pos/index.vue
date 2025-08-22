@@ -1138,6 +1138,8 @@ export default {
                 payments: [],
                 electronic: false,
                 seller_id: null,
+                head_note: this.advanced_configuration.head_note || '',
+                foot_note: this.advanced_configuration.foot_note || '',
             }
             this.initFormItem();
             this.changeDateOfIssue();

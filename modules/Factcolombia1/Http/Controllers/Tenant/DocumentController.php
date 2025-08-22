@@ -678,6 +678,16 @@ class DocumentController extends Controller
             if ($request->has('bank_accounts')) {
                 $service_invoice['bank_accounts'] = $request->bank_accounts;
             }
+            //agregar campos personalizados para la plantilla
+            if ($request->filled('head_note')) {
+                $service_invoice['head_note'] = $request->head_note;
+            }
+            if ($request->filled('foot_note')) {
+                $service_invoice['foot_note'] = $request->foot_note;
+            }
+            // if ($request->filled('notes')) {
+            //     $service_invoice['notes'] = $request->notes;
+            // }
 
             if($invoice_json === NULL){
                 $service_invoice['number'] = $correlative_api;
@@ -2583,7 +2593,15 @@ class DocumentController extends Controller
             $service_invoice['number'] = $correlative_api;
             $service_invoice['prefix'] = $request->prefix;
             $service_invoice['resolution_number'] = $request->resolution_number;
-
+            if ($request->filled('head_note')) {
+                $service_invoice['head_note'] = $request->head_note;
+            }
+            if ($request->filled('foot_note')) {
+                $service_invoice['foot_note'] = $request->foot_note;
+            }
+            // if ($request->filled('notes')) {
+            //     $service_invoice['notes'] = $request->notes;
+            // }
             if ($request->order_reference)
             {
                 if (isset($request['order_reference']['issue_date_order']) && isset($request['order_reference']['id_order']))
@@ -2757,7 +2775,13 @@ class DocumentController extends Controller
                 ->firstOrFail();
 
             // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
+                $state_document_id = self::ACCEPTED;
+            } else {
+                $state_document_id = self::REJECTED;
+            }
 
+            $request->merge(['state_document_id' => $state_document_id]);
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
 

@@ -2,7 +2,7 @@
     use Mpdf\QrCode\QrCode;
     use Mpdf\QrCode\Output;
     use Carbon\Carbon;
-
+    $advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
     $establishment = $document->establishment;
     $customer = $document->customer;
     $invoice = $document->invoice;
@@ -84,6 +84,13 @@
             else
                 $request_api = json_decode(json_encode($document->request_api), true);
         ?>
+        @if($advanced_configuration && filled($advanced_configuration->head_note))
+            <tr>
+                <td style="font-size:12px;">
+                    {!! nl2br(e($advanced_configuration->head_note)) !!}
+                </td>
+            </tr>
+        @endif
         <tr>
             <td><h6>Serial de caja: {{ $request_api['cash_information']['plate_number'] }}</h6></td>
             <td class=""><h6>Tipo de caja: {{ $request_api['cash_information']['cash_type'] }}</h6></td>
@@ -234,6 +241,11 @@
         @endif
     </tr>
 </table>
+@if($advanced_configuration && filled($advanced_configuration->foot_note))
+    <div style="font-size:12px;">
+        {!! nl2br(e($advanced_configuration->foot_note)) !!}
+    </div>
+@endif
 <table class="full-width">
     <tr>
         @if($document->state_type_id == '11')
