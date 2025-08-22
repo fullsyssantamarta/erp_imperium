@@ -97,9 +97,12 @@
 
                                 <th class="text-right">Limitar Doc.</th>
                                 <th class="text-center">Limitar Usuarios</th>
-                                <th class="text-center">Pagos</th>
-                                <th class="text-right">E. Cuenta</th>
-                                <th class="text-right">Inicio Ciclo Facturacion</th>
+                                <th class="text-center">Auto-renovar</th>
+                                <th class="text-center">Inicio plan</th>
+                                <th class="text-center">Vence plan</th>
+                                <!-- <th class="text-center">Pagos</th>
+                                <th class="text-right">E. Cuenta</th> -->
+                                <!-- <th class="text-right">Inicio Ciclo Facturacion</th> -->
                                 <th class="text-right">Acciones</th>
                                 <!-- <th class="text-right">Pagos</th> -->
 
@@ -201,15 +204,26 @@
                                     <el-switch style="display: block" v-model="row.locked_users"
                                         @change="changeLockedUser(row)"></el-switch>
                                 </td>
-                                <td class="text-right">
+                                <td class="text-center">
+                                    <el-switch v-model.lazy="row.plan_auto_renew" @change="toggleAutoRenew(row)"></el-switch>
+                                </td>
+                                <td class="text-center">
+                                    <span v-if="row.plan_started_at">{{ row.plan_started_at }}</span>
+                                    <span v-else>-</span>
+                                </td>
+                                <td class="text-center">
+                                    <span v-if="row.plan_expires_at">{{ row.plan_expires_at }}</span>
+                                    <span v-else>-</span>
+                                </td>
+                                <!-- <td class="text-right">
                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
                                         @click.prevent="clickPayments(row.id)">Pagos</button>
                                 </td>
                                 <td class="text-right">
                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-primary m-1__2"
                                         @click.prevent="clickAccountStatus(row.id)">E. Cuenta</button>
-                                </td>
-                                <td class="text-right">
+                                </td> -->
+                                <!-- <td class="text-right">
                                     <template v-if="row.start_billing_cycle">
                                         <span></span>
                                         <span>{{ row.start_billing_cycle }}</span>
@@ -219,7 +233,7 @@
                                             v-model="row.select_date_billing" value-format="yyyy-MM-dd" type="date"
                                             placeholder="..."></el-date-picker>
                                     </template>
-                                </td>
+                                </td> -->
                                 <td class="text-right">
                                     <template v-if="!row.locked">
                                         <el-dropdown trigger="click">
@@ -227,9 +241,12 @@
                                                 <i class="fa fa-ellipsis-v" style="font-size: 20px;"></i>
                                             </span>
                                             <el-dropdown-menu slot="dropdown">
-                                                <el-dropdown-item @click.native="clickEdit(row.id)">Editar</el-dropdown-item>
-                                                <el-dropdown-item @click.native="openPasswordDialog(row.id)">Cambiar contraseña</el-dropdown-item>
-                                                <el-dropdown-item divided @click.native="clickDelete(row.id)">Eliminar</el-dropdown-item>
+                                                <el-dropdown-item
+                                                    @click.native="clickEdit(row.id)">Editar</el-dropdown-item>
+                                                <el-dropdown-item @click.native="openPasswordDialog(row.id)">Cambiar
+                                                    contraseña</el-dropdown-item>
+                                                <el-dropdown-item divided
+                                                    @click.native="clickDelete(row.id)">Eliminar</el-dropdown-item>
                                             </el-dropdown-menu>
                                         </el-dropdown>
                                     </template>
@@ -418,7 +435,24 @@ export default {
                 })
                 .then(() => { });
         },
-
+        toggleAutoRenew(row) {
+            const originalValue = row.plan_auto_renew;
+            // Cambia visualmente solo si el backend responde éxito
+            this.$http.post(`/co-companies/toggle-auto-renew/${row.id}`)
+                .then(response => {
+                    if (response.data.success) {
+                        row.plan_auto_renew = response.data.plan_auto_renew;
+                        this.$message.success('Renovación automática actualizada');
+                    } else {
+                        row.plan_auto_renew = originalValue;
+                        this.$message.error('No se pudo actualizar');
+                    }
+                })
+                .catch(() => {
+                    row.plan_auto_renew = originalValue;
+                    this.$message.error('Error al actualizar');
+                });
+        },
         changeLockedUser(row) {
             this.$http
                 .post(`${this.resource}/locked_user`, row)

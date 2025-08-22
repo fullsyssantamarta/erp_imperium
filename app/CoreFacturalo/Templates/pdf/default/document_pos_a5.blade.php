@@ -1,6 +1,7 @@
 @php
     use Mpdf\QrCode\QrCode;
     use Mpdf\QrCode\Output;
+    $advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
     $establishment = $document->establishment;
     $customer = $document->customer;
     //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
@@ -86,6 +87,11 @@
         </td>
     </tr>
 </table>
+@if($advanced_configuration && filled($advanced_configuration->head_note))
+    <div style="font-size:12px;">
+        {!! nl2br(e($advanced_configuration->head_note)) !!}
+    </div>
+@endif
 <table class="full-width mt-5">
     <tr>
         <td width="15%">Cliente:</td>
@@ -338,5 +344,10 @@
     </tr>
     @endif
 </table>
+@if($advanced_configuration && filled($advanced_configuration->foot_note))
+    <div style="font-size:12px;">
+        {!! nl2br(e($advanced_configuration->foot_note)) !!}
+    </div>
+@endif
 </body>
 </html>

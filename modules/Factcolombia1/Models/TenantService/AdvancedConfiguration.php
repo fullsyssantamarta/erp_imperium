@@ -41,6 +41,9 @@ class AdvancedConfiguration extends Model
         'enable_seller_views',
         'radian_show_credit_only',
         'default_format_print',
+        'foot_note',
+        'head_note',
+        'notes',
     ];
 
     protected $casts = [
@@ -83,6 +86,9 @@ class AdvancedConfiguration extends Model
             'enable_seller_views' => $this->enable_seller_views,
             'radian_show_credit_only' => $this->radian_show_credit_only,
             'default_format_print' => $this->default_format_print,
+            'foot_note' => $this->foot_note,
+            'head_note' => $this->head_note,
+            'notes' => $this->notes,
         ];
 
     }

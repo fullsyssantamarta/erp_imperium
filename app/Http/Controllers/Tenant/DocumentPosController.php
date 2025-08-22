@@ -57,6 +57,7 @@ use Modules\Factcolombia1\Models\Tenant\{
     CustomerPurchaseCoupon,
 };
 use Modules\Factcolombia1\Models\TenantService\{
+    AdvancedConfiguration,
     Company as ServiceTenantCompany
 };
 use App\Models\Tenant\Document;
@@ -362,6 +363,8 @@ class DocumentPosController extends Controller
                 'tax_totals' => $tax_totals,
                 'allowance_charges' => $data['allowance_charges'] ?? [],
                 'invoice_lines' => $invoice_lines,
+                'head_note' => $request->input('head_note', null),
+                'foot_note' => $request->input('foot_note', null),
             ];
             // \Log::debug(json_encode($data_invoice_pos));
 //            return [

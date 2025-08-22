@@ -184,7 +184,7 @@ if($current_hostname) {
                 Route::post('locked_emission', 'System\CompanyController@lockedEmission');
                 Route::post('set_billing_cycle', 'System\CompanyController@startBillingCycle');
                 Route::post('password/{id}', 'System\CompanyController@changePassword');
-
+                Route::post('toggle-auto-renew/{id}', 'System\CompanyController@toggleAutoRenew');
 
             });
 

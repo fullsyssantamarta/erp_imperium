@@ -37,6 +37,16 @@
                             <small class="form-control-feedback" v-if="errorLDocument.limit_documents" v-text="errorLDocument.limit_documents[0]"></small>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="form-group" :class="{'has-danger': errors.period}">
+                            <label class="control-label">Periodo</label>
+                            <el-select v-model="form.period">
+                                <el-option label="Mensual" value="month"></el-option>
+                                <el-option label="Anual" value="year"></el-option>
+                            </el-select>
+                            <small class="form-control-feedback" v-if="errors.period" v-text="errors.period[0]"></small>
+                        </div>
+                    </div>
                 </div>
                 <!-- <div class="row">
                     <div class="col-md-12 mt-3">
@@ -83,7 +93,9 @@
                 errors: {},
                 errorLDocument:{},
                 errorLUser:{},
-                form: {},
+                form: {
+                    period: 'month',
+                },
             }
         },
         created() {
@@ -150,6 +162,7 @@
 
                 this.form = data
                 this.form.plan_documents = Object.values(data.plan_documents)
+                this.form.period = data.period
                 this.users_unlimited = (data.limit_users == 0) ? true : false
                 this.documents_unlimited = (data.limit_documents == 0) ? true : false
                 this.limit_users = (this.users_unlimited) ? "∞": data.limit_users

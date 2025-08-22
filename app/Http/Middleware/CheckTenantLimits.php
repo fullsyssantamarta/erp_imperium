@@ -29,7 +29,12 @@ class CheckTenantLimits
                 'message' => 'No se encontró la empresa para este tenant.'
             ], 403);
         }
-
+        if (!$company->plan_started_at || !$company->plan_expires_at || !$company->isPlanActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La empresa no tiene un plan activo. Por favor, contacte al administrador.'
+            ], 403);
+        }
         // Validar límite de usuarios
         if ($request->is('users*')&& $company->locked_users == 1) {
             $isCreate = $request->isMethod('post') && !$request->input('id');
@@ -39,7 +44,10 @@ class CheckTenantLimits
                 //     'current_users' => User::count()
                 // ]);
                 $limit_users = $company->limit_users;
-                $current_users = User::count();
+                $start = $company->plan_started_at;
+                $end = $company->plan_expires_at;
+
+                $current_users = User::whereBetween('created_at', [$start, $end])->count();
                 if ($limit_users != 0 && $current_users >= $limit_users) {
                     // \Log::warning('Límite de usuarios excedido');
                     return response()->json([
@@ -62,11 +70,24 @@ class CheckTenantLimits
         ) {
             $limit_documents = $company->limit_documents;
             // Sumar documentos aceptados de todos los modelos
-            $current_documents = Document::where('state_document_id', 5)->count();
-            $current_documents_pos = DocumentPos::where('state_type_id', 1)->count();
-            // $current_remissions = Remission::where('state_type_id', 1)->count();
-            $current_support_documents = SupportDocument::where('state_document_id', 5)->count();
-            $current_payroll_documents = DocumentPayroll::where('state_document_id', 5)->count();
+            $start = $company->plan_started_at;
+            $end = $company->plan_expires_at;
+
+            $current_documents = Document::where('state_document_id', 5)
+                ->whereBetween('date_of_issue', [$start, $end])
+                ->count();
+
+            $current_documents_pos = DocumentPos::where('state_type_id', 1)
+                ->whereBetween('date_of_issue', [$start, $end])
+                ->count();
+
+            $current_support_documents = SupportDocument::where('state_document_id', 5)
+                ->whereBetween('date_of_issue', [$start, $end])
+                ->count();
+
+            $current_payroll_documents = DocumentPayroll::where('state_document_id', 5)
+                ->whereBetween('date_of_issue', [$start, $end])
+                ->count();
 
             $total_documents = $current_documents + $current_documents_pos /*+ $current_remissions*/ + $current_support_documents + $current_payroll_documents;
 
