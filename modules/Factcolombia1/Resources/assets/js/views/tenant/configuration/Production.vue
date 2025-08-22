@@ -14,7 +14,9 @@
                                     <el-input
                                         type="textarea"
                                         class="custom-textarea"
-                                        v-model="production.technicalkey">
+                                        v-model="production.technicalkey"
+                                        :autosize="{ minRows: 1, maxRows: 20 }"
+                                        >
                                     </el-input>
                                 </div>
                             </div>
@@ -22,17 +24,17 @@
                         <div class="form-actions text-right mt-4">
                             <div>
                                 <h4 class="d-inline mr-3 font-weight-bold">Facturación: </h4>
-                                <el-button :loading="loadingCompany" class="submit" type="primary" @click="validateProduction('H')" >Pasar a Habilitación</el-button>
-                                <el-button :loading="loadingCompany" class="submit" type="primary" @click="validateProduction('P')" >Pasar a Producción</el-button>
+                                <el-button :loading="loadingCompanyH" class="submit" type="primary" @click="validateProduction('H')" >Pasar a Habilitación</el-button>
+                                <el-button :loading="loadingCompanyP" class="submit" type="primary" @click="validateProduction('P')" >Pasar a Producción</el-button>
                             </div>
                             <div class="mt-4">
                                 <h4 class="d-inline mr-3 font-weight-bold">Nómina: </h4>
-                                <el-button :loading="loadingPayroll" class="submit" type="primary" @click="validateProduction('payrollH')" >Pasar a Habilitación</el-button>
-                                <el-button :loading="loadingPayroll" class="submit" type="primary" @click="validateProduction('payrollP')" >Pasar a Producción</el-button>
+                                <el-button :loading="loadingPayrollH" class="submit" type="primary" @click="validateProduction('payrollH')" >Pasar a Habilitación</el-button>
+                                <el-button :loading="loadingPayrollP" class="submit" type="primary" @click="validateProduction('payrollP')" >Pasar a Producción</el-button>
                             </div>
                             <div class="mt-4">
                                 <h4 class="d-inline mr-3 font-weight-bold">Documentos Equivalentes: </h4>
-                                <el-button :loading="loadingEqDocs" class="submit" type="primary" @click="validateProduction('eqdocsH')" >Pasar a Habilitación</el-button>
+                                <el-button :loading="loadingEqDocsH" class="submit" type="primary" @click="validateProduction('eqdocsH')" >Pasar a Habilitación</el-button>
                                 <el-button :loading="loadingEqDocs" class="submit" type="primary" @click="validateProduction('eqdocsP')" >Pasar a Producción</el-button>
                             </div>
                         </div>
@@ -44,9 +46,9 @@
 </template>
 
 <style>
-    .custom-textarea .el-textarea__inner textarea {
+    /* .custom-textarea .el-textarea__inner textarea {
         height: 350px;
-    }
+    } */
 </style>
 
 <script>
@@ -59,18 +61,36 @@
             production: { technicalkey: ''},
             route: 'co-configuration/production',
             loadingPayroll: false,
+            loadingCompanyH: false,
+            loadingCompanyP: false,
+            loadingPayrollH: false,
+            loadingPayrollP: false,
+            loadingEqDocsH: false,
+            loadingEqDocsP: false,
             loadingEqDocs: false
         }),
 
         methods: {
             validateProduction(environment) {
-                if(['P', 'H'].includes(environment))
-                    this.loadingCompany = true;
-                else
-                    if(['payrollP', 'payrollH'].includes(environment))
-                        this.loadingPayroll = true;
-                    else
-                        this.loadingEqDocs = true;
+                this.loadingCompanyH = false;
+                this.loadingCompanyP = false;
+                this.loadingPayrollH = false;
+                this.loadingPayrollP = false;
+                this.loadingEqDocsH = false;
+                this.loadingEqDocsP = false;
+                // if(['P', 'H'].includes(environment))
+                //     this.loadingCompany = true;
+                // else
+                //     if(['payrollP', 'payrollH'].includes(environment))
+                //         this.loadingPayroll = true;
+                //     else
+                //         this.loadingEqDocs = true;
+                if(environment === 'H') this.loadingCompanyH = true;
+                if(environment === 'P') this.loadingCompanyP = true;
+                if(environment === 'payrollH') this.loadingPayrollH = true;
+                if(environment === 'payrollP') this.loadingPayrollP = true;
+                if(environment === 'eqdocsH') this.loadingEqDocsH = true;
+                if(environment === 'eqdocsP') this.loadingEqDocsP = true;
 
                 axios
                     .post(`${this.route}/changeEnvironmentProduction/${environment}`)
@@ -81,9 +101,15 @@
                         this.$message.error(error.response.data)
                     })
                     .then(() => {
-                        this.loadingCompany = false;
-                        this.loadingPayroll = false;
-                        this.loadingEqDocs = false;
+                        // this.loadingCompany = false;
+                        // this.loadingPayroll = false;
+                        // this.loadingEqDocs = false;
+                        this.loadingCompanyH = false;
+                        this.loadingCompanyP = false;
+                        this.loadingPayrollH = false;
+                        this.loadingPayrollP = false;
+                        this.loadingEqDocsH = false;
+                        this.loadingEqDocsP = false;
                     });
 
                 if(environment == 'P'){

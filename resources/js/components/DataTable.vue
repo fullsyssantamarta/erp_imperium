@@ -3,7 +3,7 @@
         <div class="row">
             <div class="col-md-12 col-lg-12 col-xl-12">
                 <div class="row" v-if="applyFilter">
-                    <div class="col-lg-4 col-md-4 col-sm-12 pb-2">
+                    <div class="col-lg-3 col-md-3 col-sm-12 pb-2">
                         <div class="d-flex">
                             <div style="width:100px">
                                 Filtrar por:
@@ -19,7 +19,7 @@
                                 <el-select 
                                     v-model="filterType" 
                                     placeholder="Tipo de filtro" 
-                                    style="width: 100%; margin-right: 8px;">
+                                    style="width: 50%; margin-right: 8px;">
                                     <el-option label="Por mes" value="month"></el-option>
                                     <el-option label="Por fecha" value="date"></el-option>
                                     <el-option label="Entre fechas" value="range"></el-option>
@@ -52,7 +52,7 @@
                                         <el-date-picker
                                             v-model="search.fecha_inicio"
                                             type="date"
-                                            style="width: calc(100% - 100px);margin-right: 8px;"
+                                            style="width: calc(50% - 65px);margin-right: 8px;"
                                             placeholder="Fecha inicio"
                                             value-format="yyyy-MM-dd"
                                             :clearable="true"
@@ -62,7 +62,7 @@
                                         <el-date-picker
                                             v-model="search.fecha_fin"
                                             type="date"
-                                            style="width: calc(100% - 100px)"
+                                            style="width: calc(50% - 65px)"
                                             placeholder="Fecha fin"
                                             value-format="yyyy-MM-dd"
                                             :clearable="true"
@@ -83,9 +83,9 @@
                             </el-input>
                         </template>
                     </div>
-                    <div class="col-lg-4 col-md-4 col-sm-12 pb-2" v-if="extraFilters">
+                    <div class="col-lg-3 col-md-3 col-sm-12 pb-2" v-if="extraFilters">
                         <el-button 
-                            @click="showExtraFilters = !showExtraFilters" 
+                            @click="toggleExtraFilters" 
                             type="primary" 
                             plain 
                             icon="el-icon-setting"
@@ -98,7 +98,7 @@
                 <template v-if="search.column=='date_of_issue'">
                     <template v-if="extraFilters && showExtraFilters" >
                         <div class="row" v-if="applyFilter">
-                            <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
+                            <div class="col-lg-3 col-md-3 col-sm-12 pb-2">
                                 <div class="d-flex">
                                     <div style="width:100px">
                                         Resolucion:
@@ -122,7 +122,7 @@
                                     </el-select>
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
+                            <div class="col-lg-3 col-md-3 col-sm-12 pb-2">
                                 <div class="d-flex">
                                     <div style="width:100px">
                                         Cliente:
@@ -146,25 +146,7 @@
                                     </el-select>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row" v-if="applyFilter">
-                            <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
-                                <div class="d-flex">
-                                    <div style="width:150px">
-                                        N.º comprobante
-                                    </div>
-                                </div>
-                                <div class="d-flex">
-                                    <el-input
-                                        v-model="comprobanteSearch"
-                                        placeholder="(Ej: SETP-990008515 o SETP990008515)"
-                                        clearable
-                                        @input="onComprobanteSearch"
-                                        prefix-icon="el-icon-search"
-                                    ></el-input>
-                                </div>                            
-                            </div>
-                            <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
+                            <div class="col-lg-3 col-md-3 col-sm-12 pb-2">
                                 <div class="d-flex">
                                     <div style="width:100px">
                                         Estado:
@@ -186,6 +168,46 @@
                                     </el-select>
                                 </div>
                             </div>
+                        </div>
+                        <div class="row" v-if="applyFilter">
+                            <!-- <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
+                                <div class="d-flex">
+                                    <div style="width:150px">
+                                        N.º comprobante
+                                    </div>
+                                </div>
+                                <div class="d-flex">
+                                    <el-input
+                                        v-model="comprobanteSearch"
+                                        placeholder="(Ej: SETP-990008515 o SETP990008515)"
+                                        clearable
+                                        @input="onComprobanteSearch"
+                                        prefix-icon="el-icon-search"
+                                    ></el-input>
+                                </div>                            
+                            </div> -->
+                            <!-- <div class="col-lg-4 col-md-6 col-sm-12 pb-2">
+                                <div class="d-flex">
+                                    <div style="width:100px">
+                                        Estado:
+                                    </div>
+                                </div>
+                                <div class="d-flex">
+                                    <el-select
+                                        v-model="selectedState"
+                                        placeholder="Seleccione estado"
+                                        clearable
+                                        @change="getRecords"
+                                        style="width:100%;">
+                                        <el-option
+                                            v-for="state in states"
+                                            :key="state.id"
+                                            :label="state.name"
+                                            :value="state.id"
+                                        ></el-option>
+                                    </el-select>
+                                </div>
+                            </div> -->
                         </div>
                     </template>
                 </template>
@@ -289,9 +311,22 @@
 
         },
         methods: {
-            onComprobanteSearch() {
-                this.getRecords();
+            toggleExtraFilters() {
+                this.showExtraFilters = !this.showExtraFilters;
+                if (!this.showExtraFilters) {
+                    // Limpiar filtros extra al ocultar
+                    this.selectedResolution = null;
+                    this.selectedCustomer = null;
+                    this.comprobanteSearch = '';
+                    this.selectedState = null;
+                    this.search.fecha_inicio = '';
+                    this.search.fecha_fin = '';
+                    this.getRecords();
+                }
             },
+            // onComprobanteSearch() {
+            //     this.getRecords();
+            // },
             async fetchCustomers() {
                 const res = await this.$http.get(`/${this.resource}/customers-list`);
                 this.customers = res.data;

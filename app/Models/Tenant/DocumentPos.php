@@ -482,6 +482,8 @@ class DocumentPos extends ModelTenant
             'currency_code' => $this->currency->code,
             'customer_name' => $customer_data->name ?? '',
             'customer_number' => $customer_data->number ?? '',
+            'customer_email' => $customer_data->email ?? '',
+            'customer_telephone' => $customer_data->telephone ?? '',
             'customer_address' => $customer_data->address ?? '',
             'net_total' => $this->generalApplyNumberFormat($this->net_total),
             'total' => $this->generalApplyNumberFormat($this->total),
