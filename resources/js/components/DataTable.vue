@@ -22,7 +22,7 @@
                                     style="width: 50%; margin-right: 8px;">
                                     <el-option label="Por mes" value="month"></el-option>
                                     <el-option label="Por fecha" value="date"></el-option>
-                                    <el-option label="Entre fechas" value="range"></el-option>
+                                    <el-option label="Entre fechas" value="range" v-if="extraFilters"></el-option>
                                 </el-select>
                                 
                                 <template v-if="filterType === 'month'">
@@ -300,6 +300,13 @@
                     }
                 } else {
                     this.search.column = _.head(Object.keys(this.columns))
+                    if (this.search.column === 'date_of_issue') {
+                        const date = new Date();
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        this.filterType = 'month';
+                        this.search.value = `${year}-${month}`;
+                    }
                 }
             });
             if (this.extraFilters) {
@@ -383,7 +390,12 @@
                 this.search.value = '';
                 this.search.fecha_fin = '';
                 this.search.fecha_inicio = '';
-                this.getRecords()
+                if (this.search.column === 'date_of_issue') {
+                    this.filterType = 'month';
+                } else {
+                    this.filterType = '';
+                }
+                this.getRecords();
             },
             onDateFieldChange(field, date) {
                 this.search[field] = date ? moment(date).format('YYYY-MM-DD') : '';

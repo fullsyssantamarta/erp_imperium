@@ -35,11 +35,6 @@
                 font-size: 7px;
                 max-width: 60px; 
             }
-            table.combined-table .correo-cell{
-                word-break: break-all !important;
-                white-space: normal !important;
-                text-align: left !important;
-            }
 
             .retencion-cell {
                 font-size: 7px;
