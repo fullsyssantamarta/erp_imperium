@@ -325,26 +325,23 @@ class RemissionController extends Controller
             $remission->save();
 
             foreach ($remission->items as $item) {
-                // Buscar el stock en el almacén correspondiente
-                $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)
-                    ->where('warehouse_id', $remission->establishment_id)
-                    ->first();
+            // Buscar el primer almacén donde esté el producto
+            $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)->first();
 
-                if ($itemWarehouse) {
-                    $itemWarehouse->stock += $item->quantity;
-                    $itemWarehouse->save();
-                }
-
-                // Registrar entrada en inventory_kardex
-                InventoryKardex::create([
-                    'date_of_issue' => now(),
-                    'item_id' => $item->item_id,
-                    'inventory_kardexable_id' => $remission->id,
-                    'inventory_kardexable_type' => Remission::class,
-                    'warehouse_id' => $remission->establishment_id,
-                    'quantity' => $item->quantity,
-                ]);
+            if ($itemWarehouse) {
+                $itemWarehouse->stock += $item->quantity;
+                $itemWarehouse->save();
             }
+
+            InventoryKardex::create([
+                'date_of_issue' => now(),
+                'item_id' => $item->item_id,
+                'inventory_kardexable_id' => $remission->id,
+                'inventory_kardexable_type' => Remission::class,
+                'warehouse_id' => $itemWarehouse->warehouse_id,
+                'quantity' => $item->quantity,
+            ]);
+        }
         });
 
         return [
