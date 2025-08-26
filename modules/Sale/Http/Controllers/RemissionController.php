@@ -327,7 +327,7 @@ class RemissionController extends Controller
             foreach ($remission->items as $item) {
                 // Buscar el stock en el almacén correspondiente
                 $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)
-                    ->where('warehouse_id', $remission->establishment_id)
+                    ->where('warehouse_id', $item->warehouse_id)
                     ->first();
 
                 if ($itemWarehouse) {
@@ -341,7 +341,7 @@ class RemissionController extends Controller
                     'item_id' => $item->item_id,
                     'inventory_kardexable_id' => $remission->id,
                     'inventory_kardexable_type' => Remission::class,
-                    'warehouse_id' => $remission->establishment_id,
+                    'warehouse_id' => $item->warehouse_id,
                     'quantity' => $item->quantity,
                 ]);
             }

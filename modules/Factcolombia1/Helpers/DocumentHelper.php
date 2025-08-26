@@ -186,7 +186,7 @@ class DocumentHelper
                 'discount' => isset($item['total_discount']) ? $item['total_discount'] : 0,
                 'total' => isset($item['total']) ? $item['total'] : (isset($item['subtotal']) ? $item['subtotal'] : $item['line_extension_amount']) + (isset($item['total_tax']) ? $item['total_tax'] : $item['price_amount'] - $item['line_extension_amount']),
                 'total_plastic_bag_taxes' => 0,
-                'warehouse_id' => null,
+                'warehouse_id' => $item['warehouse_id'] ?? null,
                 'from_remission' => $document->remission_id,// Agregamos esta bandera
 
             ]);
@@ -343,7 +343,8 @@ class DocumentHelper
                 'total_tax' => $item['total_tax'],
                 'subtotal' => $item['subtotal'],
                 'discount' => $item['discount'],
-                'total' => $item['total']
+                'total' => $item['total'],
+                'warehouse_id' => $item['warehouse_id'] ?? null,
             ];
 
         }
