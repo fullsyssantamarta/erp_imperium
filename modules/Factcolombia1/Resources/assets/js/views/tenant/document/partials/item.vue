@@ -39,7 +39,17 @@
                                                 Stock: {{option.stock}} <br>
                                                 Precio: {{option.currency_type_symbol}} {{option.sale_unit_price}} <br>
                                             </div>
-                                            <el-option  :value="option.id" :label="option.full_description"></el-option>
+                                            <el-option  
+                                            :value="option.id" 
+                                            :label="option.full_description"
+                                            :disabled="option.invalid_price"
+                                            :style="option.invalid_price ? 'color: red;' : ''"
+                                            >
+                                            <span :style="option.invalid_price ? 'color: red;' : ''">
+                                                {{ option.full_description }}
+                                                <span v-if="option.invalid_price"> - Precio inválido</span>
+                                            </span>
+                                            </el-option>
                                         </el-tooltip>
                                     </el-select>
                                     <el-tooltip slot="append" class="item" effect="dark" content="Ver Stock del Producto" placement="bottom" :disabled="recordItem != null">
@@ -354,6 +364,9 @@
                     this.taxes = response.data.taxes;
                     this.all_items = response.data.items
                     this.items_aiu = response.data.items_aiu
+                    this.all_items.forEach(item => {
+                        item.invalid_price = parseFloat(item.sale_unit_price) < parseFloat(item.purchase_unit_price);
+                    });
                     this.filterItems()
                 })
             },
