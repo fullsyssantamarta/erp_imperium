@@ -26,16 +26,14 @@
                                             <a href="#" @click.prevent="showDialogNewWorker = true">[+ Nuevo]</a>
                                         </template>
 
-                                    </label>
-
-                                    <div style="margin-bottom: 5px;">
                                         <el-checkbox
                                             :indeterminate="isIndeterminate"
                                             v-model="checkAll"
-                                            @change="handleCheckAll">
+                                            @change="handleCheckAll"
+                                            style="margin-left: 10px;">
                                             Seleccionar todos
                                         </el-checkbox>
-                                    </div>
+                                    </label>
                                     <el-select
                                         v-model="form.worker_id"
                                         filterable
