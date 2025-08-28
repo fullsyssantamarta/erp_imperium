@@ -330,10 +330,10 @@ class RemissionController extends Controller
                     ->where('warehouse_id', $item->warehouse_id)
                     ->first();
 
-                if ($itemWarehouse) {
-                    $itemWarehouse->stock += $item->quantity;
-                    $itemWarehouse->save();
-                }
+            if ($itemWarehouse) {
+                $itemWarehouse->stock += $item->quantity;
+                $itemWarehouse->save();
+            }
 
                 // Registrar entrada en inventory_kardex
                 InventoryKardex::create([
