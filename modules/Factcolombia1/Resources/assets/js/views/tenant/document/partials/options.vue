@@ -40,12 +40,25 @@
         </div>
         <div class="row mt-3">
             <div class="col-md-12">
-                <el-input v-model="form.customer_email">
+                <el-input
+                    v-model="form.customer_email"
+                    placeholder="correo1@mail.com; correo2@mail.com"
+                >
                     <el-button slot="append" icon="el-icon-message" @click="clickSendEmail" :loading="loading">Enviar</el-button>
                 </el-input>
+                <small class="text-muted">Puede ingresar varios correos separados por punto y coma (;)</small>
                 <small class="form-control-feedback" v-if="errors.customer_email" v-text="errors.customer_email[0]"></small>
             </div>
         </div>
+        <!-- <div class="row mt-3">
+            <div class="col-md-12">
+                <el-input
+                    v-model="form.additional_emails"
+                    placeholder="correo1@mail.com; correo2@mail.com"
+                ></el-input>
+                <small class="text-muted">Puede ingresar varios correos adicionales separados por punto y coma (;)</small>
+            </div>
+        </div> -->
         <div class="row mt-3">
             <div class="col-md-12">
                 <el-input v-model="form.whatsapp_number" placeholder="Número WhatsApp">

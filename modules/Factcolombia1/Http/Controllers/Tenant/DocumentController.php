@@ -1733,13 +1733,46 @@ class DocumentController extends Controller
         $number = substr($request->number_full, strpos($request->number_full, '-') + 1);
 //        \Log::debug($prefix);
 //        \Log::debug($number);
+
+        // 1. Procesar correos desde el request
+        $emails = [];
+        if (!empty($request->email)) {
+            $emails = array_merge($emails, explode(';', $request->email));
+        }
+        if (!empty($request->additional_emails)) {
+            $emails = array_merge($emails, explode(';', $request->additional_emails));
+        }
+        // Limpiar: quitar espacios, correos vacíos y duplicados
+        $emails = array_unique(array_filter(array_map('trim', $emails)));
+        // Filtrar correos válidos
+        $emails = array_filter($emails, function ($email) {
+            return filter_var($email, FILTER_VALIDATE_EMAIL);
+        });
+
+        if (empty($emails)) {
+            return [
+                'success' => false,
+                'message' => 'Debe ingresar al menos un correo válido en los campos de correo.',
+            ];
+        }
+
+        // 2. Construir email_cc_list con todos los correos válidos
+        $email_cc_list = [];
+        foreach ($emails as $email) {
+            $email_cc_list[] = ['email' => $email];
+        }
+
+        // Agregar correo de la sucursal si es válido y no está ya en la lista
+        if (!empty($sucursal->email) && filter_var($sucursal->email, FILTER_VALIDATE_EMAIL)) {
+            if (!in_array($sucursal->email, $emails)) {
+                $email_cc_list[] = ['email' => $sucursal->email];
+            }
+        }
+
         $send= (object)[
             'prefix' => $prefix,
             'number' => $number,
-            'alternate_email' => $request->email,
-            'email_cc_list' => [
-                ['email' => $sucursal->email]
-            ]
+            'email_cc_list' => $email_cc_list
         ];
     //    \Log::debug(json_encode($send));
         $data_send = json_encode($send);
