@@ -1,8 +1,17 @@
 @php
+    use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Schema;
     $path = explode('/', request()->path());
     $path[1] = (array_key_exists(1, $path)> 0)?$path[1]:'';
     $path[2] = (array_key_exists(2, $path)> 0)?$path[2]:'';
     $path[0] = ($path[0] === '')?'documents':$path[0];
+    $advanced_config = null; // Inicializa la variable
+    $tenantConnection = config('tenancy.db.tenant_connection', 'tenant');
+    if (Schema::connection($tenantConnection)->hasTable('co_advanced_configuration')) {
+        $advanced_config = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
+    } else {
+        \Log::error('ERROR: La tabla co_advanced_configuration NO existe en la base de datos del tenant');
+    }
 @endphp
 <aside id="sidebar-left" class="sidebar-left">
     <div class="sidebar-header">

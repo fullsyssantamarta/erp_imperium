@@ -4,7 +4,7 @@ $current_hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 
 if($current_hostname) {
     Route::domain($current_hostname->fqdn)->group(function () {
-        Route::middleware(['auth', 'locked.tenant'])->group(function () {
+        Route::middleware(['auth', 'locked.tenant', 'redirect.module'])->group(function () {
             Route::post('/client/configuration/storeServiceCompanieSoftware', 'Tenant\ConfigurationController@storeServiceSoftware');
             Route::post('/client/configuration/storeServiceCompanieResolution', 'Tenant\ConfigurationController@storeServiceResolution');
             Route::post('/client/configuration/storeServiceCompanieCertificate', 'Tenant\ConfigurationController@storeServiceCertificate');

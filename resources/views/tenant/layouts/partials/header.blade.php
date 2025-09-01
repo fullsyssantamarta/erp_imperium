@@ -8,6 +8,7 @@
             <i class="fas fa-bars" aria-label="Toggle sidebar"></i>
         </div>
         <div class="d-md-none ml-1 d-lg-block" style="height: inherit;">
+            @if(in_array('documents', $vc_modules))
             <a href="{{ route('tenant.co-documents.create') }}"
                 title="Nueva Factura Electrónica"
                 class="topbar-links"
@@ -16,6 +17,8 @@
                 <i aria-hidden="true" class="fas fa-fw fa-plus"></i>
                 <span>NFE</span>
             </a>
+            @endif
+            @if(in_array('pos', $vc_modules))
             <a href="{{ route('tenant.pos.index') }}"
                 title="POS"
                 class="topbar-links"
@@ -24,6 +27,8 @@
                 <i aria-hidden="true" class="fas fa-fw fa-plus"></i>
                 <span>POS</span>
             </a>
+            @endif
+            @if(in_array('purchases', $vc_modules))
             <a href="{{ route('tenant.purchases.create') }}"
                 title="Generar Compra"
                 class="topbar-links"
@@ -32,6 +37,8 @@
                 <i aria-hidden="true" class="fas fa-fw fa-plus"></i>
                 <span>GC</span>
             </a>
+            @endif
+            @if(in_array('inventory', $vc_modules))
             <a href="{{ route('tenant.items.index') }}"
                 title="Nuevo Producto"
                 class="topbar-links"
@@ -40,6 +47,8 @@
                 <i aria-hidden="true" class="fas fa-fw fa-plus"></i>
                 <span>NP</span>
             </a>
+            @endif
+            @if(in_array('reports', $vc_modules))
             <a href="{{ route('tenant.reports.customers.index') }}"
                 title="Nuevo Cliente"
                 class="topbar-links"
@@ -48,6 +57,7 @@
                 <i aria-hidden="true" class="fas fa-fw fa-plus"></i>
                 <span>CL</span>
             </a>
+            @endif
         </div>
     </div>
     <div class="header-right">
