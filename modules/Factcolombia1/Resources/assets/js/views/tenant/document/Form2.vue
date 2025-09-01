@@ -918,7 +918,11 @@ export default {
                 total: this.invoice ? this.invoice.total : 0,
                 sale: this.invoice ? this.invoice.sale : 0,
                 observation: this.invoice ? this.invoice.observation : null,
-                format_print: this.invoice ? this.invoice.format_print : null,
+                format_print: this.invoice
+                    ? this.invoice.format_print
+                    : (this.advanced_configuration && this.advanced_configuration.default_format_print
+                        ? String(this.advanced_configuration.default_format_print)
+                        : "1"),
                 time_days_credit: this.invoice ? this.invoice.time_days_credit : 0,
                 service_invoice: {},
                 payment_form_id: this.invoice ? this.invoice.payment_form_id : null,

@@ -121,6 +121,7 @@ Vue.component('tenant-configuration-documents', require('@viewsModuleProColombia
 Vue.component('tenant-configuration-change-ambient', require('@viewsModuleProColombia/tenant/configuration/Production.vue'))
 Vue.component('tenant-configuration-software-payroll', require('@viewsModuleProColombia/tenant/configuration/SoftwarePayroll.vue'));
 Vue.component('tenant-configuration-software-eqdocs', require('@viewsModuleProColombia/tenant/configuration/SoftwareEqDocs.vue'));
+Vue.component('tenant-configuration-whatsapp-api', require('@viewsModuleProColombia/tenant/configuration/WhatsappApiConfig.vue'));
 
 //colombia
 

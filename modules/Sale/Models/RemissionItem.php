@@ -28,6 +28,7 @@ class RemissionItem extends ModelTenant
         'quantity', 
         'unit_price',
         'total',
+        'warehouse_id',
 
     ];
 

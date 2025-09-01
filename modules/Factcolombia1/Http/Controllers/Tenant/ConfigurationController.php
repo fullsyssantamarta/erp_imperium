@@ -578,15 +578,35 @@ class ConfigurationController extends Controller
         return $data;
     }
 
-    public function queryTechnicalKey(){
+    public function queryTechnicalKey(Request $request){
         $company = ServiceCompany::firstOrFail();
         $base_url = config("tenant.service_fact", "");
 //        $base_url = env("SERVICE_FACT", "");
 
+        // Recibe el tipo desde el frontend
+        $type = $request->input('type', 'invoice'); // valores: invoice, payroll, eqdocs
+
+        if ($type == 'payroll') {
+            $id_software = $company->id_software_payroll;
+            $label = 'nómina';
+        } elseif ($type == 'eqdocs') {
+            $id_software = $company->id_software_eqdocs;
+            $label = 'documentos equivalentes';
+        } else {
+            $id_software = $company->id_software;
+            $label = 'facturación';
+        }
+        if (empty($id_software)) {
+            return [
+                'message' => "No hay ID de software configurado para {$label}.",
+                'success' => false,
+            ];
+        }
+
         $ch = curl_init("{$base_url}ubl2.1/numbering-range");
         $data = [
             "Nit" => $company->identification_number,
-            "IDSoftware" => $company->id_software,
+            "IDSoftware" => $id_software,
         ];
         $data_production = json_encode($data);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

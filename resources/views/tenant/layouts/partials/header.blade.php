@@ -57,6 +57,12 @@
         </a>
         </li>
         <span class="separator"></span>
+        <li class="d-inline-block">
+            <a role="menuitem" class="nav-link" id="fullscreen-btn" title="Pantalla completa">
+                <i id="fullscreen-icon" class="fas fa-expand"></i>
+            </a>
+        </li>
+        <span class="separator"></span>
         <div id="userbox" class="userbox">
             <a href="#" data-toggle="dropdown">
                 <figure class="profile-picture">
@@ -112,4 +118,29 @@ function toggleSupportSidebar() {
     sidebar.classList.toggle('show');
     backdrop.classList.toggle('show');
 }
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('fullscreen-btn');
+    const icon = document.getElementById('fullscreen-icon');
+
+    function updateIcon() {
+        if (document.fullscreenElement) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+        } else {
+            icon.classList.remove('fa-compress');
+            icon.classList.add('fa-expand');
+        }
+    }
+
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    document.addEventListener('fullscreenchange', updateIcon);
+});
 </script>

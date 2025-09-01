@@ -270,7 +270,7 @@
         </div>
 
         <!-- Nueva sección configuración API -->
-        <div class="card mb-0 pt-2 pt-md-0 mt-4">
+        <!-- <div class="card mb-0 pt-2 pt-md-0 mt-4">
             <div class="card-header bg-info">
                 <h3 class="my-0">Configuración API WhatsApp</h3>
             </div>
@@ -308,7 +308,7 @@
                     </div>
                 </form>
             </div>
-        </div>
+        </div> -->
     </div>
 </template>
 

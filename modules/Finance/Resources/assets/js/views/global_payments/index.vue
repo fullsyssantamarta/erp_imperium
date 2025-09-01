@@ -18,7 +18,7 @@
                             <th class="">Referencia</th>
                             <th class="">Pago</th>
  
-                        <tr>
+                        </tr>
                         <tr slot-scope="{ index, row }">
                             <td>{{ index }}</td>
                             <td>{{ row.person_name }}<br/><small v-text="row.person_number"></small></td>

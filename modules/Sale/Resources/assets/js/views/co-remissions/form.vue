@@ -343,6 +343,7 @@ export default {
             sellers: [],
             loading_sellers: false,
             seller_search_timeout: null,
+            seller_warehouse_id: null,
         }
     },
     async created() {
@@ -478,6 +479,11 @@ export default {
             this.customers = this.all_customers
         },
         addRow(row) {
+            let selectedWarehouse = null;
+            if (row.item && row.item.warehouses) {
+                selectedWarehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+            }
+            row.warehouse_id = selectedWarehouse ? selectedWarehouse.warehouse_id : null;
             // Validar stock mínimo si la opción está activa
             if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
                 if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {

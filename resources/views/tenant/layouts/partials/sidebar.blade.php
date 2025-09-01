@@ -867,6 +867,9 @@
                     </li>
                     @endif --}}
 
+                    {{-- Debug temporal --}}
+                    {{-- {{ dd($vc_modules) }} --}}
+                    @if(in_array('accounting', $vc_modules))
                     <li class="nav-parent {{$path[0] === 'accounting' && in_array($path[1], ['journal', 'charts', 'income-statement', 'financial-position', 'auxiliary-movement']) ? 'nav-active nav-expanded' : ''}}">
                         <a class="nav-link" href="#">
                             <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
@@ -901,6 +904,7 @@
                             </li>
                         </ul>
                     </li>
+                    @endif
 
                     @if(in_array('finance', $vc_modules))
 
