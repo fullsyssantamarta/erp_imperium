@@ -49,7 +49,7 @@
             </a>
             @endif
             @if(in_array('reports', $vc_modules))
-            <a href="{{ route('tenant.reports.customers.index') }}"
+            <a href="{{ route('tenant.persons.index', ['type' => 'customers']) }}"
                 title="Nuevo Cliente"
                 class="topbar-links"
                 data-placement="bottom"
