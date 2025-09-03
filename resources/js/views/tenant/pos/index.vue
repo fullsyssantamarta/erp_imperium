@@ -306,6 +306,16 @@
                                             @click="connectScale">
                                     {{ scale.connected ? 'Balanza conectada' : 'Conectar balanza' }}
                                 </el-button>
+                                <el-button
+                                    v-if="scale.connected"
+                                    size="mini"
+                                    type="danger"
+                                    @click="disconnectScale"
+                                    :loading="scale.connecting"
+                                    style="margin-left: 8px;"
+                                >
+                                    Desconectar balanza
+                                </el-button>
                                 <small v-if="!scale.supported" class="text-danger ml-2">
                                     Este navegador no soporta Web Serial. Usa Chrome/Edge o el Puente Local.
                                 </small>
