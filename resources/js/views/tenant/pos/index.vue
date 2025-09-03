@@ -303,7 +303,8 @@
                                 <el-button size="mini"
                                             :type="scale.connected ? 'success' : 'primary'"
                                             :loading="scale.connecting"
-                                            @click="connectScale">
+                                            @click="connectScale"
+                                            :disabled="scale.connected">
                                     {{ scale.connected ? 'Balanza conectada' : 'Conectar balanza' }}
                                 </el-button>
                                 <el-button
