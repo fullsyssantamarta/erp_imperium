@@ -299,10 +299,29 @@
                                 </tr>
                             </table>
                             <!-- Tabla tradicional SOLO en escritorio -->
+                            <div class="mb-2">
+                                <el-button size="mini"
+                                            :type="scale.connected ? 'success' : 'primary'"
+                                            :loading="scale.connecting"
+                                            @click="connectScale">
+                                    {{ scale.connected ? 'Balanza conectada' : 'Conectar balanza' }}
+                                </el-button>
+                                <small v-if="!scale.supported" class="text-danger ml-2">
+                                    Este navegador no soporta Web Serial. Usa Chrome/Edge o el Puente Local.
+                                </small>
+                            </div>
                             <table v-show="!isMobile" class="table table-sm table-borderless mb-0">
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%">
                                         <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
+                                        <el-button size="mini"
+                                                class="ml-2"
+                                                :loading="scale.readingIndex === index"
+                                                :disabled="!scale.supported"
+                                                @click="weighItem(item, index)"
+                                                title="Leer peso de la balanza">
+                                        Pesar   
+                                        </el-button>
                                     </td>
                                     <td width="20%">
                                         <p class="m-0" style="line-height: 1em;">
@@ -693,6 +712,16 @@ export default {
             advanced_configuration: {},
             isMobile: window.innerWidth <= 1800,
             windowWidth: window.innerWidth, // <-- agregar para computada
+            scale: {
+                supported: 'serial' in navigator,
+                connecting: false,
+                connected: false,
+                port: null,
+                reader: null,
+                readingIndex: null,
+                cfg: { baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' }, // ajusta si tu modelo usa otros params
+                lineBuffer: '',
+            },
         };
     },
 
@@ -701,6 +730,7 @@ export default {
     },
     beforeDestroy() {
         window.removeEventListener('resize', this.handleResize);
+        this.disconnectScale();
     },
     async created() {
         try {
@@ -790,6 +820,140 @@ export default {
         },
     },
     methods: {
+        async connectScale() {
+            if (!this.scale.supported) {
+                this.$message.error('Tu navegador no soporta Web Serial.');
+                return;
+            }
+            try {
+                this.scale.connecting = true;
+
+                // Si ya hay permisos previos, intenta reusar el puerto
+                const ports = await navigator.serial.getPorts();
+                if (ports && ports.length) {
+                this.scale.port = ports[0];
+                } else {
+                // Pide al usuario elegir el puerto de la balanza
+                this.scale.port = await navigator.serial.requestPort();
+                }
+
+                await this.scale.port.open(this.scale.cfg);
+
+                // Preparar el reader (texto por líneas)
+                const textDecoder = new TextDecoderStream();
+                this.scale.port.readable.pipeTo(textDecoder.writable);
+                this.scale.reader = textDecoder.readable.getReader();
+
+                this.scale.connected = true;
+                this.$message.success('Balanza conectada');
+            } catch (err) {
+                console.error(err);
+                this.$message.error('No se pudo abrir el puerto de la balanza.');
+                await this.disconnectScale(); // limpia estado si falló
+            } finally {
+                this.scale.connecting = false;
+            }
+        },
+        async disconnectScale() {
+            try {
+                if (this.scale.reader) {
+                await this.scale.reader.cancel();
+                this.scale.reader.releaseLock();
+                }
+            } catch (_) {}
+            try {
+                if (this.scale.port) await this.scale.port.close();
+            } catch (_) {}
+            this.scale.reader = null;
+            this.scale.port = null;
+            this.scale.connected = false;
+        },
+        // Lee una sola medición (con timeout opcional)
+        async readWeightOnce({ timeoutMs = 4000, stableOnly = false } = {}) {
+            if (!this.scale.connected || !this.scale.reader) {
+                // Intento de conexión rápida si no hay puerto aún
+                await this.connectScale();
+                if (!this.scale.connected) return null;
+            }
+
+            const deadline = Date.now() + timeoutMs;
+            let buffer = '';
+
+            while (Date.now() < deadline) {
+                const { value, done } = await this.scale.reader.read();
+                if (done) break;
+                if (!value) continue;
+
+                buffer += value;
+                const lines = buffer.split(/\r\n|\n|\r/);
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                // Algunas balanzas envían "ST" (stable) / "US" (unstable). Si pides sólo estable, filtra:
+                if (stableOnly && /US|UNSTABLE/i.test(line)) continue;
+
+                const parsed = this.parseWeightLine(line);
+                if (parsed) return parsed; // { value, unit, raw }
+                }
+            }
+            return null; // timeout
+        },
+        // Extrae número y unidad de una línea típica de balanza
+        parseWeightLine(line) {
+            // Ejemplos: "ST,GS,   0.550 kg" | "S     0.550 kg" | "Gross: 0.550kg" | "550 g" | "0.550"
+            const numM = line.match(/-?\d+(?:[.,]\d+)?/);
+            if (!numM) return null;
+
+            let val = parseFloat(numM[0].replace(',', '.'));
+            if (isNaN(val)) return null;
+
+            const unitM = line.match(/\b(kg|g|lb|lbs)\b/i);
+            let unit = unitM ? unitM[1].toLowerCase() : null;
+
+            // Normaliza a kg si viene en gramos
+            if (unit === 'g') {
+                val = val / 1000;
+                unit = 'kg';
+            }
+            return { value: val, unit, raw: line };
+        },
+        // Acción del botón "Pesar"
+        async weighItem(item, index) {
+            if (!this.scale.supported) {
+                this.$message.warning('Tu navegador no soporta Web Serial. Usa Chrome/Edge o el Puente Local.');
+                return;
+            }
+
+            try {
+                this.scale.readingIndex = index;
+
+                // Lee una medida (prefiere estable si tu modelo la marca con "ST")
+                const reading = await this.readWeightOnce({ timeoutMs: 5000, stableOnly: true });
+
+                if (!reading) {
+                this.$message.error('No se recibió lectura de la balanza (timeout).');
+                return;
+                }
+
+                const qty = Number.isFinite(reading.value) ? reading.value : null;
+                if (qty == null) {
+                this.$message.error('Lectura inválida.');
+                return;
+                }
+
+                // Escribe en la cantidad (aux_quantity) con 3 decimales
+                this.$set(item.item, 'aux_quantity', qty.toFixed(3));
+
+                // Dispara tu lógica existente para recalcular (usa lo que ya tienes)
+                this.$nextTick(() => this.onQuantityInput(item, index));
+
+            } catch (e) {
+                console.error(e);
+                this.$message.error('Error al leer la balanza.');
+            } finally {
+                this.scale.readingIndex = null;
+            }
+        },
         getQueryParameters() {
             return queryString.stringify({
                 page: this.pagination.current_page
