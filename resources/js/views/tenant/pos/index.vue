@@ -12,6 +12,42 @@
                 <h2>
                     <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode"></el-switch>
                 </h2>
+                <!-- Botón balanza al mismo nivel que el switch -->
+                <div class="d-flex align-items-center mb-2 balanza-btn-group">
+                    <el-button
+                        size="medium"
+                        class="btn-balanza"
+                        :type="scale.connected ? 'success' : 'primary'"
+                        :loading="scale.connecting"
+                        @click="connectScale"
+                        :disabled="scale.connected"
+                    >
+                        <i v-if="!scale.connected" class="fa fa-balance-scale" style="margin-right:8px;"></i>
+                        <i v-else class="fa fa-check-circle" style="margin-right:8px;"></i>
+                        <span class="balanza-btn-text">
+                            {{ scale.connected ? 'Balanza conectada' : 'Conectar balanza' }}
+                        </span>
+                    </el-button>
+                    <!-- Tooltip informativo al lado del botón -->
+                    <el-tooltip
+                        effect="dark"
+                        content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                        placement="top"
+                    >
+                        <i class="fa fa-info-circle text-info" style="margin-left:8px; font-size:18px; cursor:pointer;"></i>
+                    </el-tooltip>
+                    <el-button
+                        v-if="scale.connected"
+                        size="medium"
+                        type="danger"
+                        class="btn-balanza"
+                        @click="disconnectScale"
+                        :loading="scale.connecting"
+                    >
+                        <i class="fa fa-plug" style="margin-right:8px;"></i>
+                        <span class="balanza-btn-text">Desconectar balanza</span>
+                    </el-button>
+                </div>
                 <template v-if="!electronic">
                     <h2>
                         <el-switch v-model="type_refund" active-text="Devolución"></el-switch>
@@ -253,19 +289,7 @@
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%" class="td-main">
                                         <div class="row-main">
-                                            <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
-                                            <!-- BOTÓN PESAR PARA MÓVIL -->
-                                            <el-button
-                                                size="mini"
-                                                class="ml-2"
-                                                :loading="scale.readingIndex === index"
-                                                :disabled="!scale.supported"
-                                                @click="weighItem(item, index)"
-                                                title="Leer peso de la balanza"
-                                                style="margin-left: 4px;"
-                                            >
-                                                Pesar
-                                            </el-button>
+                                            <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)"></el-input>
                                             <div class="product-name">
                                                 <span v-html="clearText(item.item.name)"></span>
                                                 <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
@@ -311,40 +335,10 @@
                                 </tr>
                             </table>
                             <!-- Tabla tradicional SOLO en escritorio -->
-                            <div class="mb-2">
-                                <el-button size="mini"
-                                            :type="scale.connected ? 'success' : 'primary'"
-                                            :loading="scale.connecting"
-                                            @click="connectScale"
-                                            :disabled="scale.connected">
-                                    {{ scale.connected ? 'Balanza conectada' : 'Conectar balanza' }}
-                                </el-button>
-                                <el-button
-                                    v-if="scale.connected"
-                                    size="mini"
-                                    type="danger"
-                                    @click="disconnectScale"
-                                    :loading="scale.connecting"
-                                    style="margin-left: 8px;"
-                                >
-                                    Desconectar balanza
-                                </el-button>
-                                <small v-if="!scale.supported" class="text-danger ml-2">
-                                    Este navegador no soporta Web Serial. Usa Chrome/Edge o el Puente Local.
-                                </small>
-                            </div>
                             <table v-show="!isMobile" class="table table-sm table-borderless mb-0">
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%">
-                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
-                                        <el-button size="mini"
-                                                class="ml-2"
-                                                :loading="scale.readingIndex === index"
-                                                :disabled="!scale.supported"
-                                                @click="weighItem(item, index)"
-                                                title="Leer peso de la balanza">
-                                        Pesar   
-                                        </el-button>
+                                        <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)"></el-input>
                                     </td>
                                     <td width="20%">
                                         <p class="m-0" style="line-height: 1em;">
@@ -843,6 +837,31 @@ export default {
         },
     },
     methods: {
+        startContinuousWeight(item, index) {
+            if (!this.scale.connected || !this.scale.reader) return;
+            this.scale.readingIndex = index;
+            this.scale.continuousReading = true;
+            this.readWeightLoop(item, index);
+        },
+        stopContinuousWeight(item, index) {
+            this.scale.continuousReading = false;
+            this.scale.readingIndex = null;
+            // El último peso queda grabado en el campo
+            this.onQuantityInput(item, index);
+        },
+        async readWeightLoop(item, index) {
+            while (this.scale.continuousReading && this.scale.connected && this.scale.reader && this.scale.readingIndex === index) {
+                const { value, done } = await this.scale.reader.read();
+                if (done || !value) break;
+                const lines = value.split(/\r\n|\n|\r/);
+                for (const line of lines) {
+                    const reading = this.parseWeightLine(line);
+                    if (reading && Number.isFinite(reading.value)) {
+                        this.$set(item.item, 'aux_quantity', reading.value.toFixed(3));
+                    }
+                }
+            }
+        },
         async connectScale() {
             if (!this.scale.supported) {
                 this.$message.error('Tu navegador no soporta Web Serial.');
@@ -2103,3 +2122,48 @@ export default {
     }
 };
 </script>
+<style scoped>
+.page-header .balanza-btn-group {
+    gap: 14px;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.page-header .btn-balanza {
+    min-width: 120px;
+    font-weight: bold;
+    height: 36px;
+    font-size: 15px;
+    padding: 0 12px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.page-header .balanza-btn-text {
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+@media (max-width: 900px) {
+    .page-header .balanza-btn-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .page-header .btn-balanza {
+        min-width: 120px;
+        font-size: 15px;
+        height: 38px;
+        padding: 0 10px;
+        width: 100%;
+    }
+    .page-header .balanza-btn-text {
+        font-size: 13px;
+    }
+}
+</style>
