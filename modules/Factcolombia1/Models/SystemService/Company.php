@@ -135,7 +135,7 @@ class Company extends Model
      */
     public function type_liability()
     {
-        return $this->belongsTo(Typey::class)
+        return $this->belongsTo(TypeLiability::class)
             ->withDefault([
                 'id' => 117,
                 'name' => 'No Responsable',

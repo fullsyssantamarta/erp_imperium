@@ -18,6 +18,7 @@ class PlanResource extends JsonResource
             'id' => $this->id, 
             'name' => $this->name,
             'pricing' => $this->pricing,
+            'period' => $this->period,
             'limit_documents' => $this->limit_documents,
             'limit_users' => $this->limit_users,
             // 'plan_documents' => $this->plan_documents,

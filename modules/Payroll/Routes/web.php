@@ -16,7 +16,7 @@ if($hostname) {
                     Route::get('columns', 'DocumentPayrollController@columns');
                     Route::get('records', 'DocumentPayrollController@records');
                     Route::get('table/{table}', 'DocumentPayrollController@table');
-                    Route::post('', 'DocumentPayrollController@store');
+                    Route::post('', 'DocumentPayrollController@store')->middleware('check.tenant.limits');
                     Route::get('record/{record}', 'DocumentPayrollController@record');
                     Route::post('preeliminar-view', 'DocumentPayrollController@preeliminarview');
                     Route::get('downloadFile/{filename}', 'DocumentPayrollController@downloadFile');

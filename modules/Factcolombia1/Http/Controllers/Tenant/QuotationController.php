@@ -286,7 +286,7 @@ class QuotationController extends Controller
                 ->with('country', 'version_ubl', 'type_identity_document')
                 ->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
 
             $this->document = Document::create([
                 'type_document_id' => 1,

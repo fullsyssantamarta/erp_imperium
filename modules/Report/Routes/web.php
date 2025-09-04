@@ -123,6 +123,15 @@ if($current_hostname) {
 
                 });
 
+                Route::prefix('sellers')->group(function () {
+                    Route::get('', 'ReportSellerController@index')->name('tenant.reports.sellers.index');
+                    Route::get('/records', 'ReportSellerController@records')->name('tenant.reports.sellers.records');
+                    Route::get('/list', 'ReportSellerController@getSellers');
+                    Route::get('/document-types', 'ReportSellerController@getDocumentTypes');
+                    Route::get('/export-pdf', 'ReportSellerController@exportPdf');
+                    Route::get('/export-excel', 'ReportSellerController@exportExcel');
+                });
+
                 Route::get('taxes/records', 'ReportTaxController@records');
                 Route::get('taxes/excel', 'ReportTaxController@excel');
                 Route::get('taxes/purchases/excel', 'ReportTaxController@excelPurchases');

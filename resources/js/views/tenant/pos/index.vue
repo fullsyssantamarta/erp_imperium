@@ -92,11 +92,22 @@
                                             @click="clickOpenInputEditUP(index)">
                                             <span style="font-size:16px;">&#9998;</span>
                                         </button>
-                                        {{currency.symbol}} {{ getFormatDecimal(item.sale_unit_price_with_tax) }}
+                                        {{currency.symbol}} 
+                                        <span v-if="!advanced_configuration.item_tax_included">
+                                            {{ getFormatDecimal(item.sale_unit_price) }}
+                                        </span>
+                                        <span v-else>
+                                            {{ getFormatDecimal(item.sale_unit_price_with_tax) }}
+                                        </span>
                                     </h5>
                                 </template>
                                 <template v-else>
-                                    <el-input min="0" v-model="item.edit_sale_unit_price" class="mt-3 mb-3" size="mini">
+                                    <el-input
+                                        min="0"
+                                        v-model="items[index].edit_sale_unit_price"
+                                        class="mt-3 mb-3"
+                                        size="mini"
+                                    >
                                         <el-button slot="append" icon="el-icon-check" type="primary" @click="clickEditUnitPriceItem(index)"></el-button>
                                         <el-button slot="append" icon="el-icon-close" type="danger" @click="clickCancelUnitPriceItem(index)"></el-button>
                                     </el-input>
@@ -897,17 +908,24 @@ export default {
 
         },
         clickOpenInputEditUP(index) {
-            this.items[index].edit_unit_price = true
+            this.items[index].edit_unit_price = true;
+            // Inicializa el valor editable según la configuración
+            this.items[index].edit_sale_unit_price = !this.advanced_configuration.item_tax_included
+                ? this.items[index].sale_unit_price
+                : this.items[index].sale_unit_price_with_tax;
         },
         clickEditUnitPriceItem(index) {
-            // console.log(index)
-            let price_with_tax = this.items[index].edit_sale_unit_price //price with tax
-            this.items[index].sale_unit_price_with_tax = price_with_tax
-            this.items[index].sale_unit_price = price_with_tax / (1 + (this.items[index].tax.rate / this.items[index].tax.conversion))
-            this.items[index].edit_unit_price = false
-
-            // console.log(item_search)
-
+            if (!this.advanced_configuration.item_tax_included) {
+                // El precio editado ya incluye impuesto
+                this.items[index].sale_unit_price = this.items[index].edit_sale_unit_price;
+                this.items[index].sale_unit_price_with_tax = this.items[index].edit_sale_unit_price;
+            } else {
+                // El precio editado es sin impuesto, calcular el precio con impuesto
+                let price_with_tax = this.items[index].edit_sale_unit_price;
+                this.items[index].sale_unit_price_with_tax = price_with_tax;
+                this.items[index].sale_unit_price = price_with_tax / (1 + (this.items[index].tax.rate / this.items[index].tax.conversion));
+            }
+            this.items[index].edit_unit_price = false;
         },
         clickCancelUnitPriceItem(index) {
             // console.log(index)
@@ -1119,6 +1137,9 @@ export default {
                 payment_method_id: 1,
                 payments: [],
                 electronic: false,
+                seller_id: null,
+                head_note: this.advanced_configuration.head_note || '',
+                foot_note: this.advanced_configuration.foot_note || '',
             }
             this.initFormItem();
             this.changeDateOfIssue();
@@ -1227,7 +1248,24 @@ export default {
             if (this.type_refund) {
 //                console.log("Aqui devolucion...")
                 this.form_item.item = item;
-                this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
+                if (!this.advanced_configuration.item_tax_included) {
+                    // El precio mostrado incluye impuesto, pero internamente debe ser sin impuesto
+                    if (item.tax && item.tax.rate && item.tax.conversion) {
+                        this.form_item.unit_price_value = item.sale_unit_price / (1 + (item.tax.rate / item.tax.conversion));
+                    } else {
+                        // Si no hay impuesto, usa el precio tal cual
+                        this.form_item.unit_price_value = item.sale_unit_price;
+                    }
+                    this.form_item.unit_price = this.form_item.unit_price_value;
+                    this.form_item.item.unit_price = this.form_item.unit_price_value;
+                    this.form_item.sale_unit_price = this.form_item.unit_price_value;
+                } else {
+                    // El precio mostrado es sin impuesto
+                    this.form_item.unit_price_value = item.sale_unit_price;
+                    this.form_item.unit_price = item.sale_unit_price;
+                    this.form_item.item.unit_price = item.sale_unit_price;
+                    this.form_item.sale_unit_price = item.sale_unit_price;
+                }
                 this.form_item.quantity = 1;
                 this.form_item.aux_quantity = 1;
 
@@ -1331,8 +1369,22 @@ export default {
 
                     this.form_item.item = { ...item }
                     // this.form_item.item = item;
-
-                    this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
+                    if (!this.advanced_configuration.item_tax_included) {
+                        if (item.tax && item.tax.rate && item.tax.conversion) {
+                            this.form_item.unit_price_value = item.sale_unit_price / (1 + (item.tax.rate / item.tax.conversion));
+                        } else {
+                            // Si no hay impuesto, usa el precio tal cual
+                            this.form_item.unit_price_value = item.sale_unit_price;
+                        }
+                        this.form_item.unit_price = this.form_item.unit_price_value;
+                        this.form_item.item.unit_price = this.form_item.unit_price_value;
+                        this.form_item.sale_unit_price = this.form_item.unit_price_value;
+                    } else {
+                        this.form_item.unit_price_value = item.sale_unit_price;
+                        this.form_item.unit_price = item.sale_unit_price;
+                        this.form_item.item.unit_price = item.sale_unit_price;
+                        this.form_item.sale_unit_price = item.sale_unit_price;
+                    }
                     this.form_item.quantity = 1;
                     this.form_item.aux_quantity = 1;
 

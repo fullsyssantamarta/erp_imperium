@@ -38,6 +38,7 @@ class Document extends ModelTenant
 
     protected $fillable = [
         'user_id',
+        'seller_id',
         'external_id',
         'establishment_id',
         'establishment',
@@ -471,6 +472,11 @@ class Document extends ModelTenant
         return $this->hasOne(DocumentTransport::class);
     }
 
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class, 'seller_id');
+    }
+
     // public function getNumberFullAttribute()
     // {
     //     return $this->series.'-'.$this->number;
@@ -793,6 +799,8 @@ class Document extends ModelTenant
                 'currency_code' => $this->currency->code,
                 'customer_name' => $customer_data->name ?? '',
                 'customer_number' => $customer_data->number ?? '', // Agregamos el número de identificación
+                'customer_email' => $customer_data->email ?? '',
+                'customer_telephone' => $customer_data->telephone ?? '',
                 'customer_address' => $customer_address,
                 'total_discount' => $this->getGlobalDiscountFormatted(),
                 'net_total' => $this->generalApplyNumberFormat($this->sale),
@@ -808,6 +816,8 @@ class Document extends ModelTenant
                 'currency_code' => $this->currency->code,
                 'customer_name' => '',
                 'customer_number' => '', // Agregamos el número de identificación
+                'customer_email' => '',
+                'customer_telephone' => '', 
                 'customer_address' => '',
                 'total_discount' => $this->getGlobalDiscountFormatted(),
                 'net_total' => $this->generalApplyNumberFormat($this->sale),

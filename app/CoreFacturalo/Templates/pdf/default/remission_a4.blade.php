@@ -132,6 +132,17 @@
                     </tr>
                     @endif
                 </table>
+                <table>
+                    <tr>
+                        <td>
+                            @if($advanced_configuration && $advanced_configuration->custom_remission_footer_enabled && $advanced_configuration->custom_remission_footer_message)
+                                <div style="width:100%;text-align:center;margin-top:10px;font-size:12px;">
+                                    {{ $advanced_configuration->custom_remission_footer_message }}
+                                </div>
+                            @endif
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>
@@ -274,13 +285,6 @@
             El pago debe realizarse únicamente a la cuenta bancaria indicada, no asumimos responsabilidad por consignaciones a otras cuentas.
         </span>
         <br>
-    @endif
-
-    {{-- Footer personalizado --}}
-    @if($advanced_configuration && $advanced_configuration->custom_remission_footer_enabled && $advanced_configuration->custom_remission_footer_message)
-        <div style="width:100%;text-align:center;margin-top:30px;font-size:12px;">
-            {{ $advanced_configuration->custom_remission_footer_message }}
-        </div>
     @endif
 
 </body>

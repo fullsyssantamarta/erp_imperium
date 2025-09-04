@@ -95,6 +95,18 @@
                                         v-text="errors.payment_method_id[0]"></small>
                                 </div>
                             </div>
+                            <div class="col-lg-4 pb-2" v-if="advanced_configuration.enable_seller_views">
+                                <div class="form-group" :class="{ 'has-danger': errors.seller_id }">
+                                    <label class="control-label">Vendedor</label>
+                                    <el-select v-model="form.seller_id" filterable remote reserve-keyword
+                                        placeholder="Seleccione un vendedor"
+                                        :remote-method="searchRemoteSellers"
+                                        :loading="loading_sellers">
+                                        <el-option v-for="seller in sellers" :key="seller.id" :label="seller.full_name" :value="seller.id"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="errors.seller_id" v-text="errors.seller_id[0]"></small>
+                                </div>
+                            </div>
                         </div>
                         <div class="row mt-2">
                             <div class="col-md-12">
@@ -328,6 +340,10 @@ export default {
             advanced_configuration: {},
             showDiscountCodeDialog: false,
             discount_code_validated: false,
+            sellers: [],
+            loading_sellers: false,
+            seller_search_timeout: null,
+            seller_warehouse_id: null,
         }
     },
     async created() {
@@ -352,8 +368,38 @@ export default {
         await this.$http.get('/co-advanced-configuration/record').then(response => {
             this.advanced_configuration = response.data.data
         })
+        if (this.advanced_configuration.enable_seller_views) {
+            await this.fetchSellers();
+        }
     },
     methods: {
+        async fetchSellers() {
+            try {
+                const response = await this.$http.get('/co-sellers/active');
+                this.sellers = response.data.data;
+            } catch (e) {
+                this.sellers = [];
+            }
+        },
+        searchRemoteSellers(query) {
+            if (this.seller_search_timeout) clearTimeout(this.seller_search_timeout);
+
+            if (!query || query.length < 3) {
+                this.sellers = [];
+                return;
+            }
+
+            this.loading_sellers = true;
+            this.seller_search_timeout = setTimeout(() => {
+                this.$http.get('/co-sellers/active', { params: { search: query } })
+                    .then(response => {
+                        this.sellers = response.data.data;
+                    })
+                    .finally(() => {
+                        this.loading_sellers = false;
+                    });
+            }, 400);
+        },
         ratePrefix(tax = null) {
             if ((tax != null) && (!tax.is_fixed_value)) return null;
             return (this.company.currency != null) ? this.company.currency.symbol : '$';
@@ -410,6 +456,7 @@ export default {
                 prefix: 'RM',
                 number: null,
                 exchange_rate_sale: 0,
+                seller_id: null,
             }
             this.errors = {}
             this.initInputPerson()
@@ -432,6 +479,11 @@ export default {
             this.customers = this.all_customers
         },
         addRow(row) {
+            let selectedWarehouse = null;
+            if (row.item && row.item.warehouses) {
+                selectedWarehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+            }
+            row.warehouse_id = selectedWarehouse ? selectedWarehouse.warehouse_id : null;
             // Validar stock mínimo si la opción está activa
             if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
                 if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {

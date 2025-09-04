@@ -23,8 +23,8 @@ class Kernel extends ConsoleKernel
      * @return void
      */
     protected function schedule(Schedule $schedule) {
-        $schedule->command('tenancy:run tenant:run')
-            ->everyMinute();
+        $schedule->command('tenancy:run tenant:run')->everyMinute();
+        $schedule->command('companies:renew-plans')->daily();
     }
 
     /**

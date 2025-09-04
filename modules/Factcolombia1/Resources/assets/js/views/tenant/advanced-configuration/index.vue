@@ -110,6 +110,85 @@
                                             <small class="form-control-feedback" v-if="errors.custom_remission_footer_message" v-text="errors.custom_remission_footer_message[0]"></small>
                                         </div>
                                     </div>
+                                    <div class="col-md-4 mt-4">
+                                        <label class="control-label">
+                                            Activar vistas de vendedores
+                                            <el-tooltip class="item" effect="dark" content="Muestra el módulo de vendedores en el menú" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch v-model="form.enable_seller_views" active-text="Sí" inactive-text="No" @change="submit"></el-switch>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mt-4" :class="{'has-danger': errors.default_format_print}">
+                                        <label class="control-label">
+                                            Formato de impresión por defecto
+                                            <el-tooltip class="item" effect="dark" content="Este formato se seleccionará automáticamente al crear un comprobante, pero puedes cambiarlo en cada documento." placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-select v-model="form.default_format_print" placeholder="Seleccione formato" @change="submit">
+                                                <el-option label="Media Carta" :value="1"></el-option>
+                                                <el-option label="Carta" :value="2"></el-option>
+                                                <el-option label="Tirilla" :value="3"></el-option>
+                                            </el-select>
+                                            <small class="form-control-feedback" v-if="errors.default_format_print" v-text="errors.default_format_print[0]"></small>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <hr style="border-top: 3px solid #e0e0e0;">
+                                        <h4 class="mt-3 mb-2">Campos personalizados para plantilla</h4>
+                                    </div>
+                                    <div class="col-md-4 mt-3">
+                                        <label class="control-label">
+                                            Nota de encabezado
+                                            <el-tooltip class="item" effect="dark" content="Este campo se mostrara antes de los datos del cliente" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-input
+                                            type="textarea"
+                                            v-model="form.head_note"
+                                            maxlength="120"
+                                            show-word-limit
+                                            placeholder="Ingrese una nota de encabezado"
+                                            @change="submit"
+                                        ></el-input>
+                                    </div>
+                                    <!-- <div class="col-md-4 mt-3">
+                                        <label class="control-label">
+                                            Notas en plantilla
+                                            <el-tooltip class="item" effect="dark" content="Este campo se mostrará antes del footer y después de la tabla de productos" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-input
+                                            type="textarea"
+                                            v-model="form.notes"
+                                            maxlength="120"
+                                            show-word-limit
+                                            placeholder="Ingrese notas adicionales"
+                                            @change="submit"
+                                        ></el-input>
+                                    </div> -->
+                                    <div class="col-md-4 mt-3">
+                                        <label class="control-label">
+                                            Nota de pie de página
+                                            <el-tooltip class="item" effect="dark" content="Este campo se mostrará en el pie de página de la factura" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-input
+                                            type="textarea"
+                                            v-model="form.foot_note"
+                                            maxlength="120"
+                                            show-word-limit
+                                            placeholder="Ingrese una nota de pie de página"
+                                            @change="submit"
+                                        ></el-input>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 
@@ -175,7 +254,11 @@
                                     </div>
 
                                     <div class="col-md-4 mt-2">
-                                        <label class="control-label">Contraseña</label>
+                                        <label class="control-label">Contraseña
+                                            <el-tooltip class="item" effect="dark" content="La contraseña se obtiene como clave de aplicación en Gmail u otros servicios de correo." placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
                                         <div class="form-group">
                                             <el-input v-model="form.radian_imap_password" show-password></el-input>
                                         </div>
@@ -187,6 +270,26 @@
                                         </div>
                                     </div>
 
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-4">
+                                        <label class="control-label">
+                                            Mostrar documentos por
+                                            <el-tooltip class="item" effect="dark" content="Elija si desea mostrar documentos por crédito o al contado" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch
+                                                v-model="form.radian_show_credit_only"
+                                                :active-value="true"
+                                                :inactive-value="false"
+                                                active-text="Crédito y Contado"
+                                                inactive-text="Solo Crédito"
+                                                @change="submit"
+                                            ></el-switch>
+                                        </div>
+                                    </div>
                                 </div>
                             </el-tab-pane>
 
@@ -214,6 +317,17 @@
                             <el-tab-pane class="mb-3" name="qztray">
                                 <span slot="label">Impresión</span>
                                 <certificates-qztray></certificates-qztray>
+                            </el-tab-pane>
+
+                            <el-tab-pane class="mb-3" name="whatsapp">
+                                <span slot="label">WhatsApp Api</span>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="card card-dashboard border">
+                                            <whatsapp-api-config />
+                                        </div>
+                                    </div>
+                                </div>
                             </el-tab-pane>
 
                         </el-tabs>
@@ -258,9 +372,10 @@
 
 <script>
 import CertificatesQztray from './certificates_qztray.vue'
+import WhatsappApiConfig from '../configuration/WhatsappApiConfig.vue'
 
 export default {
-    components: {CertificatesQztray},
+    components: {CertificatesQztray, WhatsappApiConfig},
     props: {
         user: Object
     },
@@ -305,6 +420,11 @@ export default {
                 discount_code: '',
                 custom_remission_footer_enabled: false,
                 custom_remission_footer_message: '',
+                radian_show_credit_only: true,
+                default_format_print: 1,
+                foot_note: '',
+                head_note: '',
+                // notes: '',
             }
         },
         clickSaveEmailRadian()

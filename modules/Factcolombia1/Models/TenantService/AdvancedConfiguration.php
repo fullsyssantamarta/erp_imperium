@@ -38,6 +38,12 @@ class AdvancedConfiguration extends Model
         'discount_code',
         'custom_remission_footer_enabled',
         'custom_remission_footer_message',
+        'enable_seller_views',
+        'radian_show_credit_only',
+        'default_format_print',
+        'foot_note',
+        'head_note',
+        'notes',
     ];
 
     protected $casts = [
@@ -47,6 +53,9 @@ class AdvancedConfiguration extends Model
         'validate_min_stock' => 'bool',
         'validate_discount_code' => 'bool',
         'custom_remission_footer_enabled' => 'bool',
+        'enable_seller_views' => 'bool',
+        'radian_show_credit_only' => 'bool',
+        'default_format_print' => 'integer',
     ];
 
 
@@ -74,6 +83,12 @@ class AdvancedConfiguration extends Model
             'discount_code' => $this->discount_code,
             'custom_remission_footer_enabled' => $this->custom_remission_footer_enabled,
             'custom_remission_footer_message' => $this->custom_remission_footer_message,
+            'enable_seller_views' => $this->enable_seller_views,
+            'radian_show_credit_only' => $this->radian_show_credit_only,
+            'default_format_print' => $this->default_format_print,
+            'foot_note' => $this->foot_note,
+            'head_note' => $this->head_note,
+            'notes' => $this->notes,
         ];
 
     }

@@ -47,6 +47,7 @@ class CompanyRequest extends FormRequest
             'phone'=> 'required|numeric|digits_between:7,10',
             'dv' => 'required|numeric|digits_between:1,9|max:9',
             'ica_rate'=> 'required',
+            'plan_id' => 'required|exists:plans,id',
             'economic_activity_code'=> 'required',
             'api_token' => 'nullable|string',
         ];

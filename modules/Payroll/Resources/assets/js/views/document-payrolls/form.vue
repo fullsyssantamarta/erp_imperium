@@ -26,6 +26,13 @@
                                             <a href="#" @click.prevent="showDialogNewWorker = true">[+ Nuevo]</a>
                                         </template>
 
+                                        <el-checkbox
+                                            :indeterminate="isIndeterminate"
+                                            v-model="checkAll"
+                                            @change="handleCheckAll"
+                                            style="margin-left: 10px;">
+                                            Seleccionar todos
+                                        </el-checkbox>
                                     </label>
                                     <el-select
                                         v-model="form.worker_id"
@@ -1616,7 +1623,23 @@
                 quantity_days_month: 30,
                 quantity_days_year: 360,
                 loading: false,
-                loading_preview: false
+                loading_preview: false,
+                checkAll: false,
+                isIndeterminate: false,
+            }
+        },
+        watch: {
+            'form.worker_id'(val) {
+                // Actualiza el estado del checkbox "Seleccionar todos"
+                const total = this.workers.map(w => w.id)
+                this.checkAll = val && val.length === total.length
+                this.isIndeterminate = val && val.length > 0 && val.length < total.length
+            },
+            workers(val) {
+                // Si cambia la lista de empleados (por búsqueda), actualiza el checkbox
+                const total = val.map(w => w.id)
+                this.checkAll = this.form.worker_id && this.form.worker_id.length === total.length
+                this.isIndeterminate = this.form.worker_id && this.form.worker_id.length > 0 && this.form.worker_id.length < total.length
             }
         },
         async created() {
@@ -1667,6 +1690,19 @@
             }
         },
         methods: {
+            handleCheckAll(val) {
+                if (val) {
+                    // Selecciona todos los empleados filtrados
+                    this.form.worker_id = this.workers.map(w => w.id)
+                } else {
+                    // Deselecciona todos
+                    this.form.worker_id = []
+                }
+                this.isIndeterminate = false
+                if (this.form.worker_id && this.form.worker_id.length > 0) {
+                    this.changeWorker()
+                }
+            },
             normalizeFormArrays() {
                 const accruedArrays = [
                     'work_disabilities', 'service_bonus', 'severance', 'common_vacation', 'paid_vacation', 'bonuses', 'aid', 'other_concepts',

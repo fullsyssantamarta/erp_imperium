@@ -48,6 +48,7 @@ use Modules\Factcolombia1\Models\SystemService\{
 };
 
 use App\Models\System\Module;
+use App\Models\System\Plan;
 use Modules\Factcolombia1\Traits\System\CompanyTrait;
 use Exception;
 use Modules\Factcolombia1\Http\Resources\System\{
@@ -61,6 +62,16 @@ class CompanyController extends Controller
     use CompanyTrait;
 
     public function store(CompanyRequest $request) {
+
+        $limite = config('app.limite_reseller');
+        $totalEmpresas = Company::count();
+        if ($totalEmpresas >= $limite) {
+            return [
+                'success' => false,
+                'message' => 'Has alcanzado el límite de empresas permitidas.'
+            ];
+        }
+
         $response = $this->createCompanyApiDian($request);
         if(!property_exists( $response, 'password' ) || !property_exists( $response, 'token' )){
             return [
@@ -94,6 +105,18 @@ class CompanyController extends Controller
             app(HostnameRepository::class)->attach($hostname, $website);
 
             $company = $this->createSystemCompany($request, $hostname);
+
+            $plan = Plan::find($company->plan_id);
+            if ($plan) {
+                $now = Carbon::now();
+                $company->plan_started_at = $now;
+                $company->plan_expires_at = $plan->period === 'year'
+                    ? $now->copy()->addYear()
+                    : $now->copy()->addMonth();
+                $company->plan_active = true;
+                $company->plan_auto_renew = false;
+                $company->save();
+            }
 
             // Switch
             $tenancy = app(Environment::class);
@@ -242,13 +265,29 @@ class CompanyController extends Controller
         }
 
         $company = Company::findOrFail($request->id);
+        $old_plan_id = $company->plan_id;
 
         $company->update([
             'limit_documents' => $request->limit_documents,
             'limit_users' => $request->limit_users,
             'economic_activity_code' => $request->economic_activity_code,
-            'ica_rate' => $request->ica_rate
+            'ica_rate' => $request->ica_rate,
+            'plan_id' => $request->plan_id,
         ]);
+        
+        // Si se cambia el plan, actualiza fechas
+        if ($request->plan_id && $old_plan_id != $request->plan_id) {
+            $plan = Plan::find($request->plan_id);
+            if ($plan) {
+                $now = Carbon::now();
+                $company->plan_started_at = $now;
+                $company->plan_expires_at = $plan->period === 'year'
+                    ? $now->copy()->addYear()
+                    : $now->copy()->addMonth();
+                $company->plan_active = true;
+                $company->save();
+            }
+        }
 
         $tenancy = app(Environment::class);
         $tenancy->tenant($company->hostname->website);
@@ -335,6 +374,54 @@ class CompanyController extends Controller
         return [
             'message' => "Se actualizo con éxito la compañía {$company->name}.",
             'success' => true
+        ];
+    }
+
+    public function changePassword(Request $request, $id)
+    {
+        $company = Company::findOrFail($id);
+        $tenancy = app(Environment::class);
+        $tenancy->tenant($company->hostname->website);
+
+        $user = \Modules\Factcolombia1\Models\Tenant\User::firstOrFail();
+        $user->password = bcrypt($request->password);
+        $user->save();
+
+        return [
+            'success' => true,
+            'message' => 'Contraseña actualizada correctamente.'
+        ];
+    }
+
+    public function renewPlan(Request $request, $id)
+    {
+        $company = Company::findOrFail($id);
+        $plan = Plan::findOrFail($company->plan_id);
+
+        $now = Carbon::now();
+        $company->plan_started_at = $now;
+        $company->plan_expires_at = $plan->period === 'year'
+            ? $now->copy()->addYear()
+            : $now->copy()->addMonth();
+        $company->plan_active = true;
+        $company->save();
+
+        return [
+            'success' => true,
+            'message' => 'Plan renovado correctamente',
+            'plan_expires_at' => $company->plan_expires_at->toDateString(),
+        ];
+    }
+
+    public function toggleAutoRenew(Request $request, $id)
+    {
+        $company = Company::findOrFail($id);
+        $company->plan_auto_renew = !$company->plan_auto_renew;
+        $company->save();
+
+        return [
+            'success' => true,
+            'plan_auto_renew' => $company->plan_auto_renew,
         ];
     }
 

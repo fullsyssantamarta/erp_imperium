@@ -549,7 +549,10 @@ export default {
     loading: false,
     documents: [],
     retention: {},
-    document: {},
+    document: {
+      head_note: '',
+      foot_note: '',
+    },
     clients: [],
     search: "",
     items: [],
@@ -733,7 +736,9 @@ export default {
         items: [],
         total: 0,
         sale: 0,
-        time_days_credit: 0
+        time_days_credit: 0,
+        head_note: '',
+        foot_note: '',
       };
 
       this.taxes.forEach(tax => {
@@ -822,6 +827,16 @@ export default {
       this.$validator.validateAll(scope).then(valid => {
         if (valid) {
           this.loading = true;
+
+        ['foot_note', 'head_note'].forEach(key => {
+          if (
+            this.document[key] === null ||
+            this.document[key] === undefined ||
+            this.document[key] === ''
+          ) {
+            delete this.document[key];
+          }
+        });
 
           this.document.service_invoice = this.createInvoideService();
 //          console.log(this.document.service_invoice)

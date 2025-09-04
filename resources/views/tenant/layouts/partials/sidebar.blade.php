@@ -1,8 +1,17 @@
 @php
+    use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Schema;
     $path = explode('/', request()->path());
     $path[1] = (array_key_exists(1, $path)> 0)?$path[1]:'';
     $path[2] = (array_key_exists(2, $path)> 0)?$path[2]:'';
     $path[0] = ($path[0] === '')?'documents':$path[0];
+    $advanced_config = null; // Inicializa la variable
+    $tenantConnection = config('tenancy.db.tenant_connection', 'tenant');
+    if (Schema::connection($tenantConnection)->hasTable('co_advanced_configuration')) {
+        $advanced_config = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
+    } else {
+        \Log::error('ERROR: La tabla co_advanced_configuration NO existe en la base de datos del tenant');
+    }
 @endphp
 <aside id="sidebar-left" class="sidebar-left">
     <div class="sidebar-header">
@@ -334,6 +343,18 @@
                                         Cupones
                                     </a>
                                 </li>
+
+                                @php
+                                    $advanced_config = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
+                                @endphp
+
+                                @if($advanced_config && $advanced_config->enable_seller_views)
+                                    <li class="{{ ($path[0] === 'co-sellers')?'nav-active':'' }}">
+                                        <a class="nav-link" href="{{route('tenant.co-sellers.index')}}">
+                                            Vendedores
+                                        </a>
+                                    </li>
+                                @endif
 
                             @endif
 
@@ -741,6 +762,13 @@
                                         </ul>
                                     </li>
 
+                                    @if($advanced_config && $advanced_config->enable_seller_views)
+                                    <li class="{{(($path[0] === 'reports') && ($path[1] === 'sellers')) ? 'nav-active' : ''}}">
+                                        <a class="nav-link" href="{{route('tenant.reports.sellers.index')}}">
+                                            Vendedores
+                                        </a>
+                                    </li>
+                                    @endif
 
                                     {{-- <li class="{{(($path[0] === 'reports') && ($path[1] == 'sales-consolidated')) ? 'nav-active' : ''}}">
                                         <a class="nav-link" href="{{route('tenant.reports.sales_consolidated.index')}}">
@@ -848,6 +876,9 @@
                     </li>
                     @endif --}}
 
+                    {{-- Debug temporal --}}
+                    {{-- {{ dd($vc_modules) }} --}}
+                    @if(in_array('accounting', $vc_modules))
                     <li class="nav-parent {{$path[0] === 'accounting' && in_array($path[1], ['journal', 'charts', 'income-statement', 'financial-position', 'auxiliary-movement']) ? 'nav-active nav-expanded' : ''}}">
                         <a class="nav-link" href="#">
                             <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
@@ -882,6 +913,7 @@
                             </li>
                         </ul>
                     </li>
+                    @endif
 
                     @if(in_array('finance', $vc_modules))
 

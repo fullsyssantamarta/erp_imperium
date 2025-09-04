@@ -57,6 +57,7 @@ use Modules\Factcolombia1\Models\Tenant\{
     CustomerPurchaseCoupon,
 };
 use Modules\Factcolombia1\Models\TenantService\{
+    AdvancedConfiguration,
     Company as ServiceTenantCompany
 };
 use App\Models\Tenant\Document;
@@ -362,6 +363,8 @@ class DocumentPosController extends Controller
                 'tax_totals' => $tax_totals,
                 'allowance_charges' => $data['allowance_charges'] ?? [],
                 'invoice_lines' => $invoice_lines,
+                'head_note' => $request->input('head_note', null),
+                'foot_note' => $request->input('foot_note', null),
             ];
             // \Log::debug(json_encode($data_invoice_pos));
 //            return [
@@ -757,6 +760,7 @@ class DocumentPosController extends Controller
             'prefix' => $config->prefix,
             'electronic' => (bool)$config->electronic,
             'total_discount' => $total_discount,
+            'seller_id' => $inputs['seller_id'] ?? null,
         ];
         unset($inputs['series_id']);
         $inputs->merge($values);
@@ -1374,10 +1378,6 @@ class DocumentPosController extends Controller
             'number' => $data_consecutive->number,
             'date' => Carbon::now()->format('Y-m-d'),
             'time' => Carbon::now()->format('H:i:s'),
-//            'establishment_name' => $company->name,
-//            'establishment_address' => $document->establishment->address,
-//            'establishment_phone' => $document->establishment->telephone,
-//            'establishment_municipality' => $document->establishment->department_id,
             'billing_reference' => [
                 'number' => $request_api->prefix.$request_api->number,
                 'issue_date' => $request_api->date,
@@ -1395,7 +1395,8 @@ class DocumentPosController extends Controller
             'customer' => $request_api->customer,
             'tax_totals' => $request_api->tax_totals,
             'legal_monetary_totals' => $request_api->legal_monetary_totals,
-            'credit_note_lines' => $request_api->invoice_lines
+            'credit_note_lines' => $request_api->invoice_lines,
+            'allowance_charges' => $request_api->allowance_charges ?? [],
         ];
         return $json;
     }

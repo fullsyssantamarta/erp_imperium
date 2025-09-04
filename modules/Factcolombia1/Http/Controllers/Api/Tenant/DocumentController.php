@@ -47,12 +47,12 @@ class DocumentController extends Controller
         try {
             // validacion de tenant
             $this->company = Company::query()->with('country', 'version_ubl', 'type_identity_document')->firstOrFail();
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) {
-                return [
-                    'success' => false,
-                    'message' => '"Has excedido el límite de documentos de tu cuenta."'
-                ];
-            }
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) {
+            //     return [
+            //         'success' => false,
+            //         'message' => '"Has excedido el límite de documentos de tu cuenta."'
+            //     ];
+            // }
             $response =  null;
             $response_status =  null;
             $ignore_state_document_id = true;

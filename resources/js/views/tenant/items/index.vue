@@ -28,30 +28,23 @@
                         <th>Nombre</th>
                         <th>Descripción</th>
                         <!-- <th>Cód. SUNAT</th> -->
-                        <th  class="text-left">Stock</th>
+                        <th class="text-left">Stock (Actual)</th> 
+                        <th  class="text-left">Stock (Total)</th>
                         <th  class="text-right">P.Unitario (Venta)</th>
                         <th v-if="typeUser != 'seller'" class="text-right">P.Unitario (Compra)</th>
                         <!-- <th class="text-center">Tiene Igv</th> -->
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }" :class="{ disable_color : !row.active}">
-                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
                             <td>{{ index }}</td>
-                        </el-tooltip>
-                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
                             <td>{{ row.internal_id }}</td>
-                        </el-tooltip>
-                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
                             <td>{{ row.unit_type_id }}</td>
-                        </el-tooltip>
-                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
                             <td>{{ row.name }}</td>
-                        </el-tooltip>
-                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
                             <td>{{ row.description }}</td>
-                        </el-tooltip>
                         <!-- <td>{{ row.item_code }}</td> -->
-                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
+                            <td>
+                                {{ formatStock(row.stock) }}
+                            </td>
                             <td>
                                 <div v-if="config.product_only_location == true">
                                     {{ row.stock }}
@@ -63,13 +56,8 @@
                                     </template>
                                 </div>
                             </td>
-                        </el-tooltip>
-                        <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
-                            <td class="text-right">{{ getFormatDecimal(row.sale_unit_price) }}</td>
-                        </el-tooltip>
-                        <el-tooltip v-if="typeUser != 'seller'" effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
-                            <td class="text-right">{{ getFormatDecimal(row.purchase_unit_price) }}</td>
-                        </el-tooltip>
+                        <td class="text-right">{{ getFormatDecimal(row.sale_unit_price) }}</td>
+                        <td class="text-right" v-if="typeUser != 'seller'">{{ getFormatDecimal(row.purchase_unit_price) }}</td>
                         <!-- <td class="text-center">{{ row.has_igv_description }}</td> -->
                         <td class="text-right">
                             <template v-if="typeUser === 'admin'">
@@ -132,6 +120,10 @@
             })
         },
         methods: {
+            formatStock(value) {
+                if (value == null) return '0.00'
+                return parseFloat(value).toFixed(2)
+            },
             duplicate(id)
             {
                 this.$http.post(`${this.resource}/duplicate`, {id})

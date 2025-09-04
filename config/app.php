@@ -108,6 +108,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    'limite_reseller' => env('LIMITE_RESELLER', 999),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

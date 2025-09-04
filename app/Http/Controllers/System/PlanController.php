@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Resources\System\PlanCollection;
 use App\Http\Resources\System\PlanResource;
 use App\Http\Requests\System\PlanRequest;
+use Carbon\Carbon;
+use Modules\Factcolombia1\Models\System\Company;
 
 class PlanController extends Controller
 {
@@ -35,9 +37,8 @@ class PlanController extends Controller
 
     public function tables()
     {
-        $plan_documents = PlanDocument::all(); 
-
-        return compact('plan_documents');
+        $plans = Plan::all();
+        return compact('plans');
     }
 
 
@@ -45,8 +46,21 @@ class PlanController extends Controller
     {
         $id = $request->input('id');
         $plan = Plan::firstOrNew(['id' => $id]);
+        $old_period = $plan->period;
         $plan->fill($request->all());
         $plan->save();
+
+        if ($id && $old_period !== $plan->period) {
+            $companies = Company::where('plan_id', $plan->id)->get();
+            foreach ($companies as $company) {
+                $now = Carbon::now();
+                $company->plan_started_at = $now;
+                $company->plan_expires_at = $plan->period === 'year'
+                    ? $now->copy()->addYear()
+                    : $now->copy()->addMonth();
+                $company->save();
+            }
+        }
 
         return [
             'success' => true,

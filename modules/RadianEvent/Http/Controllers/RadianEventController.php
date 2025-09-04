@@ -7,6 +7,7 @@ use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Modules\Factcolombia1\Helpers\HttpConnectionApi;
+use Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration;
 use Modules\Factcolombia1\Models\TenantService\{
     Company as ServiceCompany
 };
@@ -226,6 +227,18 @@ class RadianEventController extends Controller
 
                 if(Storage::disk('tenant')->exists($folder.DIRECTORY_SEPARATOR.$filename)) throw new Exception('El archivo ya fue cargado');
 
+                $advancedConfig = AdvancedConfiguration::first();
+                $showCreditAndContado = $advancedConfig ? $advancedConfig->radian_show_credit_only : true; // true por defecto
+                $isCredit = $this->isCreditFromXml($file_content);
+
+                // Si el switch está inactivo (solo crédito) y el documento NO es crédito, omitir
+                if (!$showCreditAndContado && !$isCredit) {
+                    return [
+                        'success' => false,
+                        'message' => 'Solo se permiten comprobantes a crédito.'
+                    ];
+                }
+
                 // enviar api para parsear xml y obtener data
                 $company = ServiceCompany::select('identification_number', 'api_token')->firstOrFail();
                 $connection_api = new HttpConnectionApi($company->api_token);
@@ -242,12 +255,12 @@ class RadianEventController extends Controller
                 // enviar api
 
                 // Validar si es documento de crédito
-                if(!$this->isCreditFromXml($file_content)) {
-                    return [
-                        'success' => false,
-                        'message' => 'Solo se permiten comprobantes a crédito.'
-                    ];
-                }
+                // if(!$this->isCreditFromXml($file_content)) {
+                //     return [
+                //         'success' => false,
+                //         'message' => 'Solo se permiten comprobantes a crédito.'
+                //     ];
+                // }
 
                 //subir archivo 
                 Storage::disk('tenant')->put($folder.DIRECTORY_SEPARATOR.$filename, $file_content);

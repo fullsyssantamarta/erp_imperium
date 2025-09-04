@@ -34,11 +34,20 @@ class Company extends Model
         'locked_tenant',
         'locked_users',
         'limit_users',
+        'plan_id',
+        'plan_started_at',
+        'plan_expires_at',
+        'plan_auto_renew',
+        'plan_active',
         'start_billing_cycle'
     ];
 
     protected $casts = [
         'start_billing_cycle' => 'date',
+        'plan_started_at' => 'date',
+        'plan_expires_at' => 'date',
+        'plan_auto_renew' => 'boolean',
+        'plan_active' => 'boolean',
     ];
     /**
      * The attributes that should be mutated to dates.
@@ -54,5 +63,10 @@ class Company extends Model
     public function payments()
     {
         return $this->hasMany(ClientPayment::class, 'companie_id');
+    }
+
+    public function isPlanActive()
+    {
+        return $this->plan_active && $this->plan_expires_at && $this->plan_expires_at->isFuture();
     }
 }

@@ -4,7 +4,7 @@ $current_hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 
 if($current_hostname) {
     Route::domain($current_hostname->fqdn)->group(function () {
-        Route::middleware(['auth', 'locked.tenant'])->group(function () {
+        Route::middleware(['auth', 'locked.tenant', 'redirect.module'])->group(function () {
             Route::post('/client/configuration/storeServiceCompanieSoftware', 'Tenant\ConfigurationController@storeServiceSoftware');
             Route::post('/client/configuration/storeServiceCompanieResolution', 'Tenant\ConfigurationController@storeServiceResolution');
             Route::post('/client/configuration/storeServiceCompanieCertificate', 'Tenant\ConfigurationController@storeServiceCertificate');
@@ -15,6 +15,9 @@ if($current_hostname) {
 
             Route::prefix('co-documents')->group(function () {
                 Route::get('', 'Tenant\DocumentController@index')->name('tenant.co-documents.index');
+                Route::get('active-resolutions', 'Tenant\DocumentController@activeResolutions');
+                Route::get('customers-list', 'Tenant\DocumentController@customersList');
+                Route::get('states-list', 'Tenant\DocumentController@statesList');
                 Route::get('records', 'Tenant\DocumentController@records');
                 Route::get('note/{id}', 'Tenant\DocumentController@note');
                 Route::get('duplicate-invoice/{id}', 'Tenant\DocumentController@duplicate_invoice');
@@ -25,7 +28,7 @@ if($current_hostname) {
                 Route::get('search/customers', 'Tenant\DocumentController@searchCustomers');
                 Route::get('search/customer/{id}', 'Tenant\DocumentController@searchCustomerById');
                 Route::get('tables', 'Tenant\DocumentController@tables');
-                Route::post('', 'Tenant\DocumentController@store');
+                Route::post('', 'Tenant\DocumentController@store')->middleware('check.tenant.limits');
                 Route::post('preeliminar-view', 'Tenant\DocumentController@preeliminarview');
                 Route::get('item/tables', 'Tenant\DocumentController@item_tables');
                 Route::get('health/tables', 'Tenant\DocumentController@health_tables');
@@ -135,6 +138,19 @@ if($current_hostname) {
                 Route::delete('{id}', 'Tenant\CouponController@destroy');
             });
 
+            Route::prefix('co-sellers')->group(function () {
+                Route::get('', 'Tenant\SellerController@index')->name('tenant.co-sellers.index');
+                Route::get('records', 'Tenant\SellerController@records');
+                Route::get('create', 'Tenant\SellerController@create')->name('tenant.co-sellers.create');
+                Route::post('', 'Tenant\SellerController@store');
+                Route::get('edit/{id}', 'Tenant\SellerController@edit')->name('tenant.co-sellers.edit');
+                Route::put('{id}', 'Tenant\SellerController@update');
+                Route::delete('{id}', 'Tenant\SellerController@destroy');
+                Route::get('type-documents', 'Tenant\SellerController@typeDocuments');
+                Route::put('{id}/change-status', 'Tenant\SellerController@changeStatus');
+                Route::get('/active', 'Tenant\SellerController@activeSellers');
+            });
+
         });
     });
 
@@ -167,7 +183,8 @@ if($current_hostname) {
                 Route::post('locked_user', 'System\CompanyController@lockedUser');
                 Route::post('locked_emission', 'System\CompanyController@lockedEmission');
                 Route::post('set_billing_cycle', 'System\CompanyController@startBillingCycle');
-
+                Route::post('password/{id}', 'System\CompanyController@changePassword');
+                Route::post('toggle-auto-renew/{id}', 'System\CompanyController@toggleAutoRenew');
 
             });
 

@@ -16,7 +16,7 @@ $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 
 if($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
-        Route::prefix('accounting')->middleware(['auth'])->group(function() {
+        Route::prefix('accounting')->middleware(['auth','redirect.module'])->group(function() {
             Route::get('/', 'AccountingController@index');
             Route::get('/columns', 'AccountingController@columns');
 
