@@ -847,10 +847,15 @@ export default {
         stopContinuousWeight(item, index) {
             this.scale.continuousReading = false;
             this.scale.readingIndex = null;
-            // Escribe el último peso leído si existe
-            if (this.scale.lastWeightValue !== null) {
+            // Escribe el último peso leído solo si es válido y mayor que cero
+            if (
+                this.scale.lastWeightValue !== null &&
+                !isNaN(this.scale.lastWeightValue) &&
+                Number(this.scale.lastWeightValue) > 0
+            ) {
                 this.$set(item.item, 'aux_quantity', this.scale.lastWeightValue);
             }
+            // Si el valor es inválido, no lo sobrescribas
             this.onQuantityInput(item, index);
         },
         async readWeightLoop(item, index) {
@@ -2129,55 +2134,56 @@ export default {
 </script>
 <style scoped>
 .page-header .balanza-btn-group {
-    gap: 14px;
-    margin-top: 12px;
+    gap: 8px;
+    margin-top: 10px;
     display: flex;
     align-items: center;
-    flex-wrap: wrap; /* Permite que los botones se ajusten si hay más de uno */
+    flex-wrap: wrap;
 }
 
 .page-header .btn-balanza {
-    min-width: 170px; /* Aumenta el ancho mínimo para que todos los botones tengan el mismo tamaño */
-    font-weight: bold;
-    height: 38px;
-    font-size: 15px;
-    padding: 0 12px;
+    min-width: 120px; /* Reducido para que no se desborde */
+    font-weight: 500;
+    height: 32px;
+    font-size: 13px;
+    padding: 0 8px;
     white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    margin-right: 8px; /* Espacio entre botones */
+    border-radius: 6px;
+    margin-right: 0;
 }
 
 .page-header .balanza-btn-text {
     white-space: nowrap;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 500;
 }
 
 .page-header .balanza-btn-group .el-tooltip,
 .page-header .balanza-btn-group .fa-info-circle {
-    margin-right: 8px;
+    margin-right: 6px;
+    font-size: 16px;
 }
 
 @media (max-width: 900px) {
     .page-header .balanza-btn-group {
         flex-direction: column;
         align-items: stretch;
-        gap: 10px;
+        gap: 8px;
     }
     .page-header .btn-balanza {
-        min-width: 170px;
-        font-size: 15px;
-        height: 38px;
-        padding: 0 10px;
+        min-width: 120px;
+        font-size: 13px;
+        height: 32px;
+        padding: 0 8px;
         width: 100%;
         margin-right: 0;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
     .page-header .balanza-btn-text {
-        font-size: 13px;
+        font-size: 12px;
     }
 }
 </style>
