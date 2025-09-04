@@ -852,13 +852,7 @@ export default {
                 this.scale.connecting = true;
 
                 // Si ya hay permisos previos, intenta reusar el puerto
-                const ports = await navigator.serial.getPorts();
-                if (ports && ports.length) {
-                this.scale.port = ports[0];
-                } else {
-                // Pide al usuario elegir el puerto de la balanza
                 this.scale.port = await navigator.serial.requestPort();
-                }
 
                 await this.scale.port.open(this.scale.cfg);
 
