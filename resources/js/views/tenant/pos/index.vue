@@ -254,6 +254,18 @@
                                     <td width="20%" class="td-main">
                                         <div class="row-main">
                                             <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
+                                            <!-- BOTÓN PESAR PARA MÓVIL -->
+                                            <el-button
+                                                size="mini"
+                                                class="ml-2"
+                                                :loading="scale.readingIndex === index"
+                                                :disabled="!scale.supported"
+                                                @click="weighItem(item, index)"
+                                                title="Leer peso de la balanza"
+                                                style="margin-left: 4px;"
+                                            >
+                                                Pesar
+                                            </el-button>
                                             <div class="product-name">
                                                 <span v-html="clearText(item.item.name)"></span>
                                                 <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
@@ -900,11 +912,12 @@ export default {
                 buffer = lines.pop() || '';
 
                 for (const line of lines) {
-                // Algunas balanzas envían "ST" (stable) / "US" (unstable). Si pides sólo estable, filtra:
-                if (stableOnly && /US|UNSTABLE/i.test(line)) continue;
+                    console.log('BALANZA RAW:', line);
+                    // Algunas balanzas envían "ST" (stable) / "US" (unstable). Si pides sólo estable, filtra:
+                    if (stableOnly && /US|UNSTABLE/i.test(line)) continue;
 
-                const parsed = this.parseWeightLine(line);
-                if (parsed) return parsed; // { value, unit, raw }
+                    const parsed = this.parseWeightLine(line);
+                    if (parsed) return parsed; // { value, unit, raw }
                 }
             }
             return null; // timeout
