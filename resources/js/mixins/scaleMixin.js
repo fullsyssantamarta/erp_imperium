@@ -30,11 +30,23 @@ export default {
                 this.$message.success('Balanza conectada');
             } catch (err) {
                 console.error(err);
-                this.$message.error('No se pudo abrir el puerto de la balanza.');
+                // Intenta cerrar el puerto si está abierto
+                try {
+                    if (this.scale.port && this.scale.port.readable) {
+                        await this.scale.port.close();
+                    }
+                } catch (closeErr) {
+                    // Puede fallar si ya está cerrado, ignorar
+                }
+                // Espera un poco antes de permitir otro intento
+                setTimeout(() => {
+                    this.scale.connecting = false;
+                }, 500);
+                this.$message.error('No se pudo abrir el puerto de la balanza. Espere un momento y vuelva a intentar.');
                 await this.disconnectScale();
-            } finally {
-                this.scale.connecting = false;
+                return;
             }
+            this.scale.connecting = false;
         },
         async disconnectScale() {
             try {
@@ -49,6 +61,7 @@ export default {
             this.scale.reader = null;
             this.scale.port = null;
             this.scale.connected = false;
+            this.$message.info('Balanza desconectada');
         },
         async readWeightOnce({ timeoutMs = 4000, stableOnly = false } = {}) {
             if (!this.scale.connected || !this.scale.reader) {

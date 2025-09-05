@@ -26,26 +26,6 @@
                         <i class="fa fa-balance-scale" style="margin-right:8px;"></i>
                         <span class="balanza-btn-text">Conectar balanza</span>
                     </el-button>
-                    <!-- Botón para mostrar balanza conectada (solo si está conectada) -->
-                    <el-button
-                        v-else
-                        size="medium"
-                        class="btn-balanza"
-                        type="success"
-                        :loading="scale.connecting"
-                        disabled
-                    >
-                        <i class="fa fa-check-circle" style="margin-right:8px;"></i>
-                        <span class="balanza-btn-text">Balanza conectada</span>
-                    </el-button>
-                    <!-- Tooltip informativo al lado del botón -->
-                    <el-tooltip
-                        effect="dark"
-                        content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
-                        placement="top"
-                    >
-                        <i class="fa fa-info-circle text-info" style="margin-left:8px; font-size:18px; cursor:pointer;"></i>
-                    </el-tooltip>
                     <!-- Botón para desconectar balanza (solo si está conectada) -->
                     <el-button
                         v-if="scale.connected"
@@ -58,6 +38,14 @@
                         <i class="fa fa-plug" style="margin-right:8px;"></i>
                         <span class="balanza-btn-text">Desconectar balanza</span>
                     </el-button>
+                    <!-- Tooltip informativo al lado del botón -->
+                    <el-tooltip
+                        effect="dark"
+                        content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                        placement="top"
+                    >
+                        <i class="fa fa-info-circle text-info" style="margin-left:8px; font-size:18px; cursor:pointer;"></i>
+                    </el-tooltip>
                 </div>
                 <template v-if="!electronic">
                     <h2>
