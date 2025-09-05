@@ -22,6 +22,13 @@ export default {
             try {
                 this.scale.connecting = true;
                 this.scale.port = await navigator.serial.requestPort();
+                // Si el puerto ya está abierto, ciérralo antes de abrirlo de nuevo
+                if (this.scale.port.readable) {
+                    try {
+                        await this.scale.port.close();
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    } catch (_) {}
+                }
                 await this.scale.port.open(this.scale.cfg);
                 const textDecoder = new TextDecoderStream();
                 this.scale.port.readable.pipeTo(textDecoder.writable);
@@ -30,15 +37,11 @@ export default {
                 this.$message.success('Balanza conectada');
             } catch (err) {
                 console.error(err);
-                // Intenta cerrar el puerto si está abierto
                 try {
                     if (this.scale.port && this.scale.port.readable) {
                         await this.scale.port.close();
                     }
-                } catch (closeErr) {
-                    // Puede fallar si ya está cerrado, ignorar
-                }
-                // Espera un poco antes de permitir otro intento
+                } catch (_) {}
                 setTimeout(() => {
                     this.scale.connecting = false;
                 }, 500);
@@ -58,6 +61,7 @@ export default {
             try {
                 if (this.scale.port) await this.scale.port.close();
             } catch (_) {}
+            await new Promise(resolve => setTimeout(resolve, 300));
             this.scale.reader = null;
             this.scale.port = null;
             this.scale.connected = false;
