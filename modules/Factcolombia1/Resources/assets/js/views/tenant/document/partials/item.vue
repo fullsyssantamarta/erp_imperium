@@ -141,14 +141,14 @@
                             <small class="form-control-feedback" v-if="errors.price" v-text="errors.unit_price[0]"></small>
                         </div>
                     </div>
-                    <div style="padding-top: 1%;" class="col-md-2 col-sm-2" v-if="form.item_id && form.item.lots_enabled && form.lots_group.length > 0">
+                    <div style="padding-top: 1%;" class="col-md-2 col-sm-2" v-if="form.item_id && form.item && form.item.lots_enabled && form.lots_group.length > 0">
                         <a href="#"  class="text-center font-weight-bold text-info" @click.prevent="clickLotGroup">[&#10004; Seleccionar lote]</a>
                     </div>
                     <div style="padding-top: 1%;" class="col-md-3 col-sm-3" v-if="form.item_id && form.item.series_enabled">
                         <!-- <el-button type="primary" native-type="submit" icon="el-icon-check">Elegir serie</el-button> -->
                         <a href="#"  class="text-center font-weight-bold text-info" @click.prevent="clickSelectLots">[&#10004; Seleccionar series]</a>
                     </div>
-                    <div class="col-md-3 col-sm-6" v-show="form.item.calculate_quantity">
+                    <div class="col-md-3 col-sm-6" v-show="form.item && form.item.calculate_quantity">
                         <div class="form-group"  :class="{'has-danger': errors.total_item}">
                             <label class="control-label">Total venta producto</label>
                             <el-input v-model="total_item" @input="calculateQuantity" :min="0.01" ref="total_item">
@@ -487,6 +487,11 @@
                 // this.affectation_igv_types = await _.filter(this.all_affectation_igv_types, {exportation: operation_type.exportation})
                 if (this.recordItem) {
                     this.form.item_id = await this.recordItem.item_id
+                    // --- Asegura que el item esté en el array items ---
+                    let found = this.items.find(i => i.id == this.recordItem.item_id)
+                    if (!found && this.recordItem.item) {
+                        this.items.push(this.recordItem.item)
+                    }
                     await this.changeItem()
                     this.form.tax_id = this.recordItem.tax_id
                     this.form.quantity = this.recordItem.quantity
@@ -523,19 +528,24 @@
                 this.$emit('update:showDialog', false)
             },
             async changeItem() {
-                this.form.item = _.find(this.items, {'id': this.form.item_id});
-                this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types
+                const item = _.find(this.items, {'id': this.form.item_id});
+                if (!item) {
+                    // Si no existe, evita errores y sal del método
+                    this.form.item = {};
+                    this.form.item_unit_types = [];
+                    return;
+                }
+                this.form.item = item;
+                this.form.item_unit_types = item.item_unit_types || [];
                 this.form.id = this.form.item_id
-                this.form.unit_type_id = this.form.item.unit_type_id
-                this.lots = this.form.item.lots
-                this.form.tax_id = (this.taxes.length > 0 && this.form.item.tax !== null) ? this.form.item.tax.id: null
-                this.form.price = this.form.item.sale_unit_price;
-                // this.form.has_igv = this.form.item.has_igv;
-                // this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+                this.form.unit_type_id = item.unit_type_id
+                this.lots = item.lots
+                this.form.tax_id = (this.taxes.length > 0 && item.tax !== null) ? item.tax.id: null
+                this.form.price = item.sale_unit_price;
                 this.form.quantity = 1;
                 this.cleanTotalItem();
                 this.showListStock = true
-                this.form.lots_group = this.form.item.lots_group
+                this.form.lots_group = item.lots_group
                 if(this.search_item_by_barcode){
                     this.items = [];
                 }
