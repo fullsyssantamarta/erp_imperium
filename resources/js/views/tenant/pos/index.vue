@@ -14,19 +14,29 @@
                 </h2>
                 <!-- Botón balanza al mismo nivel que el switch -->
                 <div class="d-flex align-items-center mb-2 balanza-btn-group">
+                    <!-- Botón para conectar balanza (solo si NO está conectada) -->
                     <el-button
+                        v-if="!scale.connected"
                         size="medium"
                         class="btn-balanza"
-                        :type="scale.connected ? 'success' : 'primary'"
+                        type="primary"
                         :loading="scale.connecting"
                         @click="connectScale"
-                        :disabled="scale.connected"
                     >
-                        <i v-if="!scale.connected" class="fa fa-balance-scale" style="margin-right:8px;"></i>
-                        <i v-else class="fa fa-check-circle" style="margin-right:8px;"></i>
-                        <span class="balanza-btn-text">
-                            {{ scale.connected ? 'Balanza conectada' : 'Conectar balanza' }}
-                        </span>
+                        <i class="fa fa-balance-scale" style="margin-right:8px;"></i>
+                        <span class="balanza-btn-text">Conectar balanza</span>
+                    </el-button>
+                    <!-- Botón para mostrar balanza conectada (solo si está conectada) -->
+                    <el-button
+                        v-else
+                        size="medium"
+                        class="btn-balanza"
+                        type="success"
+                        :loading="scale.connecting"
+                        disabled
+                    >
+                        <i class="fa fa-check-circle" style="margin-right:8px;"></i>
+                        <span class="balanza-btn-text">Balanza conectada</span>
                     </el-button>
                     <!-- Tooltip informativo al lado del botón -->
                     <el-tooltip
@@ -36,6 +46,7 @@
                     >
                         <i class="fa fa-info-circle text-info" style="margin-left:8px; font-size:18px; cursor:pointer;"></i>
                     </el-tooltip>
+                    <!-- Botón para desconectar balanza (solo si está conectada) -->
                     <el-button
                         v-if="scale.connected"
                         size="medium"
@@ -289,7 +300,7 @@
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%" class="td-main">
                                         <div class="row-main">
-                                            <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)"></el-input>
+                                            <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
                                             <div class="product-name">
                                                 <span v-html="clearText(item.item.name)"></span>
                                                 <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
@@ -338,7 +349,7 @@
                             <table v-show="!isMobile" class="table table-sm table-borderless mb-0">
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%">
-                                        <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)"></el-input>
+                                        <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
                                     </td>
                                     <td width="20%">
                                         <p class="m-0" style="line-height: 1em;">
@@ -673,7 +684,8 @@ import HistoryPurchasesForm from "../../../../../modules/Pos/Resources/assets/js
 import PersonForm from "../persons/form.vue";
 import WarehousesDetail from '../items/partials/warehouses.vue'
 import queryString from "query-string";
-import {functions} from '@mixins/functions'
+import {functions} from '@mixins/functions';
+import scaleMixin from '@mixins/scaleMixin'
 
 export default {
     props: ['configuration', 'soapCompany'],
@@ -685,7 +697,7 @@ export default {
         PersonForm,
         WarehousesDetail
     },
-    mixins: [functions],
+    mixins: [functions, scaleMixin],
     data() {
         return {
             place: 'cat',
@@ -729,16 +741,6 @@ export default {
             advanced_configuration: {},
             isMobile: window.innerWidth <= 1800,
             windowWidth: window.innerWidth, // <-- agregar para computada
-            scale: {
-                supported: 'serial' in navigator,
-                connecting: false,
-                connected: false,
-                port: null,
-                reader: null,
-                readingIndex: null,
-                cfg: { baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' }, // ajusta si tu modelo usa otros params
-                lineBuffer: '',
-            },
         };
     },
 
@@ -837,170 +839,6 @@ export default {
         },
     },
     methods: {
-        startContinuousWeight(item, index) {
-            if (!this.scale.connected || !this.scale.reader) return;
-            this.scale.readingIndex = index;
-            this.scale.continuousReading = true;
-            this.scale.lastWeightValue = null; // <-- nuevo campo para guardar el último peso
-            this.readWeightLoop(item, index);
-        },
-        stopContinuousWeight(item, index) {
-            this.scale.continuousReading = false;
-            this.scale.readingIndex = null;
-            // Escribe el último peso leído solo si es válido y mayor que cero
-            if (
-                this.scale.lastWeightValue !== null &&
-                !isNaN(this.scale.lastWeightValue) &&
-                Number(this.scale.lastWeightValue) > 0
-            ) {
-                this.$set(item.item, 'aux_quantity', this.scale.lastWeightValue);
-            }
-            // Si el valor es inválido, no lo sobrescribas
-            this.onQuantityInput(item, index);
-        },
-        async readWeightLoop(item, index) {
-            while (this.scale.continuousReading && this.scale.connected && this.scale.reader && this.scale.readingIndex === index) {
-                const { value, done } = await this.scale.reader.read();
-                if (done || !value) break;
-                const lines = value.split(/\r\n|\n|\r/);
-                for (const line of lines) {
-                    const reading = this.parseWeightLine(line);
-                    if (reading && Number.isFinite(reading.value)) {
-                        this.scale.lastWeightValue = reading.value.toFixed(3); // <-- guarda el último peso leído
-                        this.$set(item.item, 'aux_quantity', reading.value.toFixed(3));
-                    }
-                }
-            }
-        },
-        async connectScale() {
-            if (!this.scale.supported) {
-                this.$message.error('Tu navegador no soporta Web Serial.');
-                return;
-            }
-            try {
-                this.scale.connecting = true;
-
-                // Si ya hay permisos previos, intenta reusar el puerto
-                this.scale.port = await navigator.serial.requestPort();
-
-                await this.scale.port.open(this.scale.cfg);
-
-                // Preparar el reader (texto por líneas)
-                const textDecoder = new TextDecoderStream();
-                this.scale.port.readable.pipeTo(textDecoder.writable);
-                this.scale.reader = textDecoder.readable.getReader();
-
-                this.scale.connected = true;
-                this.$message.success('Balanza conectada');
-            } catch (err) {
-                console.error(err);
-                this.$message.error('No se pudo abrir el puerto de la balanza.');
-                await this.disconnectScale(); // limpia estado si falló
-            } finally {
-                this.scale.connecting = false;
-            }
-        },
-        async disconnectScale() {
-            try {
-                if (this.scale.reader) {
-                await this.scale.reader.cancel();
-                this.scale.reader.releaseLock();
-                }
-            } catch (_) {}
-            try {
-                if (this.scale.port) await this.scale.port.close();
-            } catch (_) {}
-            this.scale.reader = null;
-            this.scale.port = null;
-            this.scale.connected = false;
-        },
-        // Lee una sola medición (con timeout opcional)
-        async readWeightOnce({ timeoutMs = 4000, stableOnly = false } = {}) {
-            if (!this.scale.connected || !this.scale.reader) {
-                // Intento de conexión rápida si no hay puerto aún
-                await this.connectScale();
-                if (!this.scale.connected) return null;
-            }
-
-            const deadline = Date.now() + timeoutMs;
-            let buffer = '';
-
-            while (Date.now() < deadline) {
-                const { value, done } = await this.scale.reader.read();
-                if (done) break;
-                if (!value) continue;
-
-                buffer += value;
-                const lines = buffer.split(/\r\n|\n|\r/);
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    console.log('BALANZA RAW:', line);
-                    // Algunas balanzas envían "ST" (stable) / "US" (unstable). Si pides sólo estable, filtra:
-                    if (stableOnly && /US|UNSTABLE/i.test(line)) continue;
-
-                    const parsed = this.parseWeightLine(line);
-                    if (parsed) return parsed; // { value, unit, raw }
-                }
-            }
-            return null; // timeout
-        },
-        // Extrae número y unidad de una línea típica de balanza
-        parseWeightLine(line) {
-            // Ejemplos: "ST,GS,   0.550 kg" | "S     0.550 kg" | "Gross: 0.550kg" | "550 g" | "0.550"
-            const numM = line.match(/-?\d+(?:[.,]\d+)?/);
-            if (!numM) return null;
-
-            let val = parseFloat(numM[0].replace(',', '.'));
-            if (isNaN(val)) return null;
-
-            const unitM = line.match(/\b(kg|g|lb|lbs)\b/i);
-            let unit = unitM ? unitM[1].toLowerCase() : null;
-
-            // Normaliza a kg si viene en gramos
-            if (unit === 'g') {
-                val = val / 1000;
-                unit = 'kg';
-            }
-            return { value: val, unit, raw: line };
-        },
-        // Acción del botón "Pesar"
-        async weighItem(item, index) {
-            if (!this.scale.supported) {
-                this.$message.warning('Tu navegador no soporta Web Serial. Usa Chrome/Edge o el Puente Local.');
-                return;
-            }
-
-            try {
-                this.scale.readingIndex = index;
-
-                // Lee una medida (prefiere estable si tu modelo la marca con "ST")
-                const reading = await this.readWeightOnce({ timeoutMs: 5000, stableOnly: true });
-
-                if (!reading) {
-                this.$message.error('No se recibió lectura de la balanza (timeout).');
-                return;
-                }
-
-                const qty = Number.isFinite(reading.value) ? reading.value : null;
-                if (qty == null) {
-                this.$message.error('Lectura inválida.');
-                return;
-                }
-
-                // Escribe en la cantidad (aux_quantity) con 3 decimales
-                this.$set(item.item, 'aux_quantity', qty.toFixed(3));
-
-                // Dispara tu lógica existente para recalcular (usa lo que ya tienes)
-                this.$nextTick(() => this.onQuantityInput(item, index));
-
-            } catch (e) {
-                console.error(e);
-                this.$message.error('Error al leer la balanza.');
-            } finally {
-                this.scale.readingIndex = null;
-            }
-        },
         getQueryParameters() {
             return queryString.stringify({
                 page: this.pagination.current_page
@@ -2104,9 +1942,15 @@ export default {
                     this.calculateTotal();
                     return;
                 }
-                if (qty < 1) {
-                    item.item.aux_quantity = 1;
-                    item.quantity = 1;
+                if (qty < 0.001) { // Cambia de 1 a 0.001 para permitir decimales pequeños
+                    // Si hay un valor leído válido, no lo sobrescribas por 0
+                    if (this.scale.lastWeightValue && Number(this.scale.lastWeightValue) > 0) {
+                        item.item.aux_quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                        item.quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                    } else {
+                        item.item.aux_quantity = 1;
+                        item.quantity = 1;
+                    }
                     this.calculateTotal();
                     return;
                 }
