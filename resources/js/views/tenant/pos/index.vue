@@ -12,6 +12,41 @@
                 <h2>
                     <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode"></el-switch>
                 </h2>
+                <!-- Botón balanza al mismo nivel que el switch -->
+                <div class="d-flex align-items-center mb-2 balanza-btn-group">
+                    <!-- Botón para conectar balanza (solo si NO está conectada) -->
+                    <el-button
+                        v-if="!scale.connected"
+                        size="medium"
+                        class="btn-balanza"
+                        type="primary"
+                        :loading="scale.connecting"
+                        @click="connectScale"
+                    >
+                        <i class="fa fa-balance-scale" style="margin-right:8px;"></i>
+                        <span class="balanza-btn-text">Conectar balanza</span>
+                    </el-button>
+                    <!-- Botón para desconectar balanza (solo si está conectada) -->
+                    <el-button
+                        v-if="scale.connected"
+                        size="medium"
+                        type="danger"
+                        class="btn-balanza"
+                        @click="disconnectScale"
+                        :loading="scale.connecting"
+                    >
+                        <i class="fa fa-plug" style="margin-right:8px;"></i>
+                        <span class="balanza-btn-text">Desconectar balanza</span>
+                    </el-button>
+                    <!-- Tooltip informativo al lado del botón -->
+                    <el-tooltip
+                        effect="dark"
+                        content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                        placement="top"
+                    >
+                        <i class="fa fa-info-circle text-info" style="margin-left:8px; font-size:18px; cursor:pointer;"></i>
+                    </el-tooltip>
+                </div>
                 <template v-if="!electronic">
                     <h2>
                         <el-switch v-model="type_refund" active-text="Devolución"></el-switch>
@@ -253,7 +288,7 @@
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%" class="td-main">
                                         <div class="row-main">
-                                            <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
+                                            <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
                                             <div class="product-name">
                                                 <span v-html="clearText(item.item.name)"></span>
                                                 <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
@@ -302,7 +337,7 @@
                             <table v-show="!isMobile" class="table table-sm table-borderless mb-0">
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%">
-                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
+                                        <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
                                     </td>
                                     <td width="20%">
                                         <p class="m-0" style="line-height: 1em;">
@@ -637,7 +672,8 @@ import HistoryPurchasesForm from "../../../../../modules/Pos/Resources/assets/js
 import PersonForm from "../persons/form.vue";
 import WarehousesDetail from '../items/partials/warehouses.vue'
 import queryString from "query-string";
-import {functions} from '@mixins/functions'
+import {functions} from '@mixins/functions';
+import scaleMixin from '@mixins/scaleMixin'
 
 export default {
     props: ['configuration', 'soapCompany'],
@@ -649,7 +685,7 @@ export default {
         PersonForm,
         WarehousesDetail
     },
-    mixins: [functions],
+    mixins: [functions, scaleMixin],
     data() {
         return {
             place: 'cat',
@@ -701,6 +737,7 @@ export default {
     },
     beforeDestroy() {
         window.removeEventListener('resize', this.handleResize);
+        this.disconnectScale();
     },
     async created() {
         try {
@@ -1893,9 +1930,15 @@ export default {
                     this.calculateTotal();
                     return;
                 }
-                if (qty < 1) {
-                    item.item.aux_quantity = 1;
-                    item.quantity = 1;
+                if (qty < 0.001) { // Cambia de 1 a 0.001 para permitir decimales pequeños
+                    // Si hay un valor leído válido, no lo sobrescribas por 0
+                    if (this.scale.lastWeightValue && Number(this.scale.lastWeightValue) > 0) {
+                        item.item.aux_quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                        item.quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                    } else {
+                        item.item.aux_quantity = 1;
+                        item.quantity = 1;
+                    }
                     this.calculateTotal();
                     return;
                 }
@@ -1921,3 +1964,58 @@ export default {
     }
 };
 </script>
+<style scoped>
+.page-header .balanza-btn-group {
+    gap: 8px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.page-header .btn-balanza {
+    min-width: 120px; /* Reducido para que no se desborde */
+    font-weight: 500;
+    height: 32px;
+    font-size: 13px;
+    padding: 0 8px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    margin-right: 0;
+}
+
+.page-header .balanza-btn-text {
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.page-header .balanza-btn-group .el-tooltip,
+.page-header .balanza-btn-group .fa-info-circle {
+    margin-right: 6px;
+    font-size: 16px;
+}
+
+@media (max-width: 900px) {
+    .page-header .balanza-btn-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .page-header .btn-balanza {
+        min-width: 120px;
+        font-size: 13px;
+        height: 32px;
+        padding: 0 8px;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 6px;
+    }
+    .page-header .balanza-btn-text {
+        font-size: 12px;
+    }
+}
+</style>
