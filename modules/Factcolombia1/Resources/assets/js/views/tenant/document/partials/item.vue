@@ -18,9 +18,16 @@
                                 Producto/Servicio
                                 <a v-if="typeUser != 'seller'" href="#" @click.prevent="showDialogNewItem = true">[+ Nuevo]</a>
                             </label>
-                            <template v-if="!search_item_by_barcode" id="select-append">
+                            <template v-if="is_disabled_item">
+                                <el-input
+                                    value="El producto está deshabilitado"
+                                    readonly
+                                    placeholder="Producto deshabilitado">
+                                </el-input>
+                            </template>
+                            <template v-else-if="!search_item_by_barcode" id="select-append">
                                 <el-input id="custom-input">
-                                    <el-select :disabled="recordItem != null"
+                                    <el-select :disabled="is_disabled_item || recordItem != null"
                                             v-model="form.item_id"
                                             @change="changeItem"
                                             filterable
@@ -53,7 +60,7 @@
                                         </el-tooltip>
                                     </el-select>
                                     <el-tooltip slot="append" class="item" effect="dark" content="Ver Stock del Producto" placement="bottom" :disabled="recordItem != null">
-                                        <el-button :disabled="isEditItemNote"  @click.prevent="clickWarehouseDetail()"><i class="fa fa-search"></i></el-button>
+                                        <el-button :disabled="is_disabled_item || isEditItemNote"  @click.prevent="clickWarehouseDetail()"><i class="fa fa-search"></i></el-button>
                                     </el-tooltip>
                                 </el-input>
                             </template>
@@ -99,12 +106,12 @@
                         <div class="form-group" :class="{'has-danger': errors.tax_id}">
                             <label class="control-label">Impuesto</label>
                             <a href="#" class="control-label" @click="form.tax_id = null"> [ * Excluido]</a>
-                            <el-select v-model="form.tax_id"  filterable>
+                            <el-select v-model="form.tax_id"  filterable :disabled="is_disabled_item">
                                 <el-option v-for="option in itemTaxes" :key="option.id" :value="option.id" :label="option.name"></el-option>
                             </el-select>
                             <!-- <el-checkbox :disabled="recordItem != null" v-model="change_tax_id">Editar</el-checkbox> -->
                             <template v-if="!is_client">
-                                <el-checkbox v-model="tax_included_in_price">Impuesto incluido en el precio.</el-checkbox><br>
+                                <el-checkbox v-model="tax_included_in_price" :disabled="is_disabled_item">Impuesto incluido en el precio.</el-checkbox><br>
                             </template>
                             <small class="form-control-feedback" v-if="errors.tax_id" v-text="errors.tax_id[0]"></small>
                         </div>
@@ -112,14 +119,14 @@
                     <div class="col-md-12">
                         <div class="form-group" :class="{'has-danger': errors.notes}">
                             <label class="control-label">Notas</label>
-                            <el-input v-model="form.notes"></el-input>
+                            <el-input v-model="form.notes" :disabled="is_disabled_item"></el-input>
                             <small class="form-control-feedback" v-if="errors.notes" v-text="errors.notes[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-3 col-sm-3">
                         <div class="form-group" :class="{'has-danger': errors.quantity}">
                             <label class="control-label">Cantidad</label>
-                            <el-input-number v-model="form.quantity" :min="0.01" :disabled="form.item.calculate_quantity"></el-input-number>
+                            <el-input-number v-model="form.quantity" :min="0.01" :disabled="is_disabled_item || form.item.calculate_quantity" ></el-input-number>
                             <small class="form-control-feedback" v-if="errors.quantity" v-text="errors.quantity[0]"></small>
                         </div>
                     </div>
@@ -135,20 +142,21 @@
                                 :value="formattedPrice"
                                 @input="onPriceInput"
                                 @blur="onPriceBlur"
-                                :readonly="typeUser === ''">
+                                :readonly="typeUser === ''"
+                                :disabled="is_disabled_item">
                                 <template slot="prepend" v-if="currencyTypeSymbolActive">{{ currencyTypeSymbolActive }}</template>
                             </el-input>
                             <small class="form-control-feedback" v-if="errors.price" v-text="errors.unit_price[0]"></small>
                         </div>
                     </div>
-                    <div style="padding-top: 1%;" class="col-md-2 col-sm-2" v-if="form.item_id && form.item.lots_enabled && form.lots_group.length > 0">
+                    <div style="padding-top: 1%;" class="col-md-2 col-sm-2" v-if="form.item_id && form.item && form.item.lots_enabled && form.lots_group.length > 0">
                         <a href="#"  class="text-center font-weight-bold text-info" @click.prevent="clickLotGroup">[&#10004; Seleccionar lote]</a>
                     </div>
                     <div style="padding-top: 1%;" class="col-md-3 col-sm-3" v-if="form.item_id && form.item.series_enabled">
                         <!-- <el-button type="primary" native-type="submit" icon="el-icon-check">Elegir serie</el-button> -->
                         <a href="#"  class="text-center font-weight-bold text-info" @click.prevent="clickSelectLots">[&#10004; Seleccionar series]</a>
                     </div>
-                    <div class="col-md-3 col-sm-6" v-show="form.item.calculate_quantity">
+                    <div class="col-md-3 col-sm-6" v-show="form.item && form.item.calculate_quantity">
                         <div class="form-group"  :class="{'has-danger': errors.total_item}">
                             <label class="control-label">Total venta producto</label>
                             <el-input v-model="total_item" @input="calculateQuantity" :min="0.01" ref="total_item">
@@ -162,8 +170,9 @@
                             <label class="control-label">Descuento</label>
                             <el-input v-model="form.discount"
                                 :min="0"
-                                class="input-with-select">
-                                <el-select v-model="form.discount_type" slot="prepend">
+                                class="input-with-select"
+                                :disabled="is_disabled_item">
+                                <el-select v-model="form.discount_type" slot="prepend" :disabled="is_disabled_item">
                                     <el-option :label="currencyTypeSymbolActive" value="amount"></el-option>
                                     <el-option label="%" value="percentage"></el-option>
                                 </el-select>
@@ -215,7 +224,7 @@
                     </template>
                     <div class="col-md-12">
                         <div class="form-group">
-                            <el-checkbox v-model="show_purchase_order_number">
+                            <el-checkbox v-model="show_purchase_order_number" :disabled="is_disabled_item">
                                 Ingresar número de orden de compra
                             </el-checkbox>
                             <el-input
@@ -229,8 +238,16 @@
                 </div>
             </div>
             <div class="form-actions text-right pt-2">
+                <el-alert
+                    v-if="is_disabled_item"
+                    type="error"
+                    :closable="false"
+                    :title="error_disabled_message"
+                    show-icon
+                    style="margin-bottom: 10px;"
+                />
                 <el-button @click.prevent="close()">Cerrar</el-button>
-                <el-button class="add" type="primary" native-type="submit" v-if="form.item_id">{{titleAction}}</el-button>
+                <el-button class="add" type="primary" native-type="submit" v-if="form.item_id" :disabled="is_disabled_item">{{titleAction}}</el-button>
             </div>
         </form>
         <item-form :showDialog.sync="showDialogNewItem"
@@ -311,6 +328,8 @@
                 taxes:[],
                 items_aiu: [],
                 show_purchase_order_number: false,
+                is_disabled_item: false,
+                error_disabled_message: '',
             }
         },
         computed: {
@@ -483,10 +502,24 @@
                 await this.getTables()
                 this.titleDialog = (this.recordItem) ? ' Editar Producto o Servicio' : ' Agregar Producto o Servicio';
                 this.titleAction = (this.recordItem) ? ' Editar' : ' Agregar';
+                this.is_disabled_item = false
+                this.error_disabled_message = ''
                 // let operation_type = await _.find(this.operation_types, {id: this.operationTypeId})
                 // this.affectation_igv_types = await _.filter(this.all_affectation_igv_types, {exportation: operation_type.exportation})
                 if (this.recordItem) {
+                    // Buscar en items y all_items
+                    let found = this.items.find(i => i.id == this.recordItem.item_id) ||
+                                this.all_items.find(i => i.id == this.recordItem.item_id);
+
+                    if (!found) {
+                        this.is_disabled_item = true
+                        this.error_disabled_message = 'El producto está deshabilitado y no puede ser editado.'
+                    }
                     this.form.item_id = await this.recordItem.item_id
+                    // --- Asegura que el item esté en el array items ---
+                    if (!found && this.recordItem.item) {
+                        this.items.push(this.recordItem.item)
+                    }
                     await this.changeItem()
                     this.form.tax_id = this.recordItem.tax_id
                     this.form.quantity = this.recordItem.quantity
@@ -523,19 +556,24 @@
                 this.$emit('update:showDialog', false)
             },
             async changeItem() {
-                this.form.item = _.find(this.items, {'id': this.form.item_id});
-                this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types
+                const item = _.find(this.items, {'id': this.form.item_id});
+                if (!item) {
+                    // Si no existe, evita errores y sal del método
+                    this.form.item = {};
+                    this.form.item_unit_types = [];
+                    return;
+                }
+                this.form.item = item;
+                this.form.item_unit_types = item.item_unit_types || [];
                 this.form.id = this.form.item_id
-                this.form.unit_type_id = this.form.item.unit_type_id
-                this.lots = this.form.item.lots
-                this.form.tax_id = (this.taxes.length > 0 && this.form.item.tax !== null) ? this.form.item.tax.id: null
-                this.form.price = this.form.item.sale_unit_price;
-                // this.form.has_igv = this.form.item.has_igv;
-                // this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+                this.form.unit_type_id = item.unit_type_id
+                this.lots = item.lots
+                this.form.tax_id = (this.taxes.length > 0 && item.tax !== null) ? item.tax.id: null
+                this.form.price = item.sale_unit_price;
                 this.form.quantity = 1;
                 this.cleanTotalItem();
                 this.showListStock = true
-                this.form.lots_group = this.form.item.lots_group
+                this.form.lots_group = item.lots_group
                 if(this.search_item_by_barcode){
                     this.items = [];
                 }
