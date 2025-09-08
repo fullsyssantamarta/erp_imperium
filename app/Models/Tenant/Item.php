@@ -69,6 +69,7 @@ class Item extends ModelTenant
         'lot_code',
         'lots_enabled',
         'active',
+        'is_favorite',
         'series_enabled',
         'tax_id',
         'purchase_tax_id',

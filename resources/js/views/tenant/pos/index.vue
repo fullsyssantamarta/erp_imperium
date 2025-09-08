@@ -104,6 +104,13 @@
                             <div class="card-body pointer px-2 pt-2" @click="clickAddItem(item,index)">
                                 <el-tooltip class="item" effect="dark" :content="item.name" placement="bottom-end">
                                     <p class="font-weight-semibold mb-0 truncate-text">
+                                        <!-- <span
+                                            class="favorite-star"
+                                            @click.stop="toggleFavorite(item)"
+                                            :title="isFavorite(item) ? 'Quitar de favoritos' : 'Marcar como favorito'"
+                                        >
+                                            <i :class="isFavorite(item) ? 'fas fa-star text-warning' : 'far fa-star text-secondary'"></i>
+                                        </span> -->
                                         {{item.name}}
                                     </p>
                                 </el-tooltip>
@@ -151,24 +158,24 @@
 
                             <div v-if="configuration.options_pos" class=" card-footer  bg-primary btn-group flex-wrap" style="width:100% !important; padding:0 !important; ">
                                 <el-row style="width:100%">
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar stock" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickWarehouseDetail(item)">
                                                 <i class="fa fa-search"></i>
                                             </button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar historial de ventas del producto (precio venta) y cliente" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickHistorySales(item.item_id)"><i class="fa fa-list"></i></button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar historial de compras del producto (precio compra)" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickHistoryPurchases(item.item_id)"><i class="fas fa-cart-plus"></i></button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar lista de precios disponibles" placement="bottom-end">
                                             <el-popover placement="top" title="Precios" width="400" trigger="click">
                                                 <el-table v-if="item.item_unit_types" :data="item.item_unit_types">
@@ -191,6 +198,16 @@
                                                 </el-table>
                                                 <button type="button" slot="reference" style="width:100% !important;" class="btn btn-xs btn-primary-pos"><i class="fas fa-money-bill-alt"></i></button>
                                             </el-popover>
+                                        </el-tooltip>
+                                    </el-col>
+                                    <el-col :span="4">
+                                        <el-tooltip class="item" effect="dark" :content="isFavorite(item) ? 'Quitar de favoritos' : 'Marcar como favorito'" placement="bottom-end">
+                                            <button type="button"
+                                                style="width:100% !important;"
+                                                class="btn btn-xs btn-primary-pos"
+                                                @click.stop="toggleFavorite(item)">
+                                                <i :class="isFavorite(item) ? 'fas fa-star text-warning' : 'far fa-star text-secondary'"></i>
+                                            </button>
                                         </el-tooltip>
                                     </el-col>
                                 </el-row>
@@ -492,6 +509,18 @@
 
 <style>
 /* The heart of the matter */
+.favorite-star .fa-star,
+.btn-primary-pos .fa-star {
+    color: #fff !important;
+}
+.favorite-star .fa-star.text-warning,
+.btn-primary-pos .fa-star.text-warning {
+    color: #ffc107 !important;
+}
+.favorite-star .fa-star.text-secondary,
+.btn-primary-pos .fa-star.text-secondary {
+    color: #fff !important;
+}
 .testimonial-group>.row {
     overflow-x: auto;
     white-space: nowrap;
@@ -827,6 +856,28 @@ export default {
         },
     },
     methods: {
+        async toggleFavorite(item) {
+            this.loading = true;
+            try {
+                const res = await this.$http.post(`/pos/toggle-favorite/${item.item_id}`);
+                item.is_favorite = res.data.is_favorite;
+                this.sortItemsByFavorites();
+                this.$message.success(res.data.message);
+            } catch (e) {
+                this.$message.error('Error al marcar favorito');
+            }
+            this.loading = false;
+        },
+        isFavorite(item) {
+            return !!item.is_favorite;
+        },
+        sortItemsByFavorites() {
+            this.items = [...this.items].sort((a, b) => {
+                const aFav = a.is_favorite ? 1 : 0;
+                const bFav = b.is_favorite ? 1 : 0;
+                return bFav - aFav;
+            });
+        },
         getQueryParameters() {
             return queryString.stringify({
                 page: this.pagination.current_page
@@ -859,6 +910,7 @@ export default {
                     } else {
                         this.pagination.total = 0;
                     }
+                    this.sortItemsByFavorites();
                 });
         },
         setListPriceItem(item_unit_type, index) {
@@ -1847,6 +1899,7 @@ export default {
         },
         filterItems() {
             this.items = this.all_items;
+            this.sortItemsByFavorites();
         },
         reloadDataCustomers(customer_id) {
             this.$http.get(`/${this.resource}/table/customers`).then(response => {

@@ -171,6 +171,7 @@ class PosController extends Controller
                     ->when($request->has('cat') && $request->cat != '', function ($query) use ($request) {
                         $query->where('category_id', $request->cat);
                     })
+                    ->orderByDesc('is_favorite')
                     ->paginate(50);
 
         return new PosCollection($items, $configuration);
@@ -273,7 +274,7 @@ class PosController extends Controller
 
             $configuration =  Configuration::first();
 
-            $items = Item::whereWarehouse()->whereNotItemsAiu()->whereIsActive()->where('unit_type_id', '!=', 'ZZ')->orderBy('description')->take(100)
+            $items = Item::whereWarehouse()->whereNotItemsAiu()->whereIsActive()->where('unit_type_id', '!=', 'ZZ')->orderByDesc('is_favorite')->orderBy('description')->take(100)
                             ->get()->transform(function($row) use ($configuration) {
                                 $full_description = ($row->internal_id)?$row->internal_id.' - '.$row->description:$row->name;
                                 return [
@@ -310,6 +311,7 @@ class PosController extends Controller
                                     'unit_type' => $row->unit_type,
                                     'tax' => $row->tax,
                                     'item_unit_types' => $row->item_unit_types->transform(function($row) { return $row->getSearchRowResource();}),
+                                    'is_favorite' => (bool) $row->is_favorite, 
                                     //'sale_unit_price_calculate' => self::calculateSalePrice($row)
                                     'sale_unit_price_with_tax' => $this->getSaleUnitPriceWithTax($row, $configuration->decimal_quantity)
                                 ];
@@ -569,6 +571,18 @@ class PosController extends Controller
                 'message' => $e->getMessage()
             ], 422);
         }
+    }
+    public function toggle_favorite(Request $request, $item_id)
+    {
+        $item = Item::findOrFail($item_id);
+        $item->is_favorite = !$item->is_favorite;
+        $item->save();
+
+        return response()->json([
+            'success' => true,
+            'is_favorite' => $item->is_favorite,
+            'message' => $item->is_favorite ? 'Marcado como favorito' : 'Quitado de favoritos'
+        ]);
     }
 
 }
