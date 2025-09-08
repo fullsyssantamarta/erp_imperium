@@ -126,14 +126,26 @@ export default {
         stopContinuousWeight(item, index) {
             this.scale.continuousReading = false;
             this.scale.readingIndex = null;
+            // Si hay un peso válido, actualiza aux_quantity y quantity ANTES de llamar a onQuantityInput
             if (
                 this.scale.lastWeightValue !== null &&
                 !isNaN(this.scale.lastWeightValue) &&
                 Number(this.scale.lastWeightValue) > 0
             ) {
-                this.$set(item.item, 'aux_quantity', this.scale.lastWeightValue);
+                const peso = Number(this.scale.lastWeightValue).toFixed(3);
+                this.$set(item.item, 'aux_quantity', peso);
+                this.$set(item, 'quantity', peso);
             }
+
+            // Llama a onQuantityInput para aplicar validaciones y cálculos
             this.onQuantityInput(item, index);
+
+            // Fuerza actualización visual si quedó en 0.00
+            if (Number(item.item.aux_quantity) === 0 && this.scale.lastWeightValue > 0) {
+                const peso = Number(this.scale.lastWeightValue).toFixed(3);
+                this.$set(item.item, 'aux_quantity', peso);
+                this.$set(item, 'quantity', peso);
+            }
         },
         async onEnterQuantity(item, index) {
             if (this.scale.connected && this.scale.reader) {
