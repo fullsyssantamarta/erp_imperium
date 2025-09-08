@@ -132,20 +132,9 @@ export default {
                 !isNaN(this.scale.lastWeightValue) &&
                 Number(this.scale.lastWeightValue) > 0
             ) {
-                const peso = Number(this.scale.lastWeightValue).toFixed(3);
-                this.$set(item.item, 'aux_quantity', peso);
-                this.$set(item, 'quantity', peso);
+                this.$set(item.item, 'aux_quantity', this.scale.lastWeightValue);
             }
-
-            // Llama a onQuantityInput para aplicar validaciones y cálculos
             this.onQuantityInput(item, index);
-
-            // Fuerza actualización visual si quedó en 0.00
-            if (Number(item.item.aux_quantity) === 0 && this.scale.lastWeightValue > 0) {
-                const peso = Number(this.scale.lastWeightValue).toFixed(3);
-                this.$set(item.item, 'aux_quantity', peso);
-                this.$set(item, 'quantity', peso);
-            }
         },
         async onEnterQuantity(item, index) {
             if (this.scale.connected && this.scale.reader) {
