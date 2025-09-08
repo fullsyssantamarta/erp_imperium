@@ -72,14 +72,15 @@
             </div>
 
         </div>
-        <journal-entry-form :showDialog.sync="showDialog" :recordId="recordId"></journal-entry-form>
+        <journal-entry-form
+            :showDialog.sync="showDialog"
+            :recordId="recordId"
+            :journal-prefixes="journalPrefixes"></journal-entry-form>
 
         <journal-entry-detail
             :showDialog.sync="showDialogDetail"
             :recordId="recordId"
-            :journal-prefixes="journalPrefixes"
-            >
-        </journal-entry-detail>
+            :journal-prefixes="journalPrefixes"></journal-entry-detail>
     </div>
 </template>
 

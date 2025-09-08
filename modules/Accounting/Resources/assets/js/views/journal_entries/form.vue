@@ -118,7 +118,10 @@ export default {
     },
     computed: {
         filteredJournalPrefixes() {
-            return this.journalPrefixes.filter(p => p.modifiable === 1);
+            if (!this.journalPrefixes || !Array.isArray(this.journalPrefixes)) {
+                return [];
+            }
+            return this.journalPrefixes.filter(p => p && p.modifiable === 1);
         }
     },
     methods: {
