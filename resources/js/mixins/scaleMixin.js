@@ -65,6 +65,7 @@ export default {
             this.scale.reader = null;
             this.scale.port = null;
             this.scale.connected = false;
+            this.scale.lastWeightValue = null;
             this.$message.info('Balanza desconectada');
         },
         async readWeightOnce({ timeoutMs = 4000, stableOnly = false } = {}) {
