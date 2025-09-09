@@ -117,7 +117,14 @@
                                 <td>{{ row.identification_number }}</td>
                                 <td>{{ row.name }}</td>
                                 <td>{{ row.email }}</td>
-                                <td>{{ row.hostname }}</td>
+                                <td>
+                                    <a :href="`http://${row.hostname}`" 
+                                        target="_blank" 
+                                        rel="noopener"
+                                        style="color:#0056b3; text-decoration: none;"
+                                        >{{ row.hostname }}
+                                    </a>
+                                </td>
                                 <!-- <td>{{ row.plan }}</td> -->
                                 <td class="text-center">{{ row.limit_documents }}</td>
                                 <td class="text-center">{{ row.limit_users }}</td>

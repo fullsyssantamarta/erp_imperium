@@ -1,7 +1,7 @@
 <table class="combined-table">
     <thead>
         <tr>
-            <th colspan="6">Información Básica</th>
+            <th colspan="8">Información Básica</th>
             <th colspan="{{ 5 + ($taxes->count() * 2) }}">Detalles Financieros</th>
             @if($retention_types->count())
                 <th colspan="2">Retenciones</th>
@@ -14,6 +14,8 @@
             <th>PREFIJO</th>
             <th>IDENTIFICACIÓN</th>
             <th>NOMBRE</th>
+            <th>CORREO</th>
+            <th>Telefono</th>
             <th>DIRECCIÓN</th>
             <th>Total/Excento</th>
             <th>Descuento</th>
@@ -133,6 +135,12 @@
                 <td class="celda">{{ $row['number_full'] }}</td>
                 <td class="celda">{{ $customer ? $customer->number : ($row['customer_number'] ?? '') }}</td>
                 <td class="celda">{{ $customer ? $customer->name : ($row['customer_name'] ?? '') }}</td>
+                @php
+                    $email = $customer ? $customer->email : ($row['customer_email'] ?? '');
+                    $email_with_breaks = str_replace(['@', '.', '-', '_'], ['<wbr>@', '<wbr>.', '<wbr>-', '<wbr>_'], e($email));
+                @endphp
+                <td class="celda">{!! $email_with_breaks !!}</td>
+                <td class="celda">{{ $customer ? $customer->telephone : ($row['customer_telephone'] ?? '') }}</td>
                 <td class="celda">{{ $customer ? $customer->address : ($row['customer_address'] ?? '') }}</td>
                 <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier, 2, '.', '') }}</td>
                 <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', ($row['total_discount'] ?? 0))) * $multiplier, 2, '.', '') }}</td>
@@ -167,7 +175,7 @@
         @endforeach
 
         <tr>
-            <th colspan="6" class="celda text-right-td">TOTALES</th>
+            <th colspan="8" class="celda text-right-td">TOTALES</th>
             <th>{{ number_format($total_exempt, 2, '.', '') }}</th>
             <th>{{ number_format($total_discount, 2, '.', '') }}</th>
             @foreach($taxes as $tax)

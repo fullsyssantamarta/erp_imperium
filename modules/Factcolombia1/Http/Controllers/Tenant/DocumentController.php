@@ -117,30 +117,100 @@ class DocumentController extends Controller
 
     public function records(Request $request)
     {
-        if ($request->column == 'date_of_issue') {
-            if (strlen($request->value) == 7) {
-                // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
-                $year_month = explode('-', $request->value);
-                $year = $year_month[0];
-                $month = $year_month[1];
+        $query = Document::query();
+        // Filtro por comprobante (ignora otros filtros)
+        if ($request->filled('comprobante')) {
+            // Elimina espacios y convierte a mayúsculas para uniformidad
+            $comprobante = strtoupper(str_replace(' ', '', $request->comprobante));
 
-                $records = Document::whereYear('date_of_issue', $year)
-                                 ->whereMonth('date_of_issue', $month)
-                                 ->whereTypeUser()
-                                 ->latest();
+            // Permite guion opcional: separa prefijo y número
+            if (strpos($comprobante, '-') !== false) {
+                $parts = explode('-', $comprobante, 2);
             } else {
-                // Si es una fecha específica (YYYY-MM-DD)
-                $records = Document::whereDate('date_of_issue', $request->value)
-                                 ->whereTypeUser()
-                                 ->latest();
+                // Busca el primer dígito para separar prefijo y número
+                $parts = preg_split('/(?=\d)/', $comprobante, 2);
+            }
+
+            if (count($parts) == 2 && $parts[0] !== '') {
+                $prefix = $parts[0];
+                $number = $parts[1];
+                $query->where('prefix', $prefix)
+                    ->where('number', $number);
+            } else {
+                
+                // Solo número o solo prefijo
+                if (is_numeric($comprobante)) {
+                    $query->where('number', $comprobante);
+                } else {
+                    $query->where('prefix', $comprobante);
+                }
             }
         } else {
-            $records = Document::where($request->column, 'like', '%' . $request->value . '%')
-                             ->whereTypeUser()
-                             ->latest();
-        }
+            // Filtro por estado (state_document_id)
+            if ($request->filled('state_document_id')) {
+                $query->where('state_document_id', $request->state_document_id);
+            }
+            // Filtro por cliente (customer_id)
+            if ($request->filled('customer_id')) {
+                $query->where('customer_id', $request->customer_id);
+            }
+            // Filtro por resolución (type_document_id)
+            if ($request->filled('resolution_id')) {
+                $query->where('type_document_id', $request->resolution_id);
+            }
+            if ($request->column == 'date_of_issue') {
 
-        return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
+                if (!empty($request->fecha_inicio) && !empty($request->fecha_fin)) {
+                    // Entre meses
+                    $query->whereBetween('date_of_issue', [$request->fecha_inicio, $request->fecha_fin]);
+
+                } else if (strlen($request->value) == 7) {
+                    // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
+                    $year_month = explode('-', $request->value);
+                    $year = $year_month[0];
+                    $month = $year_month[1];
+
+                    $query->whereYear('date_of_issue', $year)
+                        ->whereMonth('date_of_issue', $month);
+                } else if (!empty($request->value)) {
+                    // Si es una fecha específica (YYYY-MM-DD)
+                    $query->whereDate('date_of_issue', $request->value);
+                }
+            } else {
+                $query->where($request->column, 'like', '%' . $request->value . '%');
+            }
+        }
+        $query->whereTypeUser()->latest();
+
+        return new DocumentCollection($query->paginate(config('tenant.items_per_page')));
+    }
+
+    //Para el listado de estados
+    public function statesList()
+    {
+        // Ajusta el modelo y campos según tu estructura real
+        return \Modules\Factcolombia1\Models\Tenant\StateDocument::select('id', 'name')->get();
+    }
+
+    //Para El listado de Resoluciones en la vista
+    public function activeResolutions()
+    {
+        $resolutions = TypeDocument::whereNotNull('resolution_number')
+            ->where('resolution_date_end', '>', now())
+            ->orderBy('description')
+            ->get(['id', 'description']);
+
+        return response()->json($resolutions);
+    }
+
+    //Para el listado de clientes
+    public function customersList()
+    {
+        $customers = Person::whereType('customers')
+            ->whereIsEnabled()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        return response()->json($customers);
     }
 
 
@@ -1663,13 +1733,46 @@ class DocumentController extends Controller
         $number = substr($request->number_full, strpos($request->number_full, '-') + 1);
 //        \Log::debug($prefix);
 //        \Log::debug($number);
+
+        // 1. Procesar correos desde el request
+        $emails = [];
+        if (!empty($request->email)) {
+            $emails = array_merge($emails, explode(';', $request->email));
+        }
+        if (!empty($request->additional_emails)) {
+            $emails = array_merge($emails, explode(';', $request->additional_emails));
+        }
+        // Limpiar: quitar espacios, correos vacíos y duplicados
+        $emails = array_unique(array_filter(array_map('trim', $emails)));
+        // Filtrar correos válidos
+        $emails = array_filter($emails, function ($email) {
+            return filter_var($email, FILTER_VALIDATE_EMAIL);
+        });
+
+        if (empty($emails)) {
+            return [
+                'success' => false,
+                'message' => 'Debe ingresar al menos un correo válido en los campos de correo.',
+            ];
+        }
+
+        // 2. Construir email_cc_list con todos los correos válidos
+        $email_cc_list = [];
+        foreach ($emails as $email) {
+            $email_cc_list[] = ['email' => $email];
+        }
+
+        // Agregar correo de la sucursal si es válido y no está ya en la lista
+        if (!empty($sucursal->email) && filter_var($sucursal->email, FILTER_VALIDATE_EMAIL)) {
+            if (!in_array($sucursal->email, $emails)) {
+                $email_cc_list[] = ['email' => $sucursal->email];
+            }
+        }
+
         $send= (object)[
             'prefix' => $prefix,
             'number' => $number,
-            'alternate_email' => $request->email,
-            'email_cc_list' => [
-                ['email' => $sucursal->email]
-            ]
+            'email_cc_list' => $email_cc_list
         ];
     //    \Log::debug(json_encode($send));
         $data_send = json_encode($send);
@@ -2103,6 +2206,7 @@ class DocumentController extends Controller
                     'series_enabled' => (bool) $row->series_enabled,
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
+                    'active' => (bool) $row->active,
                 ];
             });
         }
@@ -2181,6 +2285,7 @@ class DocumentController extends Controller
                     'series_enabled' => (bool) $row->series_enabled,
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
+                    'active' => (bool) $row->active,
                 ];
             });
         }
@@ -2287,6 +2392,7 @@ class DocumentController extends Controller
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
                     'is_set' => (bool) $row->is_set,
+                    'active' => (bool) $row->active,
                 ];
             });
 
@@ -2530,6 +2636,7 @@ class DocumentController extends Controller
                 'series_enabled' => (bool) $row->series_enabled,
                 'unit_type' => $row->unit_type,
                 'tax' => $row->tax,
+                'active' => (bool) $row->active,
 
             ];
         });

@@ -16,7 +16,7 @@ $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 
 if($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
-        Route::prefix('accounting')->middleware(['auth'])->group(function() {
+        Route::prefix('accounting')->middleware(['auth','redirect.module'])->group(function() {
             Route::get('/', 'AccountingController@index');
             Route::get('/columns', 'AccountingController@columns');
 
@@ -41,6 +41,7 @@ if($hostname) {
             Route::apiResource('journal/entries', 'JournalEntryController')->names([
                 'index'   => 'tenant.accounting.journal.entries.index',
             ]);
+            Route::get('journal/entries/pdf/{id}', 'JournalEntryController@getPdf');
             Route::put('journal/entries/{id}/request-approval', 'JournalEntryController@requestApproval');
             Route::put('journal/entries/{id}/approve', 'JournalEntryController@approve');
             Route::put('journal/entries/{id}/reject', 'JournalEntryController@reject');

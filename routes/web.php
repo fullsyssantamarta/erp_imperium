@@ -464,6 +464,7 @@ if ($hostname) {
            //WhatsApp
            Route::post('pos/whatsapp/config', 'Tenant\PosController@saveWhatsappConfig');
            Route::get('pos/whatsapp/config', 'Tenant\PosController@getWhatsappConfig');
+           Route::post('pos/toggle-favorite/{item_id}', 'Tenant\PosController@toggle_favorite');
            Route::post('pos/whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');
            Route::prefix('quotations')->group(function() {
             Route::post('whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');

@@ -18,23 +18,35 @@ class RedirectModule
       
         $module = $request->user()->getModule();
         $path = explode('/', $request->path());
-        $modules = $request->user()->getModules();
+        // $modules = $request->user()->getModules();
+        $modulesCollection = $request->user()->getModules(); // colección
+        $modules = $modulesCollection->pluck('value')->toArray();
+        // Determina el grupo de la ruta actual
+        $group = $this->getGroup($path, $module);
 
         if(! $request->ajax()){
 
-            if(count($modules)){
+            // if(count($modules)){
 
-                if(count($modules) < 9){
+            //     if(count($modules) < 9){
 
-                    $group = $this->getGroup($path, $module);
-                    if($group){
-                        if($this->getModuleByGroup($modules,$group) === 0){
-                            return $this->redirectRoute($module);
-                        }
+            //         $group = $this->getGroup($path, $module);
+            //         if($group){
+            //             if($this->getModuleByGroup($modules,$group) === 0){
+            //                 return $this->redirectRoute($module);
+            //             }
 
-                    }
-                }
+            //         }
+            //     }
 
+            // }
+
+            // Validación especial para invoicehealth
+            if ($group === 'invoicehealth' && (!in_array('invoicehealth', $modules) || !in_array('documents', $modules))) {
+                return $this->redirectRoute(null, $modules);
+            }
+            if ($group && !in_array($group, $modules)) {
+                return $this->redirectRoute(null, $modules);
             }
         }
 
@@ -43,41 +55,69 @@ class RedirectModule
     }
 
 
-    private function redirectRoute($module){
+    private function redirectRoute($module = null, $modules = []){
 
-        switch ($module) {
+        // switch ($module) {
 
-            case 'pos':
-                return redirect()->route('tenant.pos.index');
+        //     case 'pos':
+        //         return redirect()->route('tenant.pos.index');
 
-            case 'documents':
-                return redirect()->route('tenant.documents.create');
+        //     case 'documents':
+        //         return redirect()->route('tenant.documents.create');
 
-            case 'purchases':
-                return redirect()->route('tenant.purchases.index');
+        //     case 'purchases':
+        //         return redirect()->route('tenant.purchases.index');
 
-            case 'advanced':
-                return redirect()->route('tenant.retentions.index');
+        //     case 'advanced':
+        //         return redirect()->route('tenant.retentions.index');
 
-            case 'reports':
-                return redirect()->route('tenant.reports.purchases.index');
+        //     case 'reports':
+        //         return redirect()->route('tenant.reports.purchases.index');
 
-            case 'configuration':
-                return redirect()->route('tenant.companies.create');
+        //     case 'configuration':
+        //         return redirect()->route('tenant.companies.create');
 
-            case 'inventory':
-                return redirect()->route('warehouses.index');
+        //     case 'inventory':
+        //         return redirect()->route('warehouses.index');
 
-            case 'accounting':
-                return redirect()->route('tenant.account.index');
+        //     case 'accounting':
+        //         return redirect()->route('tenant.account.index');
 
-            case 'finance':
-                return redirect()->route('tenant.finances.global_payments.index');
+        //     case 'finance':
+        //         return redirect()->route('tenant.finances.global_payments.index');
                 
-            /*case 'ecommerce':
-                return redirect()->route('tenant.ecommerce.index');*/
+        //     /*case 'ecommerce':
+        //         return redirect()->route('tenant.ecommerce.index');*/
 
+        // }
+        $routes = [
+            'pos'            => 'tenant.pos.index',
+            'documents'      => 'tenant.documents.create',
+            'purchases'      => 'tenant.purchases.index',
+            'advanced'       => 'tenant.retentions.index',
+            'reports'        => 'tenant.reports.purchases.index',
+            'configuration'  => 'tenant.configuration.documents',
+            'inventory'      => 'warehouses.index',
+            'accounting'     => 'tenant.accounting.journal.entries.index',
+            'finance'        => 'tenant.finances.global_payments.index',
+            'dashboard'      => 'tenant.dashboard.index',
+            'ecommerce'      => 'tenant.ecommerce.index',
+            'payroll'        => 'tenant.payroll.document-payrolls.index',
+            'radian'         => 'tenant.co-radian-events-manage.index',
+            'invoicehealth'  => 'tenant.co-documents-health.create',
+        ];
+
+        // Busca el primer módulo activo que tenga ruta
+        foreach ($modules as $activeModule) {
+            if ($activeModule === 'invoicehealth' && !in_array('documents', $modules)) {
+                continue;
+            }
+            if (isset($routes[$activeModule])) {
+                return redirect()->route($routes[$activeModule]);
+            }
         }
+
+        abort(403, 'No tiene módulos activos.');
     }
 
 
@@ -94,156 +134,68 @@ class RedirectModule
 
     private function getGroup($path, $module){
 
-        ///* Module Documents */
-
-        if($path[0] == "documents"){
-            $group = "documents";
-
+        if($path[0] == "documents" || $path[0] == "quotations" || $path[0] == "items" || $path[0] == "summaries" || $path[0] == "voided"|| $path[0] == "co-documents" ) {
+            return "documents";
         }
-        elseif($path[0] == "dashboard"){
-            $group = "documents";
-
+        if($path[0] == "dashboard") {
+            return "dashboard";
         }
-        elseif($path[0] == "quotations"){
-            $group = "documents";
-
+        if($path[0] == "purchases" || $path[0] == "expenses") {
+            return "purchases";
         }
-        elseif($path[0] == "items"){
-            $group = "documents";
-
+        if($path[0] == "retentions" || $path[0] == "dispatches" || $path[0] == "perceptions") {
+            return "advanced";
         }
-        elseif($path[0] == "summaries"){
-            $group = "documents";
-
+        if($path[0] == "reports") {
+            return "reports";
         }
-        elseif($path[0] == "voided"){
-            $group = "documents";
-
+        if(in_array($path[0], ["users", "establishments", "catalogs", "advanced"])) {
+            return "configuration";
         }
-
-        ///* Module purchases  */
-
-        elseif($path[0] == "purchases"){
-            $group = "purchases";
-
-        }
-        elseif($path[0] == "expenses"){
-            $group = "purchases";
-
-        }
-
-        ///* Module advanced */
-
-        elseif($path[0] == "retentions"){
-            $group = "advanced";
-
-        }
-        elseif($path[0] == "dispatches"){
-            $group = "advanced";
-
-        }
-        elseif($path[0] == "perceptions"){
-            $group = "advanced";
-
-        }
-
-        ///* Module reports */
-
-        elseif($path[0] == "reports" && $path[1] == "purchases"){
-            $group = "reports";
-        }
-        elseif($path[0] == "reports" && $path[1] == "sales"){
-            $group = "reports";
-        }
-        elseif($path[0] == "reports" && $path[1] == "consistency-documents"){
-            $group = "reports";
-        }
-
-        ///* Module configuration */
-
-        elseif($path[0] == "users"){
-            $group = "configuration";
-
-        }
-        elseif($path[0] == "establishments"){
-            $group = "configuration";
-
-        }
-        elseif($path[0] == "companies"){
-
-            $group = "configuration";
-
-            if(count($path) > 0 && $path[1] == "uploads" && $module == "documents"){
-                $group = "documents";
+        if($path[0] == "companies") {
+            if(count($path) > 1 && $path[1] == "uploads" && $module == "documents") {
+                return "configuration";
             }
-
+            return "configuration";
         }
-        elseif($path[0] == "catalogs"){
-            $group = "configuration";
-
+        if($path[0] == "persons") {
+            if($path[1] ?? '' == "suppliers") return "purchases";
+            if($path[1] ?? '' == "customers") return "documents";
         }
-        elseif($path[0] == "advanced"){
-            $group = "configuration";
-
+        if(in_array($path[0], ["pos", "cash"])) {
+            return "pos";
         }
-
-        ///* Determinate type person */
-
-        elseif($path[0] == "persons"){
-            if($path[1] == "suppliers"){
-                $group = "purchases";
-
-            }elseif($path[1] == "customers"){
-                $group = "documents";
-
-            }else{
-                $group = null;
-            }
+        if(in_array($path[0], ["warehouses", "inventory"])) {
+            return "inventory";
         }
-        ///* Module pos */
-        elseif($path[0] == "pos"){
-            $group = "pos";
-
+        if($path[0] == "accounting") {
+            return "accounting";
         }
-        elseif($path[0] == "cash"){
-            $group = "pos";
-
+        if($path[0] == "finances") {
+            return "finance";
         }
-
-        ///* Module inventory */
-        elseif($path[0] == "warehouses"){
-            $group = "inventory";
+        if($path[0] == "payroll") {
+            return "payroll";
         }
-        elseif($path[0] == "inventory"){
-            $group = "inventory";
+        if($path[0] == "invoicehealth" || $path[0] == "co-documents-health") {
+            return "invoicehealth";
         }
-        elseif($path[0] == "reports" && $path[1] == "kardex"){
-            $group = "inventory";
+        if($path[0] == "ecommerce") {
+            return "ecommerce";
         }
-        elseif($path[0] == "reports" && $path[1] == "inventory"){
-            $group = "inventory";
+        if($path[0] == "radian" || $path[0] == "co-radian-events") {
+            return "radian";
         }
-
-        ///* Module accounting */
-        elseif($path[0] == "account"){
-            $group = "accounting";
+        if(
+            $path[0] == "configuration" ||
+            $path[0] == "companies" ||
+            $path[0] == "co-configuration" ||
+            $path[0] == "co-configuration-documents" ||
+            in_array($path[0], ["users", "establishments", "catalogs", "advanced"])
+        ) {
+            return "configuration";
         }
-
-        ///* Module finance */
-        elseif($path[0] == "finances"){
-            $group = "finance";
-        }
-
-        // elseif($path[0] == "cash"){
-        //     $group = "pos";
-
-        // }
-
-        else{
-            $group = null;
-        }
-
-        return $group;
+        return null;
     }
 
 }

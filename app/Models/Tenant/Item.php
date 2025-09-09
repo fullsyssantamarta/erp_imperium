@@ -69,6 +69,7 @@ class Item extends ModelTenant
         'lot_code',
         'lots_enabled',
         'active',
+        'is_favorite',
         'series_enabled',
         'tax_id',
         'purchase_tax_id',
@@ -366,6 +367,7 @@ class Item extends ModelTenant
             'purchase_unit_price' => $this->purchase_unit_price,
             'unit_type_id' => $this->unit_type_id,
             'calculate_quantity' => (bool) $this->calculate_quantity,
+            'active' => (bool) $this->active,
             'item_unit_types' => collect($this->item_unit_types)->transform(function($row) {
                 return [
                     'id' => $row->id,
