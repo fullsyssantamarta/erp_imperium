@@ -8,50 +8,43 @@
       </div> -->
         <div class="row">
             <div class="col-md-6">
-                <!-- <h2 class="text-sm">POS</h2> -->
-                <h2>
-                    <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode"></el-switch>
-                </h2>
-                <!-- Botón balanza al mismo nivel que el switch -->
-                <div class="d-flex align-items-center mb-2 balanza-btn-group">
-                    <!-- Botón para conectar balanza (solo si NO está conectada) -->
-                    <el-button
-                        v-if="!scale.connected"
-                        size="medium"
-                        class="btn-balanza"
-                        type="primary"
-                        :loading="scale.connecting"
-                        @click="connectScale"
-                    >
-                        <i class="fa fa-balance-scale" style="margin-right:8px;"></i>
-                        <span class="balanza-btn-text">Conectar balanza</span>
-                    </el-button>
-                    <!-- Botón para desconectar balanza (solo si está conectada) -->
-                    <el-button
-                        v-if="scale.connected"
-                        size="medium"
-                        type="danger"
-                        class="btn-balanza"
-                        @click="disconnectScale"
-                        :loading="scale.connecting"
-                    >
-                        <i class="fa fa-plug" style="margin-right:8px;"></i>
-                        <span class="balanza-btn-text">Desconectar balanza</span>
-                    </el-button>
-                    <!-- Tooltip informativo al lado del botón -->
-                    <el-tooltip
-                        effect="dark"
-                        content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
-                        placement="top"
-                    >
-                        <i class="fa fa-info-circle text-info" style="margin-left:8px; font-size:18px; cursor:pointer;"></i>
-                    </el-tooltip>
-                </div>
-                <template v-if="!electronic">
-                    <h2>
+                <div class="header-controls-row">
+                    <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode" class="el-switch el-switch-barcode"></el-switch>
+                    <template v-if="!electronic">
                         <el-switch v-model="type_refund" active-text="Devolución"></el-switch>
-                    </h2>
-                </template>
+                    </template>
+                    <div class="balanza-btn-group">
+                        <el-button
+                            v-if="!scale.connected"
+                            size="small"
+                            class="btn-balanza"
+                            type="primary"
+                            :loading="scale.connecting"
+                            @click="connectScale"
+                        >
+                            <i class="fa fa-balance-scale" style="margin-right:6px;"></i>
+                            <span class="balanza-btn-text">Conectar balanza</span>
+                        </el-button>
+                        <el-button
+                            v-if="scale.connected"
+                            size="small"
+                            type="danger"
+                            class="btn-balanza"
+                            @click="disconnectScale"
+                            :loading="scale.connecting"
+                        >
+                            <i class="fa fa-plug" style="margin-right:6px;"></i>
+                            <span class="balanza-btn-text">Desconectar balanza</span>
+                        </el-button>
+                        <el-tooltip
+                            effect="dark"
+                            content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                            placement="top"
+                        >
+                            <i class="fa fa-info-circle text-info balanza-tooltip"></i>
+                        </el-tooltip>
+                    </div>
+                </div>
             </div>
             <div class="col-md-4">
                 <h2> <button type="button" @click="place = 'cat'" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-border-all"></i></button> </h2>
@@ -2018,57 +2011,76 @@ export default {
 };
 </script>
 <style scoped>
-.page-header .balanza-btn-group {
-    gap: 8px;
-    margin-top: 10px;
+.page-header .header-controls-row {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    width: 100%;
+    min-height: 48px;
+    max-width: 100%;
+    padding-left: 24px; /* <-- Ajusta este valor según lo que necesites */
 }
 
-.page-header .btn-balanza {
-    min-width: 120px; /* Reducido para que no se desborde */
-    font-weight: 500;
-    height: 32px;
-    font-size: 13px;
-    padding: 0 8px;
+.page-header .header-controls-row > * {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.page-header .el-switch {
+    min-width: 110px;
+    max-width: 160px;
+    font-size: 15px;
+    flex: 1 1 110px;
+}
+
+.page-header .el-switch__label {
+    font-size: 14px !important;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page-header .balanza-btn-group {
+    gap: 8px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    margin-right: 0;
+    min-width: 0;
+    max-width: 180px;
+    flex: 1 1 120px;
+}
+.el-switch-barcode {
+    min-width: 190px !important;
+    max-width: 200px !important;
+}
+.page-header .btn-balanza {
+    min-width: 140px;   /* antes 90px */
+    max-width: 180px;   /* antes 120px */
+    font-size: 13px;
+    height: 30px;
+    padding: 0 10px;    /* más espacio para el texto */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .page-header .balanza-btn-text {
-    white-space: nowrap;
     font-size: 13px;
-    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.page-header .balanza-btn-group .el-tooltip,
-.page-header .balanza-btn-group .fa-info-circle {
-    margin-right: 6px;
-    font-size: 16px;
+.page-header .balanza-tooltip {
+    margin-left: 6px;
+    font-size: 16px !important;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
-@media (max-width: 900px) {
-    .page-header .balanza-btn-group {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-    }
-    .page-header .btn-balanza {
-        min-width: 120px;
-        font-size: 13px;
-        height: 32px;
-        padding: 0 8px;
-        width: 100%;
-        margin-right: 0;
-        margin-bottom: 6px;
-    }
-    .page-header .balanza-btn-text {
-        font-size: 12px;
-    }
-}
+/* Responsive: apila verticalmente los controles y separa del campo de búsqueda */
 </style>
