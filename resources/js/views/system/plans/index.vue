@@ -17,7 +17,7 @@
                         <div  class="col-lg-3 col-sm-6 text-center" style="padding:10px;" :key="index">
 							<div class="plan most-popular">
 								<div class="plan-ribbon-wrapper "></div>
-								<h3>{{row.name}}<span>S/ {{row.pricing}}</span></h3> 
+								<h3>{{row.name}}<span>$ {{row.pricing}}</span></h3> 
 								<ul>
  
                                     <li v-if="row.limit_users === 0"><strong>Usuarios</strong> ilimitados</li>

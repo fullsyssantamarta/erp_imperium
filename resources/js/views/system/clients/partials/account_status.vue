@@ -49,7 +49,7 @@
                             <tr>
                                 <th>Fec. Pago</th>
                                 <th>Método de pago</th>
-                                <th>Tarjeta</th>
+                                <!-- <th>Tarjeta</th> -->
                                 <th>Referencia</th>
                                 <th class="text-right">Estado</th>
                                 <th class="text-right">Monto</th>
@@ -59,8 +59,8 @@
                             <tr v-for="(row, index) in records">
                                 <td>{{ row.date_of_payment }}</td>
                                 <td>{{ row.payment_method_type_description }}</td>
-                                <td v-if="row.card_brand">{{ row.card_brand.description }}</td>
-                                <td v-else>-</td>
+                                <!-- <td v-if="row.card_brand">{{ row.card_brand.description }}</td>
+                                <td v-else>-</td> -->
                                 <td>{{ row.reference }}</td>
                                 <td class="text-right">{{ row.state_description }}</td>
                                 <td class="text-right">$ {{ row.payment }}</td>
@@ -70,17 +70,17 @@
                             </tbody>
                             <tfoot>
                             <tr>
-                                <td colspan="5" class="text-right">TOTAL PAGADO</td>
+                                <td colspan="4" class="text-right">TOTAL PAGADO</td>
                                 <td class="text-right">$ {{ totals.total_paid }}</td>
                                 <td></td>
                             </tr>
                             <tr>
-                                <td colspan="5" class="text-right">TOTAL A PAGAR</td>
+                                <td colspan="4" class="text-right">TOTAL A PAGAR</td>
                                 <td class="text-right">$ {{ totals.total }}</td>
                                 <td></td>
                             </tr>
                             <tr>
-                                <td colspan="5" class="text-right">PENDIENTE DE PAGO</td>
+                                <td colspan="4" class="text-right">PENDIENTE DE PAGO</td>
                                 <td class="text-right">$ {{ totals.total_difference }}</td>
                                 <td></td>
                             </tr>

@@ -42,7 +42,7 @@ class ClientPaymentController extends Controller
 
         return [
             'name' => $client->name,
-            //'pricing' => $client->plan->pricing,
+            'pricing' => $client->plan->pricing,
             'total_paid' => $total_paid,
             'total' => $total,
             'total_difference' => $total_difference

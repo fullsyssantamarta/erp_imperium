@@ -9,7 +9,8 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.identification_number}">
                             <label class="control-label">Número de identificación</label>
-                            <el-input  v-model="form.identification_number" :maxlength="15" :disabled="form.is_update">
+                            <el-input v-model="form.identification_number" :maxlength="15" :disabled="form.is_update" @input="handleIdentificationInput">
+                                <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="searchCompanyName"></el-button>
                             </el-input>
                             <small class="form-control-feedback" v-if="errors.identification_number" v-text="errors.identification_number[0]"></small>
                         </div>
@@ -17,14 +18,14 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.dv}">
                             <label class="control-label">Dv</label>
-                            <el-input  v-model="form.dv" :disabled="form.is_update"></el-input>
+                            <el-input v-model="form.dv" :disabled="form.dv !== null && form.dv !== ''"></el-input>
                             <small class="form-control-feedback" v-if="errors.dv" v-text="errors.dv[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.name}">
                             <label class="control-label">Nombre de la Empresa</label>
-                            <el-input  v-model="form.name" :disabled="form.is_update"></el-input>
+                            <el-input v-model="form.name" :disabled="form.name !== null && form.name !== ''"></el-input>
                             <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
                         </div>
                     </div>
@@ -40,7 +41,7 @@
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row" v-if="form.is_update">
                     <div class="col-md-12 mb-2">
                         <label class="control-label">
                             API Token
@@ -252,7 +253,7 @@
 
 
 <script>
-
+import { calcularDv } from '../../../../../../../../resources/js/functions/Nit.js';
     export default {
         props: ['showDialog', 'recordId'],
         data() {
@@ -277,6 +278,7 @@
                 toggle: false,
                 type_liabilities: [],
                 plans: [],
+                searchTimeout: null,
             }
         },
         async created() {
@@ -453,6 +455,37 @@
                     this.form.limit_users = null;
                 }
             },
-        }
-    }
+            async searchCompanyName() {
+                if (this.form.identification_number) {
+                    this.loading_search = true;
+                    await this.$http.get(`/co-companies/searchName/${this.form.identification_number}`)
+                        .then(response => {
+                            if (response.data.name) {
+                                this.form.name = response.data.name;
+                            } else {
+                                this.form.name = '';
+                            }
+                        })
+                        .catch(() => {
+                            this.form.name = '';
+                        })
+                        .finally(() => {
+                            this.loading_search = false;
+                        });
+                }
+            },
+            handleIdentificationInput(val) {
+                if (val && val.length > 4) {
+                    this.form.dv = calcularDv(val)
+                    if (this.searchTimeout) clearTimeout(this.searchTimeout)
+                    this.searchTimeout = setTimeout(() => {
+                        this.searchCompanyName()
+                    }, 1000)
+                } else {
+                    this.form.dv = ''
+                    this.form.name = ''
+                }
+            },
+        },
+}
 </script>

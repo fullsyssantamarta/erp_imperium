@@ -33,11 +33,15 @@ class AccountStatusController extends Controller
     {
         $client = Client::find($client_id);
 
-        $total_due = collect($client->payments)->where('state',false)->sum('payment');
-        $total_paid = collect($client->payments)->where('state',true)->sum('payment');
-        $total = collect($client->payments)->sum('payment');
+        $payments = collect($client->payments)->filter(function($payment) {
+            return $payment->date_of_payment <= now();
+        });
+
+        $total_due = $payments->where('state', false)->sum('payment');
+        $total_paid = $payments->where('state', true)->sum('payment');
+        $total = $payments->sum('payment');
         $total_difference = round($total - $total_paid, 2);
-        $image_url = ($total_due>0) ? asset('/logo/sad.png') : asset('/logo/happy.png');
+        $image_url = ($total_due > 0) ? asset('/logo/sad.png') : asset('/logo/happy.png');
 
         return [
             'totals' => [

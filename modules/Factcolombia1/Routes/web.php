@@ -174,6 +174,7 @@ if($current_hostname) {
                 Route::get('records', 'System\CompanyController@records');
                 Route::get('record/{id}', 'System\CompanyController@record');
                 Route::delete('{company}', 'System\CompanyController@destroy');
+                Route::get('searchName/{nit}', 'System\CompanyController@searchName');
 
                 // Route::post('locked_emission', 'System\CompanyController@lockedEmission');
                 Route::post('locked_tenant', 'System\CompanyController@lockedTenant');

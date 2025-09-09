@@ -7,7 +7,7 @@ use Hyn\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Model;
 use Hyn\Tenancy\Models\Hostname;
 use App\Models\System\ClientPayment;
-
+use App\Models\System\Plan;
 
 class Company extends Model
 {
@@ -63,6 +63,11 @@ class Company extends Model
     public function payments()
     {
         return $this->hasMany(ClientPayment::class, 'companie_id');
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class, 'plan_id');
     }
 
     public function isPlanActive()

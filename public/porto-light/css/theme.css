@@ -13796,16 +13796,15 @@ body .ui-pnotify.icon-nb .notification .ui-pnotify-icon > span {
 
 .pricing-table h3 span {
     background: #fff;
-    border: 5px solid #fff;
-    border-radius: 100px;
-    -webkit-box-shadow: 0 5px 20px #ddd inset, 0 3px 0 #999 inset;
+    border: 5px solid #828282;
+    border-radius: 10px;
     box-shadow: 0 5px 20px #ddd inset, 0 3px 0 #999 inset;
     color: #777;
     display: block;
-    font: bold 25px / 100px Georgia, Serif;
-    height: 100px;
-    margin: 20px auto -65px;
-    width: 100px;
+    font: bold 25px / 50px Georgia, Serif;
+    height: 50px;
+    width: 180px;
+    margin: 20px auto -35px;
 }
 
 .pricing-table .most-popular {
@@ -14011,9 +14010,12 @@ html.dark .pricing-table h3 {
 html.dark .pricing-table h3 span {
     background: #2e353e;
     border-color: #242830;
-    -webkit-box-shadow: 0 5px 20px #242830 inset, 0 3px 0 #282d36 inset;
+    border-radius: 10px;
     box-shadow: 0 5px 20px #242830 inset, 0 3px 0 #282d36 inset;
     color: #ebebeb;
+    height: 50px;
+    width: 180px;
+    margin: 20px auto -20px;
 }
 
 html.dark .pricing-table .most-popular {

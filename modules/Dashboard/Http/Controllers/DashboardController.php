@@ -14,9 +14,14 @@ use Modules\Dashboard\Helpers\DashboardStock;
 use Illuminate\Support\Facades\DB;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Company;
+use App\Models\Tenant\DocumentPos;
+use Hyn\Tenancy\Contracts\CurrentHostname;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Illuminate\Support\Arr;
+use Modules\Payroll\Models\DocumentPayroll;
+use Modules\Purchase\Models\SupportDocument;
+use Modules\Sale\Models\Remission;
 
 class DashboardController extends Controller
 {
@@ -117,4 +122,38 @@ class DashboardController extends Controller
 
     }
 
+
+    public function electronicConsumption(Request $request)
+    {
+        $company = \Modules\Factcolombia1\Models\System\Company::first();
+
+        if (!$company || !$company->plan_started_at || !$company->plan_expires_at) {
+            return response()->json(['success' => false, 'message' => 'Empresa o fechas de plan no encontradas'], 404);
+        }
+
+        $plan = $company->plan;
+        $plan_status = ($plan && $company->isPlanActive()) ? 'Activo' : ((now() > $company->plan_expires_at) ? 'Vencido' : 'Por Vencer');
+        $start = $company->plan_started_at;
+        $end = $company->plan_expires_at;
+
+        // Sumar todos los documentos aceptados
+        $documents = [
+            'Facturas electrónicas' => Document::where('state_document_id', 5)->whereBetween('date_of_issue', [$start, $end])->count(),
+            'Ventas POS' => DocumentPos::where('state_type_id', 1)->whereBetween('date_of_issue', [$start, $end])->count(),
+            'Documentos de soporte' => SupportDocument::where('state_document_id', 5)->whereBetween('date_of_issue', [$start, $end])->count(),
+            'Nómina electrónica' => DocumentPayroll::where('state_document_id', 5)->whereBetween('date_of_issue', [$start, $end])->count(),
+        ];
+
+        $total_documents = array_sum($documents);
+
+        return [
+            'plan_name' => $plan ? $plan->name : 'Sin plan',
+            'plan_status' => $plan_status,
+            'plan_start' => $start ? date('Y-m-d', strtotime($start)) : null,
+            'plan_end' => $end ? date('Y-m-d', strtotime($end)) : null,
+            'plan_limit_documents' => $company->limit_documents,
+            'documents' => $documents,
+            'total_documents' => $total_documents
+        ];
+    }
 }

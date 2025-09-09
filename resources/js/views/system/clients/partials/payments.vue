@@ -9,11 +9,10 @@
                             <tr>
                                 <th>Fecha de pago</th>
                                 <th>Método de pago</th>
-                                <th>Tarjeta</th>
-                                <th>Referencia</th>
+                                <th>código de operación</th>
                                 <th>Monto</th>
                                 <th>Pagar</th>
-                                <th></th>
+                                <th>Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -21,8 +20,8 @@
                                 <template v-if="row.id">
                                     <td>{{ row.date_of_payment }}</td>
                                     <td>{{ row.payment_method_type_description }}</td>
-                                    <td v-if="row.card_brand">{{ row.card_brand.description }}</td>
-                                    <td v-else>-</td>
+                                    <!-- <td v-if="row.card_brand">{{ row.card_brand.description }}</td>
+                                    <td v-else>-</td> -->
                                     <td>{{ row.reference }}</td>
                                     <td  >S/ {{ row.payment }}</td>
                                     <td>
@@ -51,7 +50,7 @@
                                                             format="dd/MM/yyyy"
                                                             value-format="yyyy-MM-dd"></el-date-picker>
                                             <small class="form-control-feedback" v-if="row.errors.date_of_payment" v-text="row.errors.date_of_payment[0]"></small>
-                                        </div>
+                                        </div> 
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_method_type_id}">
@@ -61,7 +60,7 @@
                                             <small class="form-control-feedback" v-if="row.errors.payment_method_type_id" v-text="row.errors.payment_method_type_id[0]"></small>
                                         </div>
                                     </td>
-                                    <td v-if="has_card">
+                                    <!-- <td v-if="has_card">
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.card_brand_id}">
                                             <el-select v-model="row.card_brand_id" >
                                                 <el-option v-for="option in card_brands" :key="option.id" :value="option.id" :label="option.description"></el-option>
@@ -70,7 +69,7 @@
                                         </div>
                                     </td>
                                     <td v-else>
-                                    </td>
+                                    </td> -->
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.reference}">
                                             <el-input v-model="row.reference"></el-input>
@@ -103,17 +102,17 @@
                             </tbody>
                             <tfoot>
                             <tr>
-                                <td colspan="6" class="text-right">TOTAL PAGADO</td>
+                                <td colspan="5" class="text-right">TOTAL PAGADO</td>
                                 <td class="text-right">S/ {{ client.total_paid }}</td>
                                 <td></td>
                             </tr>
                             <tr>
-                                <td colspan="6" class="text-right">TOTAL A PAGAR</td>
+                                <td colspan="5" class="text-right">TOTAL A PAGAR</td>
                                 <td class="text-right">S/ {{ client.total }}</td>
                                 <td></td>
                             </tr>
                             <tr>
-                                <td colspan="6" class="text-right">PENDIENTE DE PAGO</td>
+                                <td colspan="5" class="text-right">PENDIENTE DE PAGO</td>
                                 <td class="text-right">S/ {{ client.total_difference }}</td>
                                 <td></td>
                             </tr>
@@ -212,10 +211,6 @@
                 this.showAddButton = true;
             },
             clickSubmit(index) {
-                if(this.has_card && this.records[index].card_brand_id == null) {
-                    this.$message.error('Elija una tarjeta.');
-                    return;
-                }
                 let form = {
                     id: this.records[index].id,
                     companie_id: this.clientId,

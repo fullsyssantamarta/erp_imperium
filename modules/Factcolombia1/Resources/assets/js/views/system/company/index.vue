@@ -100,8 +100,8 @@
                                 <th class="text-center">Auto-renovar</th>
                                 <th class="text-center">Inicio plan</th>
                                 <th class="text-center">Vence plan</th>
-                                <!-- <th class="text-center">Pagos</th>
-                                <th class="text-right">E. Cuenta</th> -->
+                                <th class="text-center">Pagos</th>
+                                <th class="text-right">E. Cuenta</th>
                                 <!-- <th class="text-right">Inicio Ciclo Facturacion</th> -->
                                 <th class="text-right">Acciones</th>
                                 <!-- <th class="text-right">Pagos</th> -->
@@ -208,14 +208,14 @@
                                     <span v-if="row.plan_expires_at">{{ row.plan_expires_at }}</span>
                                     <span v-else>-</span>
                                 </td>
-                                <!-- <td class="text-right">
+                                <td class="text-right">
                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
                                         @click.prevent="clickPayments(row.id)">Pagos</button>
                                 </td>
                                 <td class="text-right">
                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-primary m-1__2"
                                         @click.prevent="clickAccountStatus(row.id)">E. Cuenta</button>
-                                </td> -->
+                                </td>
                                 <!-- <td class="text-right">
                                     <template v-if="row.start_billing_cycle">
                                         <span></span>
