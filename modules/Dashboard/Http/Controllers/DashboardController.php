@@ -125,7 +125,11 @@ class DashboardController extends Controller
 
     public function electronicConsumption(Request $request)
     {
-        $company = \Modules\Factcolombia1\Models\System\Company::first();
+        $hostname = app(\Hyn\Tenancy\Contracts\CurrentHostname::class);
+        $company = null;
+        if ($hostname) {
+            $company = \Modules\Factcolombia1\Models\System\Company::where('hostname_id', $hostname->id)->first();
+        }
 
         if (!$company || !$company->plan_started_at || !$company->plan_expires_at) {
             return response()->json(['success' => false, 'message' => 'Empresa o fechas de plan no encontradas'], 404);
