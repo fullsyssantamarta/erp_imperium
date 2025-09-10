@@ -23,7 +23,7 @@
                         <tr>
                             <th>#</th>
                             <th>Descripción</th>
-                            <th class="text-right">Código</th>
+                            <th class="text-right">Dirección</th>
                             <th class="text-right">Acciones</th>
                         </tr>
                         </thead>
@@ -31,7 +31,7 @@
                         <tr v-for="(row, index) in records" :key="index">
                             <td>{{ index + 1 }}</td>
                             <td>{{ row.description }}</td>
-                            <td class="text-right">{{ row.code }}</td>
+                            <td class="text-right">{{ row.address }}</td>
                             <td class="text-right">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" v-if="typeUser != 'integrator'" @click.prevent="clickDelete(row.id)">Eliminar</button>

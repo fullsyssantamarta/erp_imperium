@@ -40,7 +40,7 @@ class EstablishmentRequest extends FormRequest
                 'required',
             ],
             'code' => [
-                'required',
+                // 'required',
             ],
         ];
     }

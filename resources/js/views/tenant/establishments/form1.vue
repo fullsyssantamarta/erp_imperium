@@ -3,20 +3,20 @@
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
                 <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-md-12">
                         <div class="form-group" :class="{'has-danger': errors.description}">
                             <label class="control-label">Descripción</label>
                             <el-input v-model="form.description"></el-input>
                             <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <!-- <div class="col-md-4">
                         <div class="form-group" :class="{'has-danger': errors.code}">
                             <label class="control-label">Código Domicilio Fiscal</label>
                             <el-input v-model="form.code" :maxlength="4"></el-input>
                             <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
                 <div class="row">
                     <div class="col-md-4">
