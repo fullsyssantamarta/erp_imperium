@@ -5,18 +5,59 @@
             <div class="col-md-12 col-lg-12 col-xl-12 ">
                   
                 <div class="row mt-2">  
-                         
+                        <div class="col-md-6">
+                            <label class="control-label">Almacén</label>
+                            <el-select
+                                v-model="form.warehouse_id"
+                                @change="onWarehouseChange"
+                            >
+                                <el-option
+                                    v-for="warehouse in warehouses"
+                                    :key="warehouse.id"
+                                    :value="warehouse.id"
+                                    :label="warehouse.name"
+                                ></el-option>
+                            </el-select>
+                        </div>
                         <div class="col-md-6">
                             <label class="control-label">Producto</label>
                             <el-select
-                                    v-model="form.item_id"
-                                    filterable
-                                    clearable
-                                    remote
-                                    :remote-method="searchItems"
-                                    :loading="loading_items"
+                                v-model="form.item_id"
+                                filterable
+                                clearable
+                                remote
+                                :remote-method="searchItems"
+                                :loading="loading_items"
                             >
-                                <el-option v-for="option in items"  :key="option.id" :value="option.id" :label="option.full_description"></el-option>
+                                <el-option
+                                    v-for="option in items"
+                                    :key="option.id"
+                                    :value="option.id"
+                                    :label="option.full_description"
+                                ></el-option>
+                            </el-select>
+                        </div>
+                        <div class="col-md-3" v-if="!hideMovementFilters" >
+                            <label class="control-label">Tipo de movimiento</label>
+                            <el-select v-model="form.movement_type" clearable>
+                                <el-option label="Todos" :value="null"></el-option>
+                                <el-option label="Venta" value="App\Models\Tenant\Document"></el-option>
+                                <el-option label="Compra" value="App\Models\Tenant\Purchase"></el-option>
+                                <el-option label="Nota de venta" value="App\Models\Tenant\SaleNote"></el-option>
+                                <el-option label="Movimiento de inventario" value="Modules\Inventory\Models\Inventory"></el-option>
+                                <el-option label="Pedido" value="Modules\Order\Models\OrderNote"></el-option>
+                                <el-option label="Venta POS" value="App\Models\Tenant\DocumentPos"></el-option>
+                                <el-option label="Remisión" value="Modules\Sale\Models\Remission"></el-option>
+                                <!-- Más opciones según tu lógica -->
+                            </el-select>
+                        </div>
+                        <div class="col-md-3" v-if="showStatusFilter">
+                            <label class="control-label">Estado</label>
+                            <el-select v-model="form.status" clearable placeholder="Todos">
+                                <el-option label="Todos" :value="null"></el-option>
+                                <el-option label="Disponible" value="disponible"></el-option>
+                                <el-option label="Vendido" value="vendido"></el-option>
+                                <el-option label="No disponible" value="no_disponible"></el-option>
                             </el-select>
                         </div>
                         <div class="col-md-3">
@@ -30,6 +71,10 @@
                             <el-date-picker v-model="form.date_end" type="date"
                                             :picker-options="pickerOptionsDates"
                                             value-format="yyyy-MM-dd" format="dd/MM/yyyy" :clearable="true"></el-date-picker>
+                        </div>
+                        <div class="col-md-3" v-if="!hideMovementFilters">
+                            <label class="control-label">Movimientos del día</label>
+                            <el-button type="primary" @click="filterToday">Ver movimientos de hoy</el-button>
                         </div>
 
                         <div class="col-md-6" style="margin-top:29px"> 
@@ -88,9 +133,18 @@
     export default { 
         props: {
             resource: String,
+            hideMovementFilters: {
+                type: Boolean,
+                default: false
+            },
+            showStatusFilter: {
+                type: Boolean,
+                default: false
+            }
         },
         data () {
             return {
+                warehouses: [],
                 loading_submit:false,
                 columns: [],
                 records: [],
@@ -102,6 +156,7 @@
                 establishment: null,
                 items: [],
                 loading_items: false, // nuevo estado para loading
+                filterTodayActive: false,
                 form: {}, 
                 pickerOptionsDates: {
                     disabledDate: (time) => {
@@ -125,12 +180,42 @@
                 .then(response => {
                     this.items = response.data.items;
                 });
+            await this.$http.get(`/warehouses/all`).then((response) => {
+                this.warehouses = response.data.warehouses; // Lista de todos los almacenes
+                const currentWarehouse = response.data.current_warehouse; // Almacén actual del usuario
+                this.form.warehouse_id = currentWarehouse ? currentWarehouse.id : this.warehouses[0]?.id; // Selecciona el almacén actual o el primero disponible
+                this.onWarehouseChange(); // Carga los productos del almacén seleccionado
+            });
 
 
             // await this.getRecords()
 
         },
-        methods: {  
+        methods: {
+            async filterToday() {
+                this.loading_submit = true;
+                this.filterTodayActive = true; // NUEVO
+                // Limpiar filtros
+                this.form.item_id = null;
+                this.form.date_start = null;
+                this.form.date_end = null;
+                this.form.movement_type = null;
+                this.form.today = true; // NUEVO
+                this.$eventHub.$emit('emitItemID', null); 
+                const response = await this.$http.get(`/reports/kardex_today`, {
+                    params: { warehouse_id: this.form.warehouse_id },
+                });
+                this.records = response.data.data; // Actualiza los registros con los movimientos de hoy
+                this.pagination = response.data.meta; // Actualiza la paginación
+                this.pagination.per_page = Number(this.pagination.per_page);
+                this.loading_submit = false;
+            },
+            async onWarehouseChange() {
+                // Actualizar la lista de productos al cambiar el almacén
+                this.form.item_id = null;
+                const response = await this.$http.get(`/reports/kardex/filter?warehouse_id=${this.form.warehouse_id}`);
+                this.items = response.data.items;
+            },  
             changeDisabledDates() {
                 if (this.form.date_end < this.form.date_start) {
                     this.form.date_end = this.form.date_start
@@ -139,7 +224,8 @@
             },
             clickDownload(type) {                 
                 let query = queryString.stringify({
-                    ...this.form
+                    ...this.form,
+                    today: this.filterTodayActive ? true : undefined // NUEVO
                 });
                 window.open(`/${this.resource}/${type}/?${query}`, '_blank');
             },
@@ -149,6 +235,10 @@
                     item_id:null,
                     date_start:null,
                     date_end:null,
+                    movement_type: null,
+                    warehouse_id: null,
+                    today: false,
+                    status: null,
                 }
 
             },  
@@ -160,7 +250,8 @@
                 if(!this.form.item_id){
                     return this.$message.error('El producto es obligatorio')
                 }
-
+                this.filterTodayActive = false; // NUEVO
+                this.form.today = false; // NUEVO
                 this.loading_submit = await true
                 await this.getRecords()
                 this.loading_submit = await false
@@ -172,7 +263,7 @@
                 return this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
                     this.records = response.data.data
                     this.pagination = response.data.meta
-                    this.pagination.per_page = parseInt(response.data.meta.per_page)
+                    this.pagination.per_page = Number(this.pagination.per_page);
                     this.loading_submit = false
                 });
 
@@ -182,15 +273,12 @@
                 return queryString.stringify({
                     page: this.pagination.current_page,
                     limit: this.limit,
-                    ...this.form
+                    ...this.form,
                 })
             },
             async searchItems(query) {
                 if (!query) {
-                    await this.$http.get(`/${this.resource}/filter`)
-                        .then(response => {
-                            this.items = response.data.items;
-                        });
+                    await this.onWarehouseChange(); // Cargar productos del almacén seleccionado
                     return;
                 }
                 this.loading_items = true;

@@ -50,13 +50,19 @@ class ReportKardexController extends Controller
     }
 
 
-    public function filter() {
+    public function filter(Request $request) {
+        $warehouse_id = $request->warehouse_id ?? auth()->user()->warehouse_id; // Usar el almacén del usuario por defecto
 
-        $items = Item::query()->whereNotIsSet()
-            ->where([['item_type_id', '01'], ['unit_type_id', '!=','ZZ']])
+        $items = Item::query()
+            ->whereHas('warehouses', function ($query) use ($warehouse_id) {
+                $query->where('warehouse_id', $warehouse_id); // Filtrar productos por almacén
+            })
+            ->whereNotIsSet()
+            ->where([['item_type_id', '01'], ['unit_type_id', '!=', 'ZZ']])
             ->latest()
             ->limit(20)
-            ->get()->transform(function($row) {
+            ->get()
+            ->transform(function ($row) {
                 $full_description = $this->getFullDescription($row);
                 return [
                     'id' => $row->id,
@@ -96,36 +102,44 @@ class ReportKardexController extends Controller
         $item_id = $request['item_id'];
         $date_start = $request['date_start'];
         $date_end = $request['date_end'];
+        $movement_type = $request['movement_type'] ?? null; // nuevo filtro
+        $warehouse_id = $request['warehouse_id'] ?? null; // nuevo filtro
+        $today = $request['today'] ?? false;
 
-        $records = $this->data($item_id, $date_start, $date_end);
+        $records = $this->data($item_id, $date_start, $date_end, $movement_type, $warehouse_id, $today);
 
         return $records;
 
     }
 
 
-    private function data($item_id, $date_start, $date_end)
+    private function data($item_id, $date_start, $date_end, $movement_type=null, $warehouse_id=null, $today = false)
     {
 
-        $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
+        $warehouse_id = $warehouse_id ?? auth()->user()->warehouse_id;
+        // $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
 
-        if($date_start && $date_end){
+        $data = InventoryKardex::with(['inventory_kardexable', 'item'])
+            ->where('warehouse_id', $warehouse_id);
 
-            $data = InventoryKardex::with(['inventory_kardexable'])
-                        ->where([['warehouse_id', $warehouse->id]])
-                        ->whereBetween('date_of_issue', [$date_start, $date_end])
-                        ->orderBy('item_id')->orderBy('id');
-
-        }else{
-
-            $data = InventoryKardex::with(['inventory_kardexable'])
-                        ->where([['warehouse_id', $warehouse->id]])
-                        ->orderBy('item_id')->orderBy('id');
+        if ($today) {
+            // Filtrar por movimientos del día
+            $data = $data->whereDate('date_of_issue', Carbon::today());
+        } elseif ($date_start && $date_end) {
+            // Filtrar por rango de fechas
+            $data = $data->whereBetween('date_of_issue', [$date_start, $date_end]);
         }
 
         if($item_id){
             $data = $data->where('item_id', $item_id);
         }
+
+        if ($movement_type) {
+        // Aquí filtras por el tipo de modelo relacionado
+            $data = $data->where('inventory_kardexable_type', $movement_type);
+        }
+
+        $data = $data->orderBy('item_id')->orderBy('id');
 
 
         // if($date_start && $date_end){
@@ -144,6 +158,20 @@ class ReportKardexController extends Controller
 
         return $data;
 
+    }
+
+    public function recordsToday(Request $request)
+    {
+        $warehouse_id = $request->warehouse_id ?? auth()->user()->warehouse_id; // Usar el almacén del usuario por defecto
+
+        $records = InventoryKardex::with(['inventory_kardexable', 'item'])
+            ->where('warehouse_id', $warehouse_id)
+            ->whereDate('date_of_issue', Carbon::today()) // Filtrar por la fecha de hoy
+            ->orderBy('item_id')
+            ->orderBy('id')
+            ->paginate(config('tenant.items_per_page'));
+
+        return new ReportKardexCollection($records);
     }
 
 
@@ -176,35 +204,37 @@ class ReportKardexController extends Controller
         $d = $request->date_start;
         $a = $request->date_end;
         $item_id = $request->item_id;
+        $movement_type = $request->movement_type ?? null;
+        $warehouse_id = $request->warehouse_id ?? auth()->user()->warehouse_id;
+        $today = $request->today == 'true' || $request->today === true; // NUEVO
+        $status = $request->status ?? null;
 
-        $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
+        // Usar los mismos filtros que en getRecords/data
+        $query = InventoryKardex::with(['inventory_kardexable', 'item'])
+            ->where('warehouse_id', $warehouse_id);
 
-        if($d && $a){
-
-            $reports = InventoryKardex::with(['inventory_kardexable'])
-                                        ->where([['warehouse_id', $warehouse->id]])
-                                        ->whereBetween('date_of_issue', [$d, $a])
-                                        ->orderBy('item_id')->orderBy('id')
-                                        ->get();
-
-        }else{
-
-            $reports = InventoryKardex::with(['inventory_kardexable'])
-                                        ->where([['warehouse_id', $warehouse->id]])
-                                        ->orderBy('item_id')->orderBy('id')
-                                        ->get();
+        if ($today) {
+            $query = $query->whereDate('date_of_issue', Carbon::today());
+        } elseif ($d && $a) {
+            $query = $query->whereBetween('date_of_issue', [$d, $a]);
         }
 
-        if($item_id){
-            $reports = $reports->where('item_id', $item_id);
+        if ($item_id) {
+            $query = $query->where('item_id', $item_id);
         }
+
+        if ($movement_type) {
+            $query = $query->where('inventory_kardexable_type', $movement_type);
+        }
+
+        $reports = $query->orderBy('item_id')->orderBy('id')->get();
 
         $models = $this->models;
 
         $pdf = PDF::loadView('inventory::reports.kardex.report_pdf', compact("reports", "company", "establishment", "balance","models", 'a', 'd',"item_id"));
         $filename = 'Reporte_Kardex'.date('YmdHis');
 
-        return $pdf->download($filename.'.pdf');
+        return $pdf->stream($filename.'.pdf');
     }
 
     /**
@@ -220,28 +250,29 @@ class ReportKardexController extends Controller
         $d = $request->date_start;
         $a = $request->date_end;
         $item_id = $request->item_id;
+        $movement_type = $request->movement_type ?? null;
+        $warehouse_id = $request->warehouse_id ?? auth()->user()->warehouse_id;
+        $today = $request->today == 'true' || $request->today === true;
 
-        $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
+        // Usar los mismos filtros que en PDF
+        $query = InventoryKardex::with(['inventory_kardexable', 'item'])
+            ->where('warehouse_id', $warehouse_id);
 
-        if($d && $a){
-
-            $records = InventoryKardex::with(['inventory_kardexable'])
-                                        ->where([['warehouse_id', $warehouse->id]])
-                                        ->whereBetween('date_of_issue', [$d, $a])
-                                        ->orderBy('item_id')->orderBy('id')
-                                        ->get();
-
-        }else{
-
-            $records = InventoryKardex::with(['inventory_kardexable'])
-                                        ->where([['warehouse_id', $warehouse->id]])
-                                        ->orderBy('item_id')->orderBy('id')
-                                        ->get();
+        if ($today) {
+            $query = $query->whereDate('date_of_issue', Carbon::today());
+        } elseif ($d && $a) {
+            $query = $query->whereBetween('date_of_issue', [$d, $a]);
         }
 
-        if($item_id){
-            $records = $records->where('item_id', $item_id);
+        if ($item_id) {
+            $query = $query->where('item_id', $item_id);
         }
+
+        if ($movement_type) {
+            $query = $query->where('inventory_kardexable_type', $movement_type);
+        }
+
+        $records = $query->orderBy('item_id')->orderBy('id')->get();
 
         $models = $this->models;
 
@@ -260,36 +291,40 @@ class ReportKardexController extends Controller
         $item_id = $request['item_id'];
         $date_start = $request['date_start'];
         $date_end = $request['date_end'];
+        $warehouse_id = $request['warehouse_id'] ?? null;
 
-        $records = $this->data2($item_id, $date_start, $date_end);
+        $records = $this->data2($item_id, $date_start, $date_end, $warehouse_id);
 
         return $records;
 
     }
 
 
-    private function data2($item_id, $date_start, $date_end)
+    private function data2($item_id, $date_start, $date_end , $warehouse_id=null)
     {
-
-       // $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
-
-        if($date_start && $date_end){
-
-            $data = ItemLotsGroup::whereBetween('date_of_due', [$date_start, $date_end])
-                        ->orderBy('item_id')->orderBy('id');
-
-        }else{
-
-            $data = ItemLotsGroup::orderBy('item_id')->orderBy('id');
+        // Si hay almacén, obtener los item_id de ese almacén
+        $item_ids = null;
+        if ($warehouse_id) {
+            $item_ids = ItemWarehouse::where('warehouse_id', $warehouse_id)->pluck('item_id');
         }
 
-        if($item_id){
-            $data = $data->where('item_id', $item_id);
+        $query = ItemLotsGroup::query();
+
+        if ($date_start && $date_end) {
+            $query->whereBetween('date_of_due', [$date_start, $date_end]);
         }
 
+        // Si se seleccionó un producto, filtra solo por ese producto
+        if ($item_id) {
+            $query->where('item_id', $item_id);
+        } elseif ($item_ids) {
+            // Si no se seleccionó producto, pero sí almacén, filtra por los productos de ese almacén
+            $query->whereIn('item_id', $item_ids);
+        }
 
-        return $data;
+        $query->orderBy('item_id')->orderBy('id');
 
+        return $query;
     }
 
     public function records_lots_kardex(Request $request)
@@ -307,35 +342,50 @@ class ReportKardexController extends Controller
         $item_id = $request['item_id'];
         $date_start = $request['date_start'];
         $date_end = $request['date_end'];
+        $warehouse_id = $request['warehouse_id'] ?? null;
+        $status = $request['status'] ?? null;
 
-        $records = $this->data3($item_id, $date_start, $date_end);
+        $records = $this->data3($item_id, $date_start, $date_end, $warehouse_id, $status);
 
         return $records;
 
     }
 
 
-    private function data3($item_id, $date_start, $date_end)
+    private function data3($item_id, $date_start, $date_end, $warehouse_id=null, $status=null)
     {
 
        // $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
 
-        if($date_start && $date_end){
+        $query = ItemLot::query();
 
-            $data = ItemLot::whereBetween('date', [$date_start, $date_end])
-                        ->orderBy('item_id')->orderBy('id');
-
-        }else{
-
-            $data = ItemLot::orderBy('item_id')->orderBy('id');
+        if ($date_start && $date_end) {
+            $query->whereBetween('date', [$date_start, $date_end]);
         }
 
-        if($item_id){
-            $data = $data->where('item_id', $item_id);
+        if ($item_id) {
+            $query->where('item_id', $item_id);
         }
 
+        if ($warehouse_id) {
+            $query->where('warehouse_id', $warehouse_id);
+        }
 
-        return $data;
+        if ($status) {
+            if ($status == 'disponible') {
+                $query->where('has_sale', false)->where('state', 'Activo');
+            } elseif ($status == 'vendido') {
+                $query->where('has_sale', true)->where('state', 'Activo');
+            } elseif ($status == 'no_disponible') {
+                $query->where('has_sale', true)->where('state', 'Inactivo');
+            }
+        }
+
+        
+
+        $query->orderBy('item_id')->orderBy('id');
+
+        return $query;
 
     }
 
