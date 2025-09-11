@@ -253,18 +253,23 @@ export default {
         }
       }
 
-      let dup = this.form.items.find(x => x.id == this.form_add.item_id);
-      if (dup) {
-        return;
-      }
-
+      // Buscar si el producto ya está en la lista
+      let idx = this.form.items.findIndex(x => x.id == this.form_add.item_id);
       let row = this.items.find(x => x.id == this.form_add.item_id);
-      this.form.items.push({
-        id: row.id,
-        description: row.description,
-        quantity: this.form_add.quantity,
-        lots: this.form_add.lots
-      });
+
+      if (idx !== -1) {
+        // Si existe, actualiza cantidad y lotes
+        this.form.items[idx].quantity = this.form_add.quantity;
+        this.form.items[idx].lots = this.form_add.lots;
+      } else {
+        // Si no existe, lo agrega
+        this.form.items.push({
+          id: row.id,
+          description: row.description,
+          quantity: this.form_add.quantity,
+          lots: this.form_add.lots
+        });
+      }
 
       this.initFormAdd();
     },

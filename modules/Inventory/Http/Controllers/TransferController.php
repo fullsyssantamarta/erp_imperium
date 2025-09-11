@@ -277,7 +277,7 @@ class TransferController extends Controller
         $items = collect(Inventory::where('inventories_transfer_id', $request->id)->get())->transform(function($row) {
             return (object)[
                 'quantity' => $row->quantity,
-                'item' => $row->item->description,
+                'item' => $row->item->name,
             ];
         });
 

@@ -32,6 +32,7 @@
             <th>Detalle</th>
             <th>Detalle Productos</th>
             <th>Cantidad Total Productos</th>
+            <th>Constancia</th>
             <!--<th class="text-right">Acciones</th> -->
           </tr>
           <tr></tr>
@@ -70,6 +71,14 @@
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-danger"
                                     @click.prevent="clickDelete(row.id)">Eliminar</button>
             </td>-->
+              <td>
+                <el-button
+                  type="primary"
+                  icon="el-icon-document"
+                  size="mini"
+                  @click="downloadConstancy(row.id)"
+                >PDF</el-button>
+              </td>
           </tr>
         </data-table>
       </div>
@@ -109,7 +118,10 @@ export default {
       this.destroy(`/${this.resource}/${id}`).then(() =>
         this.$eventHub.$emit("reloadData")
       );
-    }
+    },
+    downloadConstancy(id) {
+      window.open(`/${this.resource}/download?id=${id}`, '_blank');
+    },
   }
 };
 </script>
