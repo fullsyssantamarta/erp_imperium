@@ -5,7 +5,7 @@
             <div class="col-md-12 col-lg-12 col-xl-12 ">
                   
                 <div class="row mt-2">  
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6 col-lg-6">
                             <label class="control-label">Almacén</label>
                             <el-select
                                 v-model="form.warehouse_id"
@@ -19,7 +19,7 @@
                                 ></el-option>
                             </el-select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6 col-lg-6">
                             <label class="control-label">Producto</label>
                             <el-select
                                 v-model="form.item_id"
@@ -37,7 +37,7 @@
                                 ></el-option>
                             </el-select>
                         </div>
-                        <div class="col-md-3" v-if="!hideMovementFilters" >
+                        <div class="col-12 col-md-6 col-lg-3" v-if="!hideMovementFilters" >
                             <label class="control-label">Tipo de movimiento</label>
                             <el-select v-model="form.movement_type" clearable>
                                 <el-option label="Todos" :value="null"></el-option>
@@ -51,7 +51,7 @@
                                 <!-- Más opciones según tu lógica -->
                             </el-select>
                         </div>
-                        <div class="col-md-3" v-if="showStatusFilter">
+                        <div class="col-12 col-md-6 col-lg-3" v-if="showStatusFilter">
                             <label class="control-label">Estado</label>
                             <el-select v-model="form.status" clearable placeholder="Todos">
                                 <el-option label="Todos" :value="null"></el-option>
@@ -60,24 +60,27 @@
                                 <el-option label="No disponible" value="no_disponible"></el-option>
                             </el-select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-md-6 col-lg-3">
                             <label class="control-label">Fecha inicio</label>
                             <el-date-picker v-model="form.date_start" type="date"
                                             @change="changeDisabledDates"
                                             value-format="yyyy-MM-dd" format="dd/MM/yyyy" :clearable="true"></el-date-picker>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-md-6 col-lg-3">
                             <label class="control-label">Fecha término</label>
                             <el-date-picker v-model="form.date_end" type="date"
                                             :picker-options="pickerOptionsDates"
                                             value-format="yyyy-MM-dd" format="dd/MM/yyyy" :clearable="true"></el-date-picker>
                         </div>
-                        <div class="col-md-3" v-if="!hideMovementFilters">
-                            <label class="control-label">Movimientos del día</label>
-                            <el-button type="primary" @click="filterToday">Ver movimientos de hoy</el-button>
+                        <div class="col-12 col-md-6 col-lg-3 d-flex align-items-center" v-if="!hideMovementFilters">
+                            <div class="w-100">
+                                <el-checkbox v-model="form.today" class="align-checkbox checkbox-responsive-text">
+                                    Solo movimientos de hoy
+                                </el-checkbox>
+                            </div>
                         </div>
 
-                        <div class="col-md-6" style="margin-top:29px"> 
+                        <div class="col-12 col-md-12 col-lg-12" style="margin-top:29px"> 
                             <el-button class="submit" type="primary" @click.prevent="getRecordsByFilter" :loading="loading_submit" icon="el-icon-search" >Buscar</el-button>
                             <template v-if="records.length>0"> 
 
@@ -124,6 +127,28 @@
 .font-custom{
     font-size:15px !important
 }
+.input-full {
+    width: 100%;
+}
+.align-checkbox {
+    margin-top: 12px;
+}
+@media (max-width: 767.98px) {
+    .el-select, .el-date-picker, .el-checkbox {
+        width: 100% !important;
+    }
+}
+.checkbox-responsive-text {
+    white-space: nowrap;
+}
+@media (max-width: 991.98px) {
+    .checkbox-responsive-text {
+        font-size: 13px;
+        white-space: normal;
+        text-align: center;
+        display: block;
+    }
+}
 </style>
 <script>
 
@@ -138,6 +163,10 @@
                 default: false
             },
             showStatusFilter: {
+                type: Boolean,
+                default: false
+            },
+            requireProduct: { // NUEVO
                 type: Boolean,
                 default: false
             }
@@ -199,7 +228,6 @@
                 this.form.item_id = null;
                 this.form.date_start = null;
                 this.form.date_end = null;
-                this.form.movement_type = null;
                 this.form.today = true; // NUEVO
                 this.$eventHub.$emit('emitItemID', null); 
                 const response = await this.$http.get(`/reports/kardex_today`, {
@@ -222,10 +250,13 @@
                 }
                 // this.loadAll();
             },
-            clickDownload(type) {                 
+            clickDownload(type) {        
+                if(this.requireProduct && !this.form.item_id){
+                    this.$message.error('Debe seleccionar un producto para exportar.');
+                    return;
+                }         
                 let query = queryString.stringify({
                     ...this.form,
-                    today: this.filterTodayActive ? true : undefined // NUEVO
                 });
                 window.open(`/${this.resource}/${type}/?${query}`, '_blank');
             },
@@ -247,14 +278,13 @@
             }, 
             async getRecordsByFilter(){
 
-                if(!this.form.item_id){
-                    return this.$message.error('El producto es obligatorio')
+                if(this.requireProduct && !this.form.item_id){
+                    this.$message.error('Debe seleccionar un producto para buscar.');
+                    return;
                 }
-                this.filterTodayActive = false; // NUEVO
-                this.form.today = false; // NUEVO
-                this.loading_submit = await true
+                this.loading_submit =  true
                 await this.getRecords()
-                this.loading_submit = await false
+                this.loading_submit =  false
 
             },
             getRecords() {

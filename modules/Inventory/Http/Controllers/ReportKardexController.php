@@ -122,11 +122,9 @@ class ReportKardexController extends Controller
         $data = InventoryKardex::with(['inventory_kardexable', 'item'])
             ->where('warehouse_id', $warehouse_id);
 
-        if ($today) {
-            // Filtrar por movimientos del día
+        if ($today == 'true' || $today === true || $today === 1 || $today === '1') {
             $data = $data->whereDate('date_of_issue', Carbon::today());
         } elseif ($date_start && $date_end) {
-            // Filtrar por rango de fechas
             $data = $data->whereBetween('date_of_issue', [$date_start, $date_end]);
         }
 
@@ -234,7 +232,7 @@ class ReportKardexController extends Controller
         $pdf = PDF::loadView('inventory::reports.kardex.report_pdf', compact("reports", "company", "establishment", "balance","models", 'a', 'd',"item_id"));
         $filename = 'Reporte_Kardex'.date('YmdHis');
 
-        return $pdf->stream($filename.'.pdf');
+        return $pdf->download($filename.'.pdf');
     }
 
     /**
