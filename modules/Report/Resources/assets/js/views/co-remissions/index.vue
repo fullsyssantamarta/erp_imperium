@@ -27,8 +27,8 @@
                             <td>{{row.quotation_number_full}}</td>
  
                             <td class="text-center">{{row.currency_name}}</td>
-                            <td class="text-center">{{ row.total}}</td>
-                            
+                            <td class="text-center">{{ row.total | numberFormat }}</td>
+
                         </tr>
                         
                     </data-table>

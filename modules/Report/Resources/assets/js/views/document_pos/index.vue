@@ -26,7 +26,7 @@
                         <td>{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
                         <td class="text-center">{{row.state_type_description}}</td>
                         <td class="text-center">{{ row.currency_type_id}}</td>
-                        <td class="text-right">{{ row.total }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
                     </tr>
                 </data-table>
             </div>

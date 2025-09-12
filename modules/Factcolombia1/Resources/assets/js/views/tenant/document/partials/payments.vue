@@ -114,17 +114,17 @@
                             <tfoot>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL PAGADO</td>
-                                <td class="text-right">{{ document.total_paid }}</td>
+                                <td class="text-right">{{ document.total_paid | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL A PAGAR</td>
-                                <td class="text-right">{{ document.total }}</td>
+                                <td class="text-right">{{ document.total | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-right">PENDIENTE DE PAGO</td>
-                                <td class="text-right">{{ document.total_difference }}</td>
+                                <td class="text-right">{{ document.total_difference | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             </tfoot>

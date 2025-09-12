@@ -48,11 +48,11 @@
                             </span>
                         </td>
                         <td class="text-center">{{ row.currency_name }}</td>
-                        <td class="text-right">{{ row.sale }}</td>
-                        <td class="text-right">{{ row.total_discount }}</td>
-                        <td class="text-right">{{ row.total_tax }}</td>
-                        <td class="text-right">{{ row.subtotal }}</td>
-                        <td class="text-right">{{ row.total }}</td>
+                        <td class="text-right">{{ row.sale | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_discount | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_tax | numberFormat }}</td>
+                        <td class="text-right">{{ row.subtotal | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
 
                         <td class="text-center">
                             <button

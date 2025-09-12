@@ -41,8 +41,8 @@
                         <td>{{ row.user }}</td>
                         <td class="text-center">{{ row.opening }}</td>
                         <td class="text-center">{{ row.closed }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.beginning_balance) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.final_balance) }}</td>
+                        <td class="text-right">{{ row.beginning_balance | numberFormat }}</td>
+                        <td class="text-right">{{ row.final_balance | numberFormat }}</td>
                         <!-- <td>{{ row.income }}</td>
                         <td>{{ row.expense }}</td> -->
                         <td>{{ row.state_description }}</td>

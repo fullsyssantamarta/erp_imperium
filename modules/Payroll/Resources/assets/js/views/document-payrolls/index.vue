@@ -50,9 +50,9 @@
                                 <br>
                             </span>
                         </td>
-                        <td class="text-center">{{ formatNumber(row.salary) }}</td>
-                        <td class="text-center">{{ formatNumber(row.accrued_total) }}</td>
-                        <td class="text-center">{{ formatNumber(row.deductions_total) }}</td>
+                        <td class="text-center">{{ row.salary | numberFormat }}</td>
+                        <td class="text-center">{{ row.accrued_total | numberFormat }}</td>
+                        <td class="text-center">{{ row.deductions_total | numberFormat }}</td>
                         <td class="text-right">
 
                             <template v-if="row.btn_adjust_note_elimination">
@@ -179,12 +179,6 @@
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 return `${year}-${month}`;
-            },
-            formatNumber(number) {
-                return number ? new Intl.NumberFormat('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }).format(number) : '0.00'
             },
         }
     }

@@ -20,7 +20,7 @@
                         <td>{{row.document_type_description}}</td>
                         <td>{{row.series}}</td>
                         <td>{{row.alone_number}}</td>
-                        <td>{{ formatTotal(row) }}</td>
+                        <td>{{ formatTotal(row) | numberFormat }}</td>
                     </tr>
                 </data-table>
             </div>
@@ -46,9 +46,6 @@
         },
 
         methods: {
-            formatNumber(number) {
-                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
-            },
             formatTotal(row) {
                 let total;
                 
@@ -60,7 +57,7 @@
                     total = row.total;
                 }
                 
-                return this.formatNumber(total);
+                return total;
             },
         }
     }

@@ -35,7 +35,7 @@
                                             <i class="fas fa-file-download"></i>
                                         </button>
                                     </td>
-                                    <td class="text-right">{{ row.payment }}</td>
+                                    <td class="text-right">{{ row.payment | numberFormat }}</td>
                                     <td class="series-table-actions text-right">
                                         <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
                                         <!--<el-button type="danger" icon="el-icon-delete" plain @click.prevent="clickDelete(row.id)"></el-button>-->
@@ -113,17 +113,17 @@
                             <tfoot>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL PAGADO</td>
-                                <td class="text-right">{{ document.total_paid }}</td>
+                                <td class="text-right">{{ document.total_paid | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL A PAGAR</td>
-                                <td class="text-right">{{ document.total }}</td>
+                                <td class="text-right">{{ document.total | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-right">PENDIENTE DE PAGO</td>
-                                <td class="text-right">{{ document.total_difference }}</td>
+                                <td class="text-right">{{ document.total_difference | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             </tfoot>

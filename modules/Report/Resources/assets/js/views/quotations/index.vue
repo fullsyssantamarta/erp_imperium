@@ -51,7 +51,7 @@
 
                             <td>{{ row.total_taxed}}</td>
                             <td>{{ row.total_igv}}</td> -->
-                            <td class="text-center">{{ row.total}}</td>
+                            <td class="text-center">{{ row.total | numberFormat }}</td>
                             
                         </tr>
                         

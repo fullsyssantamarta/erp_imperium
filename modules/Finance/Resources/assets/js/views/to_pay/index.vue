@@ -164,7 +164,7 @@
                                                 <el-popover placement="right" width="300" trigger="click">
                                                 <p>
                                                     Saldo actual:
-                                                    <span class="custom-badge">{{ row.total_to_pay }}</span>
+                                                    <span class="custom-badge">{{ row.total_to_pay | numberFormat }}</span>
                                                 </p>
                                                 <p>
                                                     Fecha ultimo pago:
@@ -190,8 +190,8 @@
                                                 </el-popover>
                                             </td>
                                                 <td>{{row.currency_id}}</td>
-                                            <td class="text-right text-danger">{{ row.total_to_pay }}</td>
-                                            <td class="text-right">{{ row.total }}</td>
+                                            <td class="text-right text-danger">{{ row.total_to_pay | numberFormat }}</td>
+                                            <td class="text-right">{{ row.total | numberFormat }}</td>
                                             <td class="text-right">
                                                 <template v-if="row.type === 'purchase'">
                                                 <button

@@ -131,22 +131,22 @@
                                             <tr>
                                                 <td class="celda">{{$loop->iteration}}</td>
                                                 <td class="celda">{{$value->item->internal_id ?? ''}} {{$value->item->internal_id ? '-':''}} {{$value->item->name ?? ''}}</td>
-                                                <td class="celda">{{number_format($value->stock, 0, '.', ',')}}</td>
+                                                <td class="celda">{{number_format($value->stock, 0, ',', '.')}}</td>
                                                 <td class="celda">
-                                                    {{number_format($value->item->sale_unit_price, 2, '.', ',')}}
+                                                    {{number_format($value->item->sale_unit_price, 2, ',', '.')}}
                                                     @if($item_prices->count() > 0)
                                                         @foreach($item_prices as $price)
-                                                            @if($price->price1 > 0)<br>Precio1: {{number_format($price->price1, 2, '.', ',')}}@endif
-                                                            @if($price->price2 > 0)<br>Precio2: {{number_format($price->price2, 2, '.', ',')}}@endif
-                                                            @if($price->price3 > 0)<br>Precio3: {{number_format($price->price3, 2, '.', ',')}}@endif
+                                                            @if($price->price1 > 0)<br>Precio1: {{number_format($price->price1, 2, ',', '.')}}@endif
+                                                            @if($price->price2 > 0)<br>Precio2: {{number_format($price->price2, 2, ',', '.')}}@endif
+                                                            @if($price->price3 > 0)<br>Precio3: {{number_format($price->price3, 2, ',', '.')}}@endif
                                                         @endforeach
                                                     @endif
                                                 </td>
-                                                <td class="celda">{{number_format($value->item->purchase_unit_price, 2, '.', ',')}}</td>
+                                                <td class="celda">{{number_format($value->item->purchase_unit_price, 2, ',', '.')}}</td>
                                                 <td class="celda">{{$value->warehouse->description}}</td>
 
-                                                <td class="celda text-right">{{number_format($global_sale_unit_price, 2, '.', ',')}}</td>
-                                                <td class="celda text-right">{{number_format($global_purchase_unit_price, 2, '.', ',')}}</td>
+                                                <td class="celda text-right">{{number_format($global_sale_unit_price, 2, ',', '.')}}</td>
+                                                <td class="celda text-right">{{number_format($global_purchase_unit_price, 2, ',', '.')}}</td>
                                             </tr>
                                         @endforeach
                                     @else

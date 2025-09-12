@@ -29,7 +29,7 @@
                         <td>{{ index }}</td>
                         <td>{{ row.title }}</td>
                         <td>{{ row.description }}</td>
-                        <td>{{ row.minimum_purchase_amount }}</td>
+                        <td>{{ row.minimum_purchase_amount | numberFormat }}</td>
                         <td>{{ row.establishment }}</td>
                         <td>{{ row.coupon_date }}</td>
                         <td>{{ (row.status)?'Activo':'Inactivo' }}</td>

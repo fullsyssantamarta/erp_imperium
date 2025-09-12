@@ -72,7 +72,7 @@
                         </td> -->
                         <!-- <td>{{ row.state_type_description }}</td> -->
                         <td class="text-center">{{ row.currency_type_id }}</td>
-                        <td class="text-right">{{ row.total }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
                         <td class="text-right">
 
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info"

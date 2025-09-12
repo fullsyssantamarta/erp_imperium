@@ -37,6 +37,20 @@ Vue.prototype.$removeStorage = function(name){
     localStorage.removeItem(name)
 }
 
+Vue.filter('numberFormat', function (value) {
+  if (value === undefined || value === null) return '0,00';
+  if (typeof value === 'string') {
+    if (value.match(/^\d{1,3}(,\d{3})*\.\d{2}$/)) {
+      value = value.replace(/,/g, '');
+    }
+    else if (value.match(/^\d{1,3}(\.\d{3})*,\d{2}$/)) {
+      value = value.replace(/\./g, '').replace(',', '.');
+    }
+  }
+  if (isNaN(value)) return '0,00';
+  return Number(value).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+});
+
 // Vuetify es
 // Vue.use(Vuetify, {
 //     lang: {

@@ -69,7 +69,7 @@
             <!-- <td class="text-right">{{ row.total_taxed }}</td>
             <td class="text-right">{{ row.total_igv }}</td> -->
             <!-- <td class="text-right">{{ row.total_perception ? row.total_perception : 0 }}</td> -->
-            <td class="text-right">{{ row.total }}</td>
+            <td class="text-right">{{ row.total | numberFormat }}</td>
             
                         <td class="text-center"> 
 

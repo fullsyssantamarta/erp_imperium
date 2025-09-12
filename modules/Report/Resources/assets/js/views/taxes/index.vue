@@ -70,21 +70,21 @@
                           </div>
                         </td>
 
-                        <td class="text-right">$ {{ formatNumber(row.total) }}</td>
-                        <td class="text-right">$ {{ formatNumber(row.total_discount) }}</td>
+                        <td class="text-right">$ {{ row.total | numberFormat }}</td>
+                        <td class="text-right">$ {{ row.total_discount | numberFormat }}</td>
 
                         <td class="text-right" v-for="(tax, index) in taxTitles" :key="index + 'TD'">
-                          {{ ratePrefix() }}{{ formatNumber(getTaxTotalBill(tax, row.taxes))}}</td>
+                          {{ ratePrefix() }}{{ getTaxTotalBill(tax, row.taxes) | numberFormat }}</td>
 
                       </tr>
                     </tbody>
                     <tfoot>
                       <td class="text-center" colspan="4"><strong>Totales:</strong></td>
-                      <td class="text-right"><strong>{{ ratePrefix() }}{{ formatNumber(getSaleTotal()) }}</strong></td>
-                      <td class="text-right"><strong>{{ ratePrefix() }}{{ formatNumber(getTotalDiscount()) }}</strong>
+                      <td class="text-right"><strong>{{ ratePrefix() }}{{ getSaleTotal() | numberFormat }}</strong></td>
+                      <td class="text-right"><strong>{{ ratePrefix() }}{{ getTotalDiscount() | numberFormat }}</strong>
                       </td>
                       <td class="text-right" v-for="(tax, index) in taxTitles" :key="index + 'F'">
-                        <strong>{{ ratePrefix() }}{{ formatNumber(getTaxTotal(tax)) }}</strong>
+                        <strong>{{ ratePrefix() }}{{ getTaxTotal(tax) | numberFormat }}</strong>
                       </td>
                     </tfoot>
                   </table>
@@ -121,22 +121,22 @@
                           </div>
                         </td>
 
-                        <td class="text-right">$ {{ formatNumber(row.total) }}</td>
-                        <td class="text-right">$ {{ formatNumber(row.total_discount) }}</td>
+                        <td class="text-right">$ {{ row.total | numberFormat }}</td>
+                        <td class="text-right">$ {{ row.total_discount | numberFormat }}</td>
 
                         <td class="text-right" v-for="(tax, index) in taxTitles" :key="index + 'TD'">
-                          {{ ratePrefix() }}{{ formatNumber(getTaxTotalBill(tax, row.taxes)) }}</td>
+                          {{ ratePrefix() }}{{ getTaxTotalBill(tax, row.taxes) | numberFormat }}</td>
 
                       </tr>
                     </tbody>
                     <tfoot>
                       <td class="text-center" colspan="4"><strong>Totales:</strong></td>
-                      <td class="text-right"><strong>{{ ratePrefix() }}{{ formatNumber(getSaleTotal(1)) }}</strong>
+                      <td class="text-right"><strong>{{ ratePrefix() }}{{ getSaleTotal(1) | numberFormat }}</strong>
                       </td>
-                      <td class="text-right"><strong>{{ ratePrefix() }}{{ formatNumber(getTotalDiscount(1)) }}</strong>
+                      <td class="text-right"><strong>{{ ratePrefix() }}{{ getTotalDiscount(1) | numberFormat }}</strong>
                       </td>
                       <td class="text-right" v-for="(tax, index) in taxTitles" :key="index + 'F'">
-                        <strong>{{ ratePrefix() }}{{ formatNumber(getTaxTotal(tax, 1)) }}</strong>
+                        <strong>{{ ratePrefix() }}{{ getTaxTotal(tax, 1) | numberFormat }}</strong>
                       </td>
                     </tfoot>
                   </table>
@@ -209,13 +209,6 @@ export default {
   },
   async mounted() {},
   methods: {
-    formatNumber(number) {
-      if(!number) return '0.00';
-      let value = Number(number).toFixed(2);
-      let parts = value.split('.');
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      return parts.join('.');
-    },
     getTotalDiscount(is_purchase = 0) {
       try {
         return _.reduce(this.documents, (sum, value) => {

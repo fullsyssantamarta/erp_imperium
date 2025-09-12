@@ -19,8 +19,8 @@
                             <!-- <td>{{row.user_name}}</td> -->
                             <td>{{row.user_name}}</td>
                             <td class="text-center">{{row.total_transactions}}</td>
-                            <td class="text-center">{{row.acum_sales}}</td> 
-                            <td class="text-center">{{row.total_commision}}</td> 
+                            <td class="text-center">{{row.acum_sales | numberFormat}}</td> 
+                            <td class="text-center">{{row.total_commision | numberFormat}}</td> 
                         </tr>
                         
                     </data-table>

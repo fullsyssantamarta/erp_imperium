@@ -56,8 +56,8 @@
                                     </template>
                                 </div>
                             </td>
-                        <td class="text-right">{{ getFormatDecimal(row.sale_unit_price) }}</td>
-                        <td class="text-right" v-if="typeUser != 'seller'">{{ getFormatDecimal(row.purchase_unit_price) }}</td>
+                        <td class="text-right">{{ row.sale_unit_price | numberFormat }}</td>
+                        <td class="text-right" v-if="typeUser != 'seller'">{{ row.purchase_unit_price | numberFormat }}</td>
                         <!-- <td class="text-center">{{ row.has_igv_description }}</td> -->
                         <td class="text-right">
                             <template v-if="typeUser === 'admin'">

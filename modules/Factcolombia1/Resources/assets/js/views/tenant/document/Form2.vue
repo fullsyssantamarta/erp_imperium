@@ -797,7 +797,7 @@ export default {
                 return value;
             }
             // Asumiendo que numericPrice es un número
-            const formattedPrice = numericPrice.toLocaleString('en-US', {
+            const formattedPrice = numericPrice.toLocaleString('es-CO', {
                 style: 'decimal',  // Estilo 'decimal' para separadores de mil y dos decimales
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2

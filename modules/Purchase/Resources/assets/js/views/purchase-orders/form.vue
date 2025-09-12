@@ -143,9 +143,9 @@
                                             <td class="text-center">{{ row.item.unit_type.name }}</td>
                                             <td class="text-right">{{ row.quantity }}</td>
                                             <!-- <td class="text-right">{{ currency_type.symbol }} {{ row.unit_price }}</td> -->
-                                            <td class="text-right">{{ ratePrefix() }} {{ getFormatUnitPriceRow(row.unit_price) }}</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ row.discount }}</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ row.total }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ getFormatUnitPriceRow(row.unit_price) | numberFormat }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ row.discount | numberFormat }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ row.total | numberFormat }}</td>
                                             <td class="text-right">
                                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickRemoveItem(index)">x</button>
                                             </td>
@@ -161,12 +161,12 @@
                                     <tr>
                                         <td>TOTAL VENTA</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.sale }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.sale | numberFormat }}</td>
                                     </tr>
                                     <tr >
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.total_discount }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.total_discount | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
@@ -174,13 +174,13 @@
                                                 {{tax.name}}(+)
                                             </td>
                                             <td>:</td>
-                                            <td class="text-right">{{ratePrefix()}} {{Number(tax.total).toFixed(2)}}</td>
+                                            <td class="text-right">{{ratePrefix()}} {{Number(tax.total).toFixed(2) | numberFormat}}</td>
                                         </tr>
                                     </template>
                                     <tr>
                                         <td>SUBTOTAL</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.subtotal }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.subtotal | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="tax.is_retention && tax.retention > 0" :key="index">
@@ -216,7 +216,7 @@
                             </div>
 
                             <div class="col-md-12">
-                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL COMPRAS: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
+                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL COMPRAS: </b>{{ currency_type.symbol }} {{ form.total | numberFormat }}</h3>
 
                                 <template v-if="is_perception_agent">
                                     <hr>

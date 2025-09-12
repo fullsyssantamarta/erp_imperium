@@ -32,7 +32,7 @@
                         <td>{{row.description}}</td>
                         <!-- <td>{{row.unit_type_id}}</td> -->
                         <td>{{row.quantity}}</td>
-                        <td>{{row.total}}</td>
+                        <td>{{row.total | numberFormat}}</td>
                     </tr>
                 </data-table>
             </div>

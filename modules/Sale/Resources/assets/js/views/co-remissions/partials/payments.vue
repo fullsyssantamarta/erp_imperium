@@ -25,7 +25,7 @@
                                     <td>{{ row.payment_method_type_description }}</td>
                                     <td>{{ row.destination_description }}</td>
                                     <td>{{ row.reference }}</td>
-                                    <td class="text-right">{{ row.payment }}</td>
+                                    <td class="text-right">{{ row.payment | numberFormat }}</td>
                                     <td class="series-table-actions text-right">
                                         <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
                                     </td>
@@ -84,17 +84,17 @@
                             <tfoot>
                             <tr>
                                 <td colspan="5" class="text-right">TOTAL PAGADO</td>
-                                <td class="text-right">{{ remission.total_paid }}</td>
+                                <td class="text-right">{{ remission.total_paid | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right">TOTAL A PAGAR</td>
-                                <td class="text-right">{{ remission.total }}</td>
+                                <td class="text-right">{{ remission.total | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right">PENDIENTE DE PAGO</td>
-                                <td class="text-right">{{ remission.total_difference }}</td>
+                                <td class="text-right">{{ remission.total_difference | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             </tfoot>

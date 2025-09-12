@@ -23,8 +23,8 @@
                             <td>{{row.user_name}}</td>
                             <td class="text-center">{{row.type}}</td>
                             <td class="text-center">{{row.amount}}</td> 
-                            <td class="text-center">{{row.total_utility}}</td> 
-                            <td class="text-center">{{row.commission}}</td> 
+                            <td class="text-center">{{row.total_utility | numberFormat}}</td> 
+                            <td class="text-center">{{row.commission | numberFormat}}</td> 
                         </tr>
                         
                     </data-table>

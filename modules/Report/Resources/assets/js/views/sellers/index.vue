@@ -84,18 +84,18 @@
                 <el-table-column prop="customer_name" label="Cliente" sortable="custom" />
                 <el-table-column prop="total" label="Total" sortable="custom">
                     <template slot-scope="scope">
-                        {{ formatNumber(scope.row.total) }}
+                        {{ scope.row.total | numberFormat }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="commission" label="Comisión" sortable="custom">
                     <template slot-scope="scope">
-                        {{ formatNumber(scope.row.commission) }}
+                        {{ scope.row.commission | numberFormat }}
                     </template>
                 </el-table-column>
             </el-table>
             <div v-if="records.length" class="mt-2 text-right font-weight-bold">
-                Total general: {{ formatNumber(totals.total_sum) }} &nbsp; | &nbsp; Comisión total: {{
-                formatNumber(totals.commission_sum) }}
+                Total general: {{ totals.total_sum | numberFormat }} &nbsp; | &nbsp; Comisión total: {{
+                totals.commission_sum | numberFormat }}
             </div>
             <el-pagination v-if="pagination.total > pagination.per_page" class="mt-3" background
                 layout="total, prev, pager, next" :total="pagination.total" :page-size="pagination.per_page"
@@ -261,10 +261,6 @@ export default {
         handleSortChange({ prop, order }) {
             this.sort = { prop, order }
             this.getRecords(1)
-        },
-        formatNumber(value) {
-            if (value == null) return ''
-            return Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         },
     }
 }

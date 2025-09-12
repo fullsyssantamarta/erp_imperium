@@ -211,7 +211,7 @@
                             <br />Pagado
                           </h4>
                           <div class="info">
-                            <strong class="amount text-info">{{ formatNumber(sale_note.totals.total_payment) }}</strong>
+                            <strong class="amount text-info">{{ sale_note.totals.total_payment | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -224,7 +224,7 @@
                           <div class="info">
                             <strong
                               class="amount text-danger"
-                            >{{ formatNumber(sale_note.totals.total_to_pay) }}</strong>
+                            >{{ sale_note.totals.total_to_pay | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -235,7 +235,7 @@
                             <br />&nbsp;
                           </h4>
                           <div class="info">
-                            <strong class="amount">{{ formatNumber(sale_note.totals.total) }}</strong>
+                            <strong class="amount">{{ sale_note.totals.total | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -266,7 +266,7 @@
                             <br />Pagado
                           </h4>
                           <div class="info">
-                            <strong class="amount text-info">{{ formatNumber(document.totals.total_payment) }}</strong>
+                            <strong class="amount text-info">{{ document.totals.total_payment | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -277,7 +277,7 @@
                             <br />por Pagar
                           </h4>
                           <div class="info">
-                            <strong class="amount text-danger">{{ formatNumber(document.totals.total_to_pay) }}</strong>
+                            <strong class="amount text-danger">{{ document.totals.total_to_pay | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -288,7 +288,7 @@
                             <br />&nbsp;
                           </h4>
                           <div class="info">
-                            <strong class="amount">{{ formatNumber(document.totals.total) }}</strong>
+                            <strong class="amount">{{ document.totals.total | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -319,7 +319,7 @@
                             <br />Pagado
                           </h4>
                           <div class="info">
-                            <strong class="amount text-info">{{ formatNumber(document_pos.totals.total_payment) }}</strong>
+                            <strong class="amount text-info">{{ document_pos.totals.total_payment | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -330,7 +330,7 @@
                             <br />por Pagar
                           </h4>
                           <div class="info">
-                            <strong class="amount text-danger">{{ formatNumber(document_pos.totals.total_to_pay) }}</strong>
+                            <strong class="amount text-danger">{{ document_pos.totals.total_to_pay | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -341,7 +341,7 @@
                             <br />&nbsp;
                           </h4>
                           <div class="info">
-                            <strong class="amount">{{ formatNumber(document_pos.totals.total) }}</strong>
+                            <strong class="amount">{{ document_pos.totals.total | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -665,7 +665,7 @@
                           <td>{{ row.internal_id }}</td>
                           <td>{{ row.description }}</td>
                           <td class="text-right">{{ row.move_quantity }}</td>
-                          <td class="text-right">{{ formatNumber(row.total) }}</td>
+                          <td class="text-right">{{ row.total | numberFormat }}</td>
                         </tr>
                       </template>
                     </tbody>
@@ -711,7 +711,7 @@
                             <small v-text="row.number"></small>
                           </td>
                           <td class="text-right">{{ row.transaction_quantity }}</td>
-                          <td class="text-right">{{ formatNumber(row.total) }}</td>
+                          <td class="text-right">{{ row.total | numberFormat }}</td>
                         </tr>
                       </template>
                     </tbody>
@@ -833,10 +833,6 @@ export default {
   },
 
   methods: {
-    formatNumber(number) {
-      if (number === undefined || number === null) return '0.00';
-      return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
-    },
     changeFilterItem(){
       this.form.item_id = null
       this.loadDataUtilities()

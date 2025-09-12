@@ -62,11 +62,11 @@
                         <!-- <td class="text-center">{{ row.acknowledgment_received }}</td> -->
                         <td class="text-center">{{ row.currency_name }}</td>
 
-                        <td class="text-right">{{ getFormatDecimal(row.sale) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_discount) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_tax) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.subtotal) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total) }}</td>
+                        <td class="text-right">{{ row.sale | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_discount | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_tax | numberFormat }}</td>
+                        <td class="text-right">{{ row.subtotal | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
 
                         <td class="text-center">
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"

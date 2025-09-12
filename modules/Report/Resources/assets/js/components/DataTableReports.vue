@@ -141,7 +141,7 @@
                         <tfoot v-if="colspan">
                             <tr>
                                 <td class="text-right" :colspan="colspan">Total calculado:</td>
-                                <td class="text-right">$ {{ returnTotal }}</td>
+                                <td class="text-right">$ {{ returnTotal | numberFormat }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -209,10 +209,9 @@
             }
         },
         computed: {
-            returnTotal()
-            {
-                let total = _.sum(this.records.map(x=> parseFloat(x.total))).toFixed(3)
-                return this.formatNumber(total)
+            returnTotal() {
+                let total = _.sum(this.records.map(x => parseFloat(x.total)));
+                return total;
             }
         },
         created() {
@@ -242,9 +241,6 @@
 
         },
         methods: {
-            formatNumber(number) {
-                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
-            },
             changePersons(){
                 // this.form.type_person = this.resource === 'reports/sales' ? 'customers':'suppliers'
             },
