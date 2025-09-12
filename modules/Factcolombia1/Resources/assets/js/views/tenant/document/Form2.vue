@@ -968,7 +968,7 @@ export default {
             // this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
             this.form.type_invoice_id = (this.type_invoices.length > 0) ? this.type_invoices[0].id : null
             this.form.payment_form_id = (this.payment_forms.length > 0) ? this.payment_forms[0].id : null;
-            this.form.payment_method_id = (this.payment_methods.length > 0) ? this.payment_methods[0].id : null;
+            this.form.payment_method_id = (this.payment_methods.length > 0) ? this.payment_methods[9].id : null;
             // this.form.operation_type_id = (this.operation_types.length > 0)?this.operation_types[0].id:null
             // this.selectDocumentType()
             // this.changeEstablishment()
