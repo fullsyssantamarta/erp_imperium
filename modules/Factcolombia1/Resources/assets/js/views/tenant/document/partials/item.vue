@@ -360,9 +360,9 @@
                 if (isNaN(num)) return val;
                 let parts = val.split('.');
                 if (parts.length > 1) {
-                    return parseInt(parts[0]).toLocaleString('es-CO') + '.' + parts[1];
+                    return parseInt(parts[0]).toLocaleString('en-US') + '.' + parts[1];
                 } else {
-                    return parseInt(val).toLocaleString('es-CO');
+                    return parseInt(val).toLocaleString('en-US');
                 }
             },
         },
