@@ -755,6 +755,7 @@ class DocumentController extends Controller
             if ($request->filled('foot_note')) {
                 $service_invoice['foot_note'] = $request->foot_note;
             }
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             // if ($request->filled('notes')) {
             //     $service_invoice['notes'] = $request->notes;
             // }
@@ -1236,6 +1237,7 @@ class DocumentController extends Controller
             $service_invoice = $request->service_invoice;
 
             $service_invoice['number'] = $correlative_api;
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             $service_invoice['prefix'] = $request->prefix;
             $service_invoice['resolution_number'] = $request->resolution_number;
             $service_invoice['head_note'] = "V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R";

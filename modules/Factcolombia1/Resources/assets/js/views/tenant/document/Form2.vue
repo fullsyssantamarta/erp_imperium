@@ -155,6 +155,9 @@
                                         <el-option label="Carta" value="2"></el-option>
                                         <el-option label="Tirilla" value="3"></el-option>
                                     </el-select>
+                                    <el-checkbox v-model="form.is_tirilla2" v-if="form.format_print === '3'">
+                                        Usar plantilla alternativa de tirilla
+                                    </el-checkbox>
                                     <small class="form-control-feedback" v-if="errors.format_print">{{
                                         errors.format_print }}</small>
                                 </div>
@@ -903,6 +906,7 @@ export default {
             else
                 this.health_sector = false
             this.form = {
+                is_tirilla2: false,
                 type_document_id: null,
                 resolution_id: null,
                 currency_id: this.invoice ? this.invoice.currency_id : null,
@@ -1214,6 +1218,12 @@ export default {
             if (!this.form.format_print) {
                 return this.$message.error('Debe seleccionar un Formato de Impresión')
             }
+            // Establecer el valor booleano para `is_tirilla2`
+            if (this.form.format_print === "3") {
+                this.form.is_tirilla2 = this.form.format_print === "3" && this.form.is_tirilla2
+            } else {
+                this.form.is_tirilla2 = false; // O puedes: delete this.form.is_tirilla2;
+            }
             if (!this.validateResolution()) {
                 // La validación falló, detener la ejecución del método
                 return;
@@ -1296,6 +1306,12 @@ export default {
             //validacion de format_print
             if (!this.form.format_print) {
                 return this.$message.error('Debe seleccionar un Formato de Impresión')
+            }
+            // Establecer el valor booleano para `is_tirilla2`
+            if (this.form.format_print === "3") {
+                this.form.is_tirilla2 = this.form.format_print === "3" && this.form.is_tirilla2
+            } else {
+                this.form.is_tirilla2 = false; // O puedes: delete this.form.is_tirilla2;
             }
             if (this.health_sector) {
                 if (this.form.health_users.length == 0)
