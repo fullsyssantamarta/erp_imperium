@@ -308,7 +308,7 @@ trait CompanyTrait
             ->table('co_taxes')
             ->where('id', 2)
             ->update([
-                'type_tax_id' => 2
+                'type_tax_id' => 1
             ]);
 
         DB::connection('tenant')

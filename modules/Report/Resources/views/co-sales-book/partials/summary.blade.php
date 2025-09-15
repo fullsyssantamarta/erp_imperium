@@ -1,5 +1,6 @@
 @php
     use Modules\Factcolombia1\Helpers\DocumentHelper;
+    use App\CoreFacturalo\Helpers\Number\NumberLetter;
 @endphp
 <table class="">
     <thead>
@@ -64,9 +65,9 @@
                 <td class="celda">{{ $first_row['type_document_name'] }} <br/> {{ $record['prefix'] }}-{{$record['last_document']->number}}</td>
 
                 {{-- TOTALES --}}
-                <td class="celda text-right-td">{{ number_format($net_total, 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ number_format($total, 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ number_format($total_exempt, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat($net_total, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat($total, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat($total_exempt, 2, '.', '') }}</td>
                 
                 {{-- IMPUESTOS --}}
                 @foreach($taxes as &$tax)
@@ -91,8 +92,8 @@
                         $tax->global_tax_amount += $sum_tax_amount;
                     @endphp
                     
-                    <td class="celda text-right-td">{{ number_format($sum_taxable_amount, 2, '.', '') }}</td>
-                    <td class="celda text-right-td">{{ number_format($sum_tax_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">{{ NumberLetter::numberFormat($sum_taxable_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">{{ NumberLetter::numberFormat($sum_tax_amount, 2, '.', '') }}</td>
                 @endforeach
             </tr>
         @endforeach
@@ -112,7 +113,7 @@
     <tbody>
         <tr>
             <td class="celda">TOTAL VENTAS EXENTAS</td>
-            <td class="celda text-right-td">{{ DocumentHelper::applyNumberFormat($global_total_exempt) }}</td>
+            <td class="celda text-right-td">{{ NumberLetter::numberFormat($global_total_exempt) }}</td>
             <td class="celda text-right-td">0.00</td>
         </tr>
 
@@ -123,8 +124,8 @@
                     {{-- <br> --}}
                     - {{ $tax->name }} ({{ $tax->rate }}%)
                 </td>
-                <td class="celda text-right-td">{{ DocumentHelper::applyNumberFormat($tax->global_taxable_amount) }}</td>
-                <td class="celda text-right-td">{{ DocumentHelper::applyNumberFormat($tax->global_tax_amount) }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat($tax->global_taxable_amount) }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat($tax->global_tax_amount) }}</td>
             </tr>
         @endforeach
     </tbody>

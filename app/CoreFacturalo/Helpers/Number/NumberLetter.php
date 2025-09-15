@@ -155,4 +155,27 @@ class NumberLetter
 
         return $output;
     }
+
+    public static function numberFormat($value)
+    {
+        if ($value === null || $value === '') return '0,00';
+
+        // Si es string, intenta convertir formatos comunes
+        if (is_string($value)) {
+            // 1,234.56 -> 1234.56
+            if (preg_match('/^\d{1,3}(,\d{3})*\.\d{2}$/', $value)) {
+                $value = str_replace(',', '', $value);
+            }
+            // 1.234,56 -> 1234.56
+            elseif (preg_match('/^\d{1,3}(\.\d{3})*,\d{2}$/', $value)) {
+                $value = str_replace('.', '', $value);
+                $value = str_replace(',', '.', $value);
+            }
+        }
+
+        if (!is_numeric($value)) return '0,00';
+
+        // Formato colombiano: 1.234,56
+        return number_format((float)$value, 2, ',', '.');
+    }
 }

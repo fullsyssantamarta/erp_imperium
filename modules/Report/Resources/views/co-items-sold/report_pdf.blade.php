@@ -19,6 +19,7 @@
         @include('report::co-items-sold.partials.filters')
 
         @php
+            use App\CoreFacturalo\Helpers\Number\NumberLetter;
             // 1. Identifica los IDs de facturas anuladas (las que tienen nota de crédito de anulación)
             $anulaciones = $records->filter(function($item) {
                 $doc = $item->document;
@@ -126,25 +127,27 @@
                                     <td class="celda">{{ $first_item['internal_id'] }}</td>
                                     <td class="celda">{{ $first_item['name'] }}</td>
                                     <td class="celda">{{ $quantity }}</td>
-                                    <td class="celda">{{ $cost }}</td>
-                                    <td class="celda">{{ $net_value }}</td>
-                                    <td class="celda">{{ $utility }}</td>
-                                    <td class="celda">{{ ($utility > 0 && $net_value > 0) ? number_format(($utility * 100) / $net_value, 2) : 0 }}</td>
-                                    <td class="celda">{{ $total_tax_item }}</td>
-                                    <td class="celda">{{ $discount }}</td>
-                                    <td class="celda">{{ $total_item }}</td>
+                                    <td class="celda">{{ NumberLetter::numberFormat($cost) }}</td>
+                                    <td class="celda">{{ NumberLetter::numberFormat($net_value) }}</td>
+                                    <td class="celda">{{ NumberLetter::numberFormat($utility) }}</td>
+                                    <td class="celda">
+                                        {{ ($utility > 0 && $net_value > 0) ? number_format(($utility * 100) / $net_value) : '0,00' }}
+                                    </td>
+                                    <td class="celda">{{ NumberLetter::numberFormat($total_tax_item) }}</td>
+                                    <td class="celda">{{ NumberLetter::numberFormat($discount) }}</td>
+                                    <td class="celda">{{ NumberLetter::numberFormat($total_item) }}</td>
                                 </tr>
                             @endforeach
                             <tr>
                                 <td colspan="3" class="celda text-right-td">TOTALES </td>
                                 <td class="celda">{{ $total_quantity }}</td>
-                                <td class="celda">{{ number_format($total_cost, 2) }}</td>
-                                <td class="celda">{{ number_format($total_net_value, 2) }}</td>
-                                <td class="celda">{{ number_format($total_utility, 2) }}</td>
+                                <td class="celda">{{ NumberLetter::numberFormat($total_cost, 2) }}</td>
+                                <td class="celda">{{ NumberLetter::numberFormat($total_net_value, 2) }}</td>
+                                <td class="celda">{{ NumberLetter::numberFormat($total_utility, 2) }}</td>
                                 <td class="celda">{{ ($total_utility > 0 && $total_net_value > 0) ? number_format(($total_utility * 100) / $total_net_value, 2) : 0 }}</td>
-                                <td class="celda">{{ number_format($total_tax, 2) }}</td>
-                                <td class="celda">{{ number_format($total_discount, 2) }}</td>
-                                <td class="celda">{{ number_format($total, 2) }}</td>
+                                <td class="celda">{{ NumberLetter::numberFormat($total_tax, 2) }}</td>
+                                <td class="celda">{{ NumberLetter::numberFormat($total_discount, 2) }}</td>
+                                <td class="celda">{{ NumberLetter::numberFormat($total, 2) }}</td>
                             </tr>
                         </tbody>
                     </table>

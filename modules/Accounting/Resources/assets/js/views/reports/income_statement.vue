@@ -42,15 +42,15 @@
                     <table class="table table-bordered table-striped">
                         <tr>
                             <td class="text-bold">Utilidad Bruta</td>
-                            <td class="text-right">{{ gross_profit }}</td>
+                            <td class="text-right">{{ gross_profit | numberFormat }}</td>
                         </tr>
                         <tr>
                             <td class="text-bold">Utilidad Operativa</td>
-                            <td class="text-right">{{ operating_profit }}</td>
+                            <td class="text-right">{{ operating_profit | numberFormat }}</td>
                         </tr>
                         <tr>
                             <td class="text-bold">Resultado Neto</td>
-                            <td class="text-right">{{ net_profit }}</td>
+                            <td class="text-right">{{ net_profit | numberFormat }}</td>
                         </tr>
                     </table>
                 </div>

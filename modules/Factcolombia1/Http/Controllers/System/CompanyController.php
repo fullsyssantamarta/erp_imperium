@@ -175,19 +175,30 @@ class CompanyController extends Controller
         ];
 
     }
+    protected $nameclient;
+    public function setNameClient($name)
+    {
+        $this->nameclient = $name;
+    }
 
     public function searchName($nit)
     {
         $client = new \Goutte\Client();
         $crawler = $client->request('GET', "https://www.einforma.co/servlet/app/portal/ENTP/prod/LISTA_EMPRESAS/razonsocial/{$nit}");
-        $name = null;
-        $crawler->filter('h1[class="title01"]')->each(function($node) use (&$name) {
+        $crawler->filter('h1[class="title01"]')->each(function($node) {
             $text = $node->text();
             $marker = 'Situación de la empresa:';
-            $name = (strpos($text, $marker) !== false) ? trim(substr($text, 0, strpos($text, $marker))) : trim($text);
+            if (strpos($text, $marker) !== false) {
+                $name = substr($text, 0, strpos($text, $marker));
+            } else {
+                $name = $text;
+            }
+            $name = trim($name);
+            $this->setNameClient($name);
         });
+
         return [
-            'name' => $name,
+            'name' => $this->nameclient
         ];
     }
 

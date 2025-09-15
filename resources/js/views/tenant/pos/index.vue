@@ -440,12 +440,12 @@
                                 <tr class="font-weight-semibold  m-0" v-if="form.sale > 0">
                                     <td class="font-weight-semibold">SUBTOTAL</td>
                                     <td class="font-weight-semibold">:</td>
-                                    <td class="text-right text-blue">{{ formatCurrencyCOP(form.sale) }}</td>
+                                    <td class="text-right text-blue">{{ form.sale | numberFormat }}</td>
                                 </tr>
                                 <tr class="font-weight-semibold  m-0" v-if="form.total_discount > 0">
                                     <td class="font-weight-semibold">TOTAL DESCUENTO (-)</td>
                                     <td class="font-weight-semibold">:</td>
-                                    <td class="text-right text-blue">{{ formatCurrencyCOP(form.total_discount) }}</td>
+                                    <td class="text-right text-blue">{{ form.total_discount | numberFormat }}</td>
                                 </tr>
                                 <template v-for="(tax, index) in form.taxes">
                                     <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index" class="font-weight-semibold  m-0">
@@ -453,13 +453,13 @@
                                             {{tax.name}}[+]
                                         </td>
                                         <td class="font-weight-semibold">:</td>
-                                        <td class="text-right text-blue">{{ formatCurrencyCOP(tax.total) }}</td>
+                                        <td class="text-right text-blue">{{ tax.total | numberFormat }}</td>
                                     </tr>
                                 </template>
                                 <tr class="font-weight-semibold  m-0" v-if="form.subtotal > 0">
                                     <td class="font-weight-semibold">TOTAL VENTA</td>
                                     <td class="font-weight-semibold">:</td>
-                                    <td class="text-right text-blue">{{ formatCurrencyCOP(form.subtotal) }}</td>
+                                    <td class="text-right text-blue">{{ form.subtotal | numberFormat }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -470,7 +470,7 @@
                             <span class="font-weight-semibold">PAGO</span>
                         </div>
                         <div class="col-6 text-center">
-                            <h5 class="font-weight-semibold h5">{{ formatCurrencyCOP(form.total) }}</h5>
+                            <h5 class="font-weight-semibold h5">{{ form.total | numberFormat }}</h5>
                         </div>
                     </div>
                 </div>
@@ -2050,11 +2050,6 @@ export default {
         handleResize() {
             this.isMobile = window.innerWidth <= 1800;
             this.windowWidth = window.innerWidth; // <-- actualizar para computada
-        },
-        formatCurrencyCOP(value) {
-            if (isNaN(value)) return "$ 0.00";
-            let formatted = Number(value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            return "$ " + formatted;
         },
         getFormatDecimal(value) {
             return Math.round(Number(value));

@@ -57,10 +57,10 @@
                                         <td colspan="7">
                                             <span class="font-weight-bold">Cuenta contable:</span> {{ group.account_code }} {{ group.account_name }}
                                         </td>
-                                        <td>{{ group.balance_initial }}</td>
-                                        <td>{{ group.total_debit }}</td>
-                                        <td>{{ group.total_credit }}</td>
-                                        <td>{{ group.balance_final }}</td>
+                                        <td>{{ group.balance_initial | numberFormat }}</td>
+                                        <td>{{ group.total_debit | numberFormat }}</td>
+                                        <td>{{ group.total_credit | numberFormat }}</td>
+                                        <td>{{ group.balance_final | numberFormat }}</td>
                                     </tr>
                                     <tr v-for="row in group.details" :key="row.id">
                                         <td>{{ row.account_code }}</td>
@@ -71,16 +71,16 @@
                                         <td>{{ row.document_info && row.document_info.third_party_name }}</td>
                                         <td>{{ row.description }}</td>
                                         <td class="text-right">0</td>
-                                        <td class="text-right">{{ row.debit }}</td>
-                                        <td class="text-right">{{ row.credit }}</td>
+                                        <td class="text-right">{{ row.debit | numberFormat }}</td>
+                                        <td class="text-right">{{ row.credit | numberFormat }}</td>
                                         <td class="text-right">0</td>
                                     </tr>
                                 </template>
                                 <tr>
                                     <td>TOTAL</td>
                                     <td colspan="7"></td>
-                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_debit, 0)).toFixed(2) }}</td>
-                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_credit, 0)).toFixed(2) }}</td>
+                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_debit, 0)).toFixed(2) | numberFormat }}</td>
+                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_credit, 0)).toFixed(2) | numberFormat }}</td>
                                     <td></td>
                                 </tr>
                             </tbody>

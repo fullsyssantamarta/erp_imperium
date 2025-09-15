@@ -60,13 +60,13 @@
                     <div class="col-lg-6 bg-light">
                         <div class="d-flex justify-content-between">
                             <h4>Activos</h4>
-                            <h4 class="text-right">Total: {{ accounts.totals.assets || 0.00 }}</h4>
+                            <h4 class="text-right">Total: {{ accounts.totals.assets || 0.00 | numberFormat }}</h4>
                         </div>
                     </div>
                     <div class="col-lg-6 bg-light">
                         <div class="d-flex justify-content-between">
                             <h4>Pasivos + Patrimonio</h4>
-                            <h4 class="text-right">Total: {{ accounts.totals.liabilities + accounts.totals.equity || 0.00 }}</h4>
+                            <h4 class="text-right">Total: {{ accounts.totals.liabilities + accounts.totals.equity || 0.00 | numberFormat }}</h4>
                         </div>
                     </div>
                 </div>

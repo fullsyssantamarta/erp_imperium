@@ -1,3 +1,6 @@
+@php
+    use App\CoreFacturalo\Helpers\Number\NumberLetter;
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -59,23 +62,23 @@
                     <td colspan="7">
                         <strong>Cuenta contable:</strong> {{ $group['account_code'] }} {{ $group['account_name'] }}
                     </td>
-                    <td>{{ $group['balance_initial'] }}</td>
-                    <td>{{ $group['total_debit'] }}</td>
-                    <td>{{ $group['total_credit'] }}</td>
-                    <td>{{ $group['balance_final'] }}</td>
+                    <td>{{ NumberLetter::numberFormat($group['balance_initial']) }}</td>
+                    <td>{{ NumberLetter::numberFormat($group['total_debit']) }}</td>
+                    <td>{{ NumberLetter::numberFormat($group['total_credit']) }}</td>
+                    <td>{{ NumberLetter::numberFormat($group['balance_final']) }}</td>
                 </tr>
                     @foreach ($group['details'] as $row)
                         <tr>
                             <td>{{ $row['account_code'] }}</td>
                             <td>{{ $row['account_name'] }}</td>
-                            <td>{{ $row['document_info']['number'] }}</td>
+                            <td>{{ $row['document_info']['number'] ?? '' }}</td>
                             <td>{{ $row['date'] }}</td>
-                            <td>{{ $row['document_info']['third_party_number'] }}</td>
-                            <td>{{ $row['document_info']['third_party_name'] }}</td>
+                            <td>{{ $row['document_info']['third_party_number'] ?? '' }}</td>
+                            <td>{{ $row['document_info']['third_party_name'] ?? '' }}</td>
                             <td>{{ $row['description'] }}</td>
                             <td class="text-right">0</td>
-                            <td class="text-right">{{ $row['debit'] }}</td>
-                            <td class="text-right">{{ $row['credit'] }}</td>
+                            <td class="text-right">{{ NumberLetter::numberFormat($row['debit']) }}</td>
+                            <td class="text-right">{{ NumberLetter::numberFormat($row['credit']) }}</td>
                             <td class="text-right">0</td>
                         </tr>
                     @endforeach
@@ -89,8 +92,8 @@
                 <td></td>
                 <td></td>
                 <td class="text-right"></td>
-                <td class="text-right">{{ $total_debit }}</td>
-                <td class="text-right">{{ $total_credit }}</td>
+                <td class="text-right">{{ NumberLetter::numberFormat($total_debit) }}</td>
+                <td class="text-right">{{ NumberLetter::numberFormat($total_credit) }}</td>
                 <td class="text-right"></td>
             </tr>
         </tbody>

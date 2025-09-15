@@ -26,7 +26,7 @@
                         <td>{{ index }}</td>
                         <td>{{ row.user_name }}</td> 
                         <td>{{ row.type }}</td>
-                        <td>{{ row.amount }}</td>
+                        <td>{{ row.amount | numberFormat }}</td>
                         <td class="text-right">
                             <template v-if="typeUser === 'admin'">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>

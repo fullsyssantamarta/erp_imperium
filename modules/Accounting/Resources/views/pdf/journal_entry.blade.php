@@ -2,6 +2,7 @@
     $number = $journalEntry->journal_prefix->prefix . '-' . $journalEntry->number;
     $details = $journalEntry->details;
     $statuses = [ 'rejected' => 'Rechazado', 'draft' => 'Borrador', 'posted' => 'Aprobado'];
+    use App\CoreFacturalo\Helpers\Number\NumberLetter;
 @endphp
 
 <!DOCTYPE html>
@@ -160,14 +161,14 @@
                 <tr>
                     <td class="account-code">{{ $detail->chartOfAccount->code }}</td>
                     <td>{{ $detail->chartOfAccount->name }}</td>
-                    <td class="text-right amount">{{ number_format($detail->debit, 2) }}</td>
-                    <td class="text-right amount">{{ number_format($detail->credit, 2) }}</td>
+                    <td class="text-right amount">{{ NumberLetter::numberFormat($detail->debit, 2) }}</td>
+                    <td class="text-right amount">{{ NumberLetter::numberFormat($detail->credit, 2) }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td colspan="2" class="text-right">Total</td>
-                <td class="text-right total-amount">{{ number_format($details->sum('debit'), 2) }}</td>
-                <td class="text-right total-amount">{{ number_format($details->sum('credit'), 2) }}</td>
+                <td class="text-right total-amount">{{ NumberLetter::numberFormat($details->sum('debit'), 2) }}</td>
+                <td class="text-right total-amount">{{ NumberLetter::numberFormat($details->sum('credit'), 2) }}</td>
             </tr>
         </tbody>
     </table>

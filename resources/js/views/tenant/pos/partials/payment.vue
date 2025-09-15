@@ -23,7 +23,7 @@
                         <div class="col-4 p-l-0">
                             <!-- <p class="font-weight-semibold m-b-0">{{currencyTypeActive.symbol}} 240.00</p> -->
                             <h4 class="font-weight-semibold m-0 text-right">{{currencyTypeActive.symbol}} {{
-                                getFormatDecimal(item.total) }}</h4>
+                                item.total | numberFormat }}</h4>
                         </div>
                     </div>
                 </template>
@@ -37,7 +37,7 @@
                     </div>
                     <div class="col-sm-6 py-1 text-right">
                         <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}} {{
-                            getFormatDecimal(form.sale) }}</p>
+                            form.sale | numberFormat }}</p>
                     </div>
                 </div>
                 <div class="row m-0 p-0 bg-white h-10 d-flex align-items-center" v-if="discount_amount > 0">
@@ -46,7 +46,7 @@
                     </div>
                     <div class="col-sm-6 py-1 text-right">
                         <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}}
-                            {{getFormatDecimal(discount_amount)}}</p>
+                            {{discount_amount | numberFormat}}</p>
                     </div>
                 </div>
 
@@ -58,7 +58,7 @@
                         </div>
                         <div class="col-sm-4 py-1 text-right">
                             <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}}
-                                {{getFormatDecimal(tax.total)}}</p>
+                                {{tax.total | numberFormat}}</p>
                         </div>
                     </div>
                 </template>
@@ -69,7 +69,7 @@
                     </div>
                     <div class="col-sm-6 py-1 text-right">
                         <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}}
-                            {{getFormatDecimal(form.subtotal)}}</p>
+                            {{form.subtotal | numberFormat}}</p>
                     </div>
                 </div>
 
@@ -79,7 +79,7 @@
                     </div>
                     <div class="col-sm-6 py-2 text-right">
                         <p class="font-weight-semibold mb-0 text-white">{{currencyTypeActive.symbol}} {{
-                            getFormatDecimal(form.total) }}</p>
+                            form.total | numberFormat }}</p>
                     </div>
                 </div>
             </div>
@@ -226,7 +226,7 @@
                     <div class="card card-default">
                         <div class="card-body text-center">
                             <p class="my-0"><small>Monto a cobrar</small></p>
-                            <h1 class="mb-2 mt-0">{{currencyTypeActive.symbol}} {{ getFormatDecimal(form.total) }}</h1>
+                            <h1 class="mb-2 mt-0">{{currencyTypeActive.symbol}} {{ form.total | numberFormat }}</h1>
                         </div>
                     </div>
                 </div>
@@ -251,7 +251,7 @@
                                             <template slot="prepend">{{currencyTypeActive.symbol}}</template>
                                         </el-input> -->
                                         <h4 class="control-label font-weight-semibold m-0 text-center m-b-0">
-                                            {{currencyTypeActive.symbol}} {{ getFormatDecimal(difference)}}</h4>
+                                            {{currencyTypeActive.symbol}} {{ difference | numberFormat }}</h4>
                                     </div>
                                 </div>
                             </div>
@@ -338,7 +338,7 @@
                                             </div>
                                             <div class="col-lg-5" :key="pay.id">
                                                 <label><strong>{{currencyTypeActive.symbol}} {{
-                                                        getFormatDecimal(pay.payment) }}</strong> </label>
+                                                        pay.payment | numberFormat }}</strong> </label>
                                             </div>
                                         </template>
                                     </div>
@@ -348,32 +348,32 @@
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(2000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(2000)}}</button>
+                                                {{2000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(5000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(5000)}}</button>
+                                                {{5000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(10000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(10000)}}</button>
+                                                {{10000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(20000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(20000)}}</button>
+                                                {{20000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(50000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(50000)}}</button>
+                                                {{50000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(100000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(100000)}}</button>
+                                                {{100000 | numberFormat}}</button>
                                         </div>
                                     </div>
                                 </div>

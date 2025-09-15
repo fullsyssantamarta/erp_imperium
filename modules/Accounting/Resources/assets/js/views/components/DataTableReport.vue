@@ -19,14 +19,15 @@
                         <td v-for="column in columns"
                             :key="column.field"
                             :class="{ 'text-right': column.field === 'saldo' }">
-                            {{ row[column.field] }}
+                            <span v-if="column.field === 'saldo'">{{ row[column.field] | numberFormat }}</span>
+                            <span v-else>{{ row[column.field] }}</span>
                         </td>
                     </tr>
                     <tr>
                         <td :colspan="columns.length - 1" class="text-right">
                             <strong>Total</strong>
                         </td>
-                        <td class="text-right">{{ total }}</td>
+                        <td class="text-right">{{ total | numberFormat }}</td>
                     </tr>
                 </tbody>
             </table>

@@ -32,8 +32,8 @@
                                         <td>{{ row.date }}</td>
                                         <td>{{ row.chart_account_code }}</td>
                                         <td>{{ row.chart_account_name }}</td>
-                                        <td>{{ row.debit }}</td>
-                                        <td>{{ row.credit }}</td>
+                                        <td>{{ row.debit | numberFormat }}</td>
+                                        <td>{{ row.credit | numberFormat }}</td>
                                     </template>
                                 </tr>
                             </tbody>
@@ -41,10 +41,10 @@
                                 <tr>
                                     <td colspan="4" class="text-right"><b>Total</b></td>
                                     <td>
-                                        <b>{{ records.reduce((sum, r) => sum + Number(r.debit || 0), 0).toFixed(2) }}</b>
+                                        <b>{{ records.reduce((sum, r) => sum + Number(r.debit || 0), 0).toFixed(2) | numberFormat }}</b>
                                     </td>
                                     <td>
-                                        <b>{{ records.reduce((sum, r) => sum + Number(r.credit || 0), 0).toFixed(2) }}</b>
+                                        <b>{{ records.reduce((sum, r) => sum + Number(r.credit || 0), 0).toFixed(2) | numberFormat }}</b>
                                     </td>
                                 </tr>
                             </tfoot>

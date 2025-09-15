@@ -1,3 +1,6 @@
+@php
+    use App\CoreFacturalo\Helpers\Number\NumberLetter;
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -46,13 +49,13 @@
                     <tr>
                         <td>{{ $row['code'] }}</td>
                         <td>{{ $row['name'] }}</td>
-                        <td>{{ number_format($row['saldo'], 2) }}</td>
+                        <td>{{ NumberLetter::numberFormat($row['saldo'], 2) }}</td>
                     </tr>
                 @endif
             @endforeach
             <tr class="totals">
                 <td colspan="2">Total Ingresos</td>
-                <td>{{ number_format($totals['revenue'], 2) }}</td>
+                <td>{{ NumberLetter::numberFormat($totals['revenue'], 2) }}</td>
             </tr>
         </tbody>
     </table>
@@ -72,13 +75,13 @@
                     <tr>
                         <td>{{ $row['code'] }}</td>
                         <td>{{ $row['name'] }}</td>
-                        <td>{{ number_format($row['saldo'], 2) }}</td>
+                        <td>{{ NumberLetter::numberFormat($row['saldo'], 2) }}</td>
                     </tr>
                 @endif
             @endforeach
             <tr class="totals">
                 <td colspan="2">Total Gastos</td>
-                <td>{{ number_format($totals['expense'], 2) }}</td>
+                <td>{{ NumberLetter::numberFormat($totals['expense'], 2) }}</td>
             </tr>
         </tbody>
     </table>
@@ -98,13 +101,13 @@
                     <tr>
                         <td>{{ $row['code'] }}</td>
                         <td>{{ $row['name'] }}</td>
-                        <td>{{ number_format($row['saldo'], 2) }}</td>
+                        <td>{{ NumberLetter::numberFormat($row['saldo'], 2) }}</td>
                     </tr>
                 @endif
             @endforeach
             <tr class="totals">
                 <td colspan="2">Total costos</td>
-                <td>{{ number_format($totals['cost'], 2) }}</td>
+                <td>{{ NumberLetter::numberFormat($totals['cost'], 2) }}</td>
             </tr>
         </tbody>
     </table>
@@ -119,9 +122,9 @@
         </thead>
         <tbody>
             <tr>
-                <td>{{{ $gross_profit }}}</td>
-                <td>{{ $operating_profit }}</td>
-                <td>{{ $net_profit }}</td>
+                <td>{{ NumberLetter::numberFormat($gross_profit) }}</td>
+                <td>{{ NumberLetter::numberFormat($operating_profit) }}</td>
+                <td>{{ NumberLetter::numberFormat($net_profit) }}</td>
             </tr>
         </tbody>
     </table>

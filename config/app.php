@@ -110,6 +110,8 @@ return [
 
     'limite_reseller' => env('LIMITE_RESELLER', 999),
 
+    'limit_documents' => env('LIMIT_DOCUMENTS', 0),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
