@@ -25,14 +25,6 @@
                                         <template v-if="!isAdjustNote">
                                             <a href="#" @click.prevent="showDialogNewWorker = true">[+ Nuevo]</a>
                                         </template>
-
-                                        <el-checkbox
-                                            :indeterminate="isIndeterminate"
-                                            v-model="checkAll"
-                                            @change="handleCheckAll"
-                                            style="margin-left: 10px;">
-                                            Seleccionar todos
-                                        </el-checkbox>
                                     </label>
                                     <el-select
                                         v-model="form.worker_id"
@@ -51,6 +43,13 @@
                                     </el-select>
                                     <small class="form-control-feedback" v-if="errors.worker_id" v-text="errors.worker_id[0]"></small>
                                 </div>
+                                <el-checkbox
+                                    :indeterminate="isIndeterminate"
+                                    v-model="checkAll"
+                                    @change="handleCheckAll"
+                                    style="margin-left: 10px;">
+                                    Seleccionar todos
+                                </el-checkbox>
                             </div>
 
 

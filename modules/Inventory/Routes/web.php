@@ -15,6 +15,7 @@ if($hostname) {
                 Route::get('record/{warehouse}', 'WarehouseController@record');
                 Route::post('/', 'WarehouseController@store');
                 Route::get('initialize', 'WarehouseController@initialize');
+                Route::get('all', 'WarehouseController@all')->name('warehouses.all');
             });
 
             Route::prefix('inventory')->group(function () {
@@ -49,6 +50,7 @@ if($hostname) {
 
 
                 Route::get('kardex', 'ReportKardexController@index')->name('reports.kardex.index');
+                Route::get('kardex_today', 'ReportKardexController@recordsToday')->name('reports.kardex_today');
                 Route::get('kardex/pdf', 'ReportKardexController@pdf')->name('reports.kardex.pdf');
                 Route::get('kardex/excel', 'ReportKardexController@excel')->name('reports.kardex.excel');
                 Route::get('kardex/filter', 'ReportKardexController@filter')->name('reports.kardex.filter');

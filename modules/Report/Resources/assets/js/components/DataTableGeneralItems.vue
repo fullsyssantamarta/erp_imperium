@@ -6,7 +6,7 @@
                         <div class="col-md-3" >
                             <div class="form-group">
                                 <label class="control-label">Tipo</label>
-                                <el-select v-model="form.type" >
+                                <el-select v-model="form.type" @change="onChangeType">
                                     <el-option v-for="option in types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
                             </div>
@@ -58,14 +58,21 @@
                             </div>
                         </template>
 
-                        <div class="col-md-3" v-if="form.type == 'sale'">
-                            <div class="form-group">
-                                <label class="control-label">Resolucion</label>
-                                <el-select v-model="form.document_type_id" clearable>
-                                    <el-option v-for="option in document_types" :key="option.id" :value="option.id" :label="`${option.prefix} / ${option.description} / ${option.resolution_number} / ${option.from} / ${option.to}`"></el-option>
-                                </el-select>
+                        <template v-if="form.type !== 'purchase'">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="control-label">Resolución / Documento</label>
+                                    <el-select v-model="form.document_type_id" clearable>
+                                        <el-option
+                                            v-for="option in document_types"
+                                            :key="form.type === 'pos' || form.type === 'remission' ? option.prefix : option.id"
+                                            :value="form.type === 'pos' || form.type === 'remission' ? option.prefix : option.id"
+                                            :label="getDocumentTypeLabel(option)">
+                                        </el-option>
+                                    </el-select>
+                                </div>
                             </div>
-                        </div>
+                        </template>
 
                         <div class="col-md-3">
                             <div class="form-group">
@@ -143,7 +150,7 @@
                 totals: {},
                 establishment: null,
                 establishments: [],
-                types: [{id:'sale', description: 'Venta'},{id:'purchase', description: 'Compra'}],
+                types: [{id:'sale', description: 'Venta'},{id:'purchase', description: 'Compra'},{id:'pos', description: 'Venta POS'},{id:'remission', description: 'Remisiones'},],
                 form: {},
                 pickerOptionsDates: {
                     disabledDate: (time) => {
@@ -179,6 +186,20 @@
         },
 
         methods: {
+            async onChangeType() {
+                const response = await this.$http.get(`/${this.resource}/filter?type=${this.form.type}`);
+                this.document_types = response.data.document_types;
+                this.establishments = response.data.establishments;
+                this.form.document_type_id = null;
+            },
+            getDocumentTypeLabel(option) {
+                if (this.form.type === 'pos') {
+                    return `${option.prefix || ''} / ${option.resolution_number || ''} / ${option.from || ''} / ${option.to || ''}`;
+                }else if (this.form.type === "remission") {
+                    return `${option.prefix || ''} / ${option.description || ''}`;
+                }
+                return `${option.prefix || ''} / ${option.description || option.name || ''} / ${option.resolution_number || ''} / ${option.from || ''} / ${option.to || ''}`;
+            },
             clickDownload(type) {
                 let query = queryString.stringify({
                     ...this.form
