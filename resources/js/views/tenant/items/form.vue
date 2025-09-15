@@ -705,7 +705,7 @@
                     lots:[],
                     attributes: [],
                     series_enabled: false,
-                    tax_id: 1,
+                    tax_id: 2,
                     purchase_tax_id: 1,
                     currency_type_id: 170,
                     model: null,
