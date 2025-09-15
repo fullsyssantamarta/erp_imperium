@@ -31,6 +31,23 @@ class WarehouseController extends Controller
         return new WarehouseCollection($records->paginate(config('tenant.items_per_page')));
     }
 
+    // Filtro para Kardex
+    public function all()
+    {
+        $user = auth()->user(); // Usuario autenticado
+        $currentWarehouse = Warehouse::where('establishment_id', $user->establishment_id)->first(); // Almacén del establecimiento del usuario
+
+        if (!$currentWarehouse) {
+            $currentWarehouse = Warehouse::first(); // Selecciona el primer almacén disponible
+        }
+        $warehouses = Warehouse::select('id', 'description as name')->get();
+
+        return response()->json([
+            'warehouses' => $warehouses,
+            'current_warehouse' => $currentWarehouse, // Devuelve el almacén actual del usuario
+        ]);
+    }
+
     public function record($id)
     {
         $record = new WarehouseResource(Warehouse::findOrFail($id));

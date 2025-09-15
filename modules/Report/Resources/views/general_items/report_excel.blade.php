@@ -30,41 +30,72 @@
                         </thead>
                         <tbody>
                             @if($type == 'sale')
-                                @foreach($records as $key => $value)
-                                <tr>
-                                    <td class="celda">{{$value->document->date_of_issue->format('Y-m-d')}}</td> 
-                                    <td class="celda">{{$value->document->type_document->name}}</td>
-                                    <td class="celda">{{$value->document->series}}</td>
-                                    <td class="celda">{{$value->document->number}}</td>
-                                    <td class="celda">{{$value->document->customer->number}} - {{$value->document->customer->name}}</td>
-                                    <td class="celda">{{$value->document->currency_type_id}}</td>
-                                    <td class="celda">{{$value->relation_item->unit_type->name}}</td>
-                                    <td class="celda">{{$value->relation_item->internal_id}}</td>
-                                    <td class="celda">{{$value->relation_item->name}}</td>
-                                    <td class="celda">{{$value->quantity}}</td>
-                                    <td class="celda">{{$value->unit_price}}</td>
-                                    <td class="celda">{{$value->total}}</td>
-                                    
-                                </tr> 
+                                @foreach($records as $item)
+                                    <tr>
+                                        <td>{{ optional($item->document)->date_of_issue }}</td>
+                                        <td>{{ optional($item->document->type_document)->name }}</td>
+                                        <td>{{ optional($item->document)->series }}</td>
+                                        <td>{{ optional($item->document)->number }}</td>
+                                        <td>{{ optional($item->document->customer)->number }} - {{ optional($item->document->customer)->name }}</td>
+                                        <td>{{ optional($item->document)->currency_type_id }}</td>
+                                        <td>{{ optional($item->relation_item->unit_type)->name }}</td>
+                                        <td>{{ optional($item->relation_item)->internal_id }}</td>
+                                        <td>{{ optional($item->relation_item)->name }}</td>
+                                        <td>{{ $item->quantity }}</td>
+                                        <td>{{ $item->unit_price }}</td>
+                                        <td>{{ $item->total }}</td>
+                                    </tr>
                                 @endforeach
-                            @else
-                            
-                                @foreach($records as $key => $value)
-                                <tr>
-                                    <td class="celda">{{$value->purchase->date_of_issue->format('Y-m-d')}}</td> 
-                                    <td class="celda">{{$value->purchase->document_type->description}}</td>
-                                    <td class="celda">{{$value->purchase->series}}</td>
-                                    <td class="celda">{{$value->purchase->number}}</td>
-                                    <td class="celda">{{$value->purchase->supplier->name}} - {{$value->purchase->supplier->number}}</td>
-                                    <td class="celda">{{$value->purchase->currency_type_id}}</td>
-                                    <td class="celda">{{$value->relation_item->unit_type->name}}</td>
-                                    <td class="celda">{{$value->relation_item->internal_id}}</td>
-                                    <td class="celda">{{$value->relation_item->name}}</td>
-                                    <td class="celda">{{$value->quantity}}</td>
-                                    <td class="celda">{{$value->unit_price}}</td>
-                                    <td class="celda">{{$value->total}}</td>
-                                    
-                                </tr> 
+                            @elseif($type == 'purchase')
+                                @foreach($records as $item)
+                                    <tr>
+                                        <td>{{ optional($item->purchase)->date_of_issue }}</td>
+                                        <td>{{ optional($item->purchase->document_type)->description }}</td>
+                                        <td>{{ optional($item->purchase)->series }}</td>
+                                        <td>{{ optional($item->purchase)->number }}</td>
+                                        <td>{{ optional($item->purchase->supplier)->name }} - {{ optional($item->purchase->supplier)->number }}</td>
+                                        <td>{{ optional($item->purchase)->currency_type_id }}</td>
+                                        <td>{{ optional($item->relation_item->unit_type)->name }}</td>
+                                        <td>{{ optional($item->relation_item)->internal_id }}</td>
+                                        <td>{{ optional($item->relation_item)->name }}</td>
+                                        <td>{{ $item->quantity }}</td>
+                                        <td>{{ $item->unit_price }}</td>
+                                        <td>{{ $item->total }}</td>
+                                    </tr>
+                                @endforeach
+                            @elseif($type == 'pos')
+                                @foreach($records as $item)
+                                    <tr>
+                                        <td>{{ optional($item->document_pos)->date_of_issue }}</td>
+                                        <td>POS</td>
+                                        <td>{{ optional($item->document_pos)->series }}</td>
+                                        <td>{{ optional($item->document_pos)->number }}</td>
+                                        <td>{{ optional($item->document_pos->customer)->number }} - {{ optional($item->document_pos->customer)->name }}</td>
+                                        <td>{{ optional($item->document_pos)->currency_type_id }}</td>
+                                        <td>{{ optional($item->relation_item->unit_type)->name }}</td>
+                                        <td>{{ optional($item->relation_item)->internal_id }}</td>
+                                        <td>{{ optional($item->relation_item)->name }}</td>
+                                        <td>{{ $item->quantity }}</td>
+                                        <td>{{ $item->unit_price }}</td>
+                                        <td>{{ $item->total }}</td>
+                                    </tr>
+                                @endforeach
+                            @elseif($type == 'remission')
+                                @foreach($records as $item)
+                                    <tr>
+                                        <td>{{ optional($item->remission)->date_of_issue }}</td>
+                                        <td>Remisión</td>
+                                        <td>{{ optional($item->remission)->series }}</td>
+                                        <td>{{ optional($item->remission)->number }}</td>
+                                        <td>{{ optional($item->remission->customer)->number }} - {{ optional($item->remission->customer)->name }}</td>
+                                        <td>{{ optional($item->remission)->currency_type_id }}</td>
+                                        <td>{{ optional($item->relation_item->unit_type)->name }}</td>
+                                        <td>{{ optional($item->relation_item)->internal_id }}</td>
+                                        <td>{{ optional($item->relation_item)->name }}</td>
+                                        <td>{{ $item->quantity }}</td>
+                                        <td>{{ $item->unit_price }}</td>
+                                        <td>{{ $item->total }}</td>
+                                    </tr>
                                 @endforeach
                             @endif
                         </tbody>

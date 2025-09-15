@@ -98,11 +98,31 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @php
+                            function getProductName($value) {
+                                if(isset($value->item) && $value->item) {
+                                    return $value->item->description ?? $value->item->name ?? '-';
+                                }
+                                if(isset($value->inventory_kardexable) && $value->inventory_kardexable) {
+                                    // Solo si el modelo relacionado tiene el método item y la relación está cargada
+                                    if(method_exists($value->inventory_kardexable, 'item')) {
+                                        try {
+                                            $item = $value->inventory_kardexable->item;
+                                            if($item) return $item->description ?? $item->name ?? '-';
+                                        } catch (\Throwable $th) {
+                                            // Si la relación no existe, ignora
+                                        }
+                                    }
+                                    return $value->inventory_kardexable->description ?? $value->inventory_kardexable->name ?? '-';
+                                }
+                                return '-';
+                            }
+                            @endphp
                             @foreach($reports as $key => $value)
                                 <tr>
                                     <td class="celda">{{$loop->iteration}}</td>
                                     @if(!$item_id)
-                                        <td class="celda">{{$value->item->description}}</td>
+                                        <td class="celda">{{ getProductName($value) }}</td>
                                     @endif
                                     <td class="celda">{{$value->created_at}}</td>
                                     <td class="celda">

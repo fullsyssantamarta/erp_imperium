@@ -66,11 +66,28 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @php
+                                $getProductName = function($row) {
+                                    if(isset($row->item) && $row->item) {
+                                        return $row->item->description ?? $row->item->name ?? '-';
+                                    }
+                                    if(isset($row->inventory_kardexable) && $row->inventory_kardexable) {
+                                        if(method_exists($row->inventory_kardexable, 'item')) {
+                                            try {
+                                                $item = $row->inventory_kardexable->item;
+                                                if($item) return $item->description ?? $item->name ?? '-';
+                                            } catch (\Throwable $th) {}
+                                        }
+                                        return $row->inventory_kardexable->description ?? $row->inventory_kardexable->name ?? '-';
+                                    }
+                                    return '-';
+                                };
+                            @endphp
                             @foreach($records as $key => $value)
                             <tr>
                                     <td class="celda">{{$loop->iteration}}</td>
                                     @if(!$item_id)
-                                        <td class="celda">{{$value->item->description}}</td>
+                                        <td class="celda">{{ $getProductName($value) }}</td>
                                     @endif
                                     <td class="celda">{{$value->created_at->format('d/m/Y H:i')}}</td>
                                     <td class="celda">

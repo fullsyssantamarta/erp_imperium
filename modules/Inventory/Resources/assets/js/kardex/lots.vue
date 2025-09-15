@@ -2,7 +2,7 @@
     <div class="card mb-0 pt-2 pt-md-0">
         <div class="card mb-0">
             <div class="card-body">
-                <data-table :resource="resource">
+                <data-table :resource="resource" :hideMovementFilters="true" :requireProduct="true">
                     <tr slot="heading">
                         <th width="5%">#</th>
                         <th>Codigo</th>
