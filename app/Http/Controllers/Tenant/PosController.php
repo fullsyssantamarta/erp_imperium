@@ -172,6 +172,7 @@ class PosController extends Controller
                         $query->where('category_id', $request->cat);
                     })
                     ->orderByDesc('is_favorite')
+                    ->orderBy('internal_id')
                     ->paginate(50);
 
         return new PosCollection($items, $configuration);
@@ -274,7 +275,7 @@ class PosController extends Controller
 
             $configuration =  Configuration::first();
 
-            $items = Item::whereWarehouse()->whereNotItemsAiu()->whereIsActive()->where('unit_type_id', '!=', 'ZZ')->orderByDesc('is_favorite')->orderBy('description')->take(100)
+            $items = Item::whereWarehouse()->whereNotItemsAiu()->whereIsActive()->where('unit_type_id', '!=', 'ZZ')->orderByDesc('is_favorite')->orderBy('internal_id')->take(100)
                             ->get()->transform(function($row) use ($configuration) {
                                 $full_description = ($row->internal_id)?$row->internal_id.' - '.$row->description:$row->name;
                                 return [
