@@ -893,6 +893,7 @@ export default {
                 this.form.health_fields = this.health_sector ? this.duplicated_health_fields : {};
                 this.form.health_users = this.health_sector ? this.duplicated_health_users : [];
                 this.changeResolution();
+                this.form.is_tirilla2 = typeof this.invoice.is_tirilla2 !== 'undefined' ? this.invoice.is_tirilla2 : false;
                 if (this.is_edit) {
                     this.form.number = this.invoice.number
                     this.calculateTotal()
