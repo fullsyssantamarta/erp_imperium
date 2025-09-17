@@ -72,9 +72,19 @@
             <div class="col-lg-8 col-md-6 px-4 pt-3 hyo">
 
                 <template v-if="!search_item_by_barcode">
-                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @input="searchItems" autofocus class="m-bottom">
+                    <el-autocomplete
+                        v-show="place  == 'prod' || place == 'cat2'"
+                        v-model="input_item"
+                        :fetch-suggestions="querySearchAsync"
+                        placeholder="Buscar productos"
+                        size="medium"
+                        @select="handleSelectProduct"
+                        class="m-bottom"
+                        :trigger-on-focus="false"
+                        autofocus
+                    >
                         <el-button slot="append" icon="el-icon-plus" @click.prevent="showDialogNewItem = true"></el-button>
-                    </el-input>
+                    </el-autocomplete>
                 </template>
                 <template v-else>
                     <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @change="searchItemsBarcode" autofocus class="m-bottom">
@@ -609,6 +619,15 @@
 .page-header .header-controls-row[data-v-5563e231]{
     min-height: auto !important;
 }
+.el-autocomplete.m-bottom {
+    width: 100% !important;
+}
+.el-autocomplete.m-bottom .el-input {
+    width: 100% !important;
+}
+.el-autocomplete.m-bottom .el-input__inner {
+    width: 100% !important;
+}
 /* --- INICIO: Responsive para listado de items --- */
 @media (max-width: 1000px) {
   .row.pos-items > div[class^="col-"], 
@@ -901,6 +920,28 @@ export default {
         },
     },
     methods: {
+        async querySearchAsync(queryString, cb) {
+            if (!queryString || queryString.length < 1) {
+                return cb([]);
+            }
+            // Llama a la API de búsqueda rápida
+            try {
+                const response = await this.$http.get(`/${this.resource}/search_items?input_item=${encodeURIComponent(queryString)}`);
+                // Mapea los resultados para el autocomplete
+                const results = response.data.data.map(item => ({
+                    value: `${item.name} ${item.internal_id ? '(' + item.internal_id + ')' : ''}`,
+                    itemData: item
+                }));
+                cb(results);
+            } catch (e) {
+                cb([]);
+            }
+        },
+        handleSelectProduct(option) {
+            // Al seleccionar, agrega el producto
+            this.clickAddItem(option.itemData, 0);
+            this.input_item = '';
+        },
         async toggleFavorite(item) {
             this.loading = true;
             try {
