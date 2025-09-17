@@ -33,6 +33,10 @@ class DocumentResource extends JsonResource
             'customer_id' => $this->customer_id,
             'customer_email' => $this->customer->email, 
             'customer_phone' => $this->customer->telephone,
+            'contact_phone' => $this->customer->contact_phone ?? null,
+            'customer_name' => $this->customer->name ?? null, // <-- nombre del cliente
+            'type_document_name' => $this->type_document->name ?? null, // <-- tipo de documento
+            'total' => $this->total ?? null,
             'additional_emails' => $this->person && $this->person->additional_emails ? $this->person->additional_emails : [], 
             'response_api_message' => $response_api_message,
             'download_xml' => $download_xml,

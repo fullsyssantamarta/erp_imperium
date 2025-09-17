@@ -210,9 +210,15 @@
                         this.getPdfAsBase64(this.form.download_pdf)
                     ]);
 
+                    // Personaliza el mensaje aquí
+                    const message = 
+                        `Hola ${this.form.customer_name || ''},\n` +
+                        `Adjunto su ${this.form.type_document_name || 'documento'} número ${this.form.number_full} ` +
+                        `por un valor de $${this.form.total || ''}.`;
+
                     const payload = {
                         number: this.form.whatsapp_number,
-                        message: `Documento: ${this.form.number_full}`,
+                        message: message,
                         pdf_base64: pdfBase64,
                         filename: `documento_${this.form.number_full}.pdf`
                     };
@@ -260,12 +266,16 @@
                     response_api_message: null,
                     download_pdf: null,
                     download_xml: null,
+                    whatsapp_number: null,
                 };
             },
             async create() {
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`).then(async response => {
-                    this.form = response.data.data;
+                    Object.assign(this.form, response.data.data);
                     this.titleDialog = 'Comprobante: '+this.form.number_full;
+                    if (this.form.contact_phone) {
+                        this.form.whatsapp_number = this.form.contact_phone;
+                    }
                 });
 
             },
