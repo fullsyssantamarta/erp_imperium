@@ -949,21 +949,6 @@ export default {
                         value: `${item.name} ${item.internal_id ? '(' + item.internal_id + ')' : ''} - ${this.getFormatDecimal(item.sale_unit_price)} ${this.currency.symbol}`,
                         itemData: item
                     });
-                    // Opciones por cada presentación adicional
-                    if (item.item_unit_types && item.item_unit_types.length > 0) {
-                        item.item_unit_types.forEach(unitType => {
-                            results.push({
-                                value: `${item.name} ${unitType.description ? '- ' + unitType.description : ''} (${unitType.unit_type_name}) - ${this.getFormatDecimal(unitType.price_default == 1 ? unitType.price1 : unitType.price_default == 2 ? unitType.price2 : unitType.price3)} ${this.currency.symbol}`,
-                                itemData: {
-                                    ...item,
-                                    presentation: unitType,
-                                    sale_unit_price: unitType.price_default == 1 ? unitType.price1 : unitType.price_default == 2 ? unitType.price2 : unitType.price3,
-                                    unit_type_id: unitType.unit_type_id,
-                                    unit_type: unitType.unit_type
-                                }
-                            });
-                        });
-                    }
                 });
                 cb(results);
             } catch (e) {
