@@ -919,19 +919,52 @@ export default {
             return this.windowWidth < 600;
         },
     },
+    watch: {
+        input_item(val) {
+            // Si está vacío, mostrar todos los productos
+            if (!val || val.length === 0) {
+                this.items = this.all_items;
+            } else {
+                const texto = val.toLowerCase();
+                this.items = this.all_items.filter(item =>
+                    (item.name && item.name.toLowerCase().includes(texto)) ||
+                    (item.description && item.description.toLowerCase().includes(texto)) ||
+                    (item.internal_id && item.internal_id.toLowerCase().includes(texto))
+                );
+            }
+        }
+    },
     methods: {
         async querySearchAsync(queryString, cb) {
             if (!queryString || queryString.length < 1) {
                 return cb([]);
             }
-            // Llama a la API de búsqueda rápida
             try {
                 const response = await this.$http.get(`/${this.resource}/search_items?input_item=${encodeURIComponent(queryString)}`);
-                // Mapea los resultados para el autocomplete
-                const results = response.data.data.map(item => ({
-                    value: `${item.name} ${item.internal_id ? '(' + item.internal_id + ')' : ''}`,
-                    itemData: item
-                }));
+                // Aquí generamos una lista de opciones, una por cada presentación/precio
+                let results = [];
+                response.data.data.forEach(item => {
+                    // Opción principal (precio base)
+                    results.push({
+                        value: `${item.name} ${item.internal_id ? '(' + item.internal_id + ')' : ''} - ${this.getFormatDecimal(item.sale_unit_price)} ${this.currency.symbol}`,
+                        itemData: item
+                    });
+                    // Opciones por cada presentación adicional
+                    if (item.item_unit_types && item.item_unit_types.length > 0) {
+                        item.item_unit_types.forEach(unitType => {
+                            results.push({
+                                value: `${item.name} ${unitType.description ? '- ' + unitType.description : ''} (${unitType.unit_type_name}) - ${this.getFormatDecimal(unitType.price_default == 1 ? unitType.price1 : unitType.price_default == 2 ? unitType.price2 : unitType.price3)} ${this.currency.symbol}`,
+                                itemData: {
+                                    ...item,
+                                    presentation: unitType,
+                                    sale_unit_price: unitType.price_default == 1 ? unitType.price1 : unitType.price_default == 2 ? unitType.price2 : unitType.price3,
+                                    unit_type_id: unitType.unit_type_id,
+                                    unit_type: unitType.unit_type
+                                }
+                            });
+                        });
+                    }
+                });
                 cb(results);
             } catch (e) {
                 cb([]);
