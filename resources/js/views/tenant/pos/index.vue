@@ -920,17 +920,27 @@ export default {
         },
     },
     watch: {
-        input_item(val) {
-            // Si está vacío, mostrar todos los productos
-            if (!val || val.length === 0) {
+        async input_item(val) {
+            if (!val || val.trim().length === 0) {
+                // Si está vacío, mostrar todos los productos de la página actual
                 this.items = this.all_items;
             } else {
-                const texto = val.toLowerCase();
-                this.items = this.all_items.filter(item =>
-                    (item.name && item.name.toLowerCase().includes(texto)) ||
-                    (item.description && item.description.toLowerCase().includes(texto)) ||
-                    (item.internal_id && item.internal_id.toLowerCase().includes(texto))
-                );
+                // Buscar en el backend, igual que el autocomplete
+                this.loading = true;
+                try {
+                    let url = `/${this.resource}/search_items?input_item=${encodeURIComponent(val.trim())}`;
+                    if (this.category_selected) {
+                        url += `&cat=${encodeURIComponent(this.category_selected)}`;
+                    }
+                    const response = await this.$http.get(url);
+                    this.items = response.data.data;
+                    this.pagination = response.data.meta;
+                    this.pagination.per_page = parseInt(response.data.meta.per_page);
+                    this.pagination.total = response.data.meta.total;
+                } catch (e) {
+                    this.items = [];
+                }
+                this.loading = false;
             }
         }
     },
@@ -940,11 +950,13 @@ export default {
                 return cb([]);
             }
             try {
-                const response = await this.$http.get(`/${this.resource}/search_items?input_item=${encodeURIComponent(queryString)}`);
-                // Aquí generamos una lista de opciones, una por cada presentación/precio
+                let url = `/${this.resource}/search_items?input_item=${encodeURIComponent(queryString)}`;
+                if (this.category_selected) {
+                    url += `&cat=${encodeURIComponent(this.category_selected)}`;
+                }
+                const response = await this.$http.get(url);
                 let results = [];
                 response.data.data.forEach(item => {
-                    // Opción principal (precio base)
                     results.push({
                         value: `${item.name} ${item.internal_id ? '(' + item.internal_id + ')' : ''} - ${this.getFormatDecimal(item.sale_unit_price)} ${this.currency.symbol}`,
                         itemData: item
