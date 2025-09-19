@@ -87,7 +87,7 @@
                     </el-autocomplete>
                 </template>
                 <template v-else>
-                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item"  autofocus class="m-bottom">
+                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @change="onBarcodeChange" autofocus class="m-bottom">
                         <el-button slot="append" icon="el-icon-plus" @click.prevent="showDialogNewItem = true"></el-button>
                     </el-input>
                 </template>
@@ -940,8 +940,9 @@ export default {
                     this.pagination = response.data.meta;
                     this.pagination.per_page = parseInt(response.data.meta.per_page);
                     this.pagination.total = response.data.meta.total;
-                    // if (this.search_item_by_barcode) {
-                    //     this.enabledSearchItemsBarcode();
+                    // if (this.search_item_by_barcode && this.items.length === 1) {
+                    //     await this.clickAddItem(this.items[0], 0);
+                    //     this.input_item = ""; // Limpia el input después de agregar
                     // }
                 } catch (e) {
                     this.items = [];
@@ -951,6 +952,32 @@ export default {
         }
     },
     methods: {
+        async onBarcodeChange() {
+            if (this.search_item_by_barcode) {
+                // Forzar búsqueda antes de intentar agregar
+                this.loading = true;
+                try {
+                    let url = `/${this.resource}/search_items?input_item=${encodeURIComponent(this.input_item.trim())}`;
+                    if (this.category_selected) {
+                        url += `&cat=${encodeURIComponent(this.category_selected)}`;
+                    }
+                    url += `&barcode_only=1`;
+                    const response = await this.$http.get(url);
+                    this.items = response.data.data;
+                    this.pagination = response.data.meta;
+                    this.pagination.per_page = parseInt(response.data.meta.per_page);
+                    this.pagination.total = response.data.meta.total;
+
+                    if (this.items.length === 1) {
+                        await this.clickAddItem(this.items[0], 0);
+                        this.input_item = ""; // Limpia el input después de agregar
+                    }
+                } catch (e) {
+                    this.items = [];
+                }
+                this.loading = false;
+            }
+        },
         async querySearchAsync(queryString, cb) {
             if (!queryString || queryString.length < 1) {
                 return cb([]);
