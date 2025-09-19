@@ -87,7 +87,7 @@
                     </el-autocomplete>
                 </template>
                 <template v-else>
-                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @change="searchItemsBarcode" autofocus class="m-bottom">
+                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item"  autofocus class="m-bottom">
                         <el-button slot="append" icon="el-icon-plus" @click.prevent="showDialogNewItem = true"></el-button>
                     </el-input>
                 </template>
@@ -923,7 +923,7 @@ export default {
         async input_item(val) {
             if (!val || val.trim().length === 0) {
                 // Si está vacío, mostrar todos los productos de la página actual
-                this.items = this.all_items;
+                await this.getRecords();
             } else {
                 // Buscar en el backend, igual que el autocomplete
                 this.loading = true;
@@ -932,11 +932,17 @@ export default {
                     if (this.category_selected) {
                         url += `&cat=${encodeURIComponent(this.category_selected)}`;
                     }
+                    if (this.search_item_by_barcode) {
+                        url += `&barcode_only=1`;
+                    }
                     const response = await this.$http.get(url);
                     this.items = response.data.data;
                     this.pagination = response.data.meta;
                     this.pagination.per_page = parseInt(response.data.meta.per_page);
                     this.pagination.total = response.data.meta.total;
+                    // if (this.search_item_by_barcode) {
+                    //     this.enabledSearchItemsBarcode();
+                    // }
                 } catch (e) {
                     this.items = [];
                 }
@@ -957,8 +963,13 @@ export default {
                 const response = await this.$http.get(url);
                 let results = [];
                 response.data.data.forEach(item => {
+                    let stock = '';
+                    if (item.warehouses && Array.isArray(item.warehouses)) {
+                        const wh = item.warehouses.find(w => w.warehouse_id == this.establishment.id || w.id == this.establishment.id);
+                        stock = wh ? wh.stock : 0;
+                    }
                     results.push({
-                        value: `${item.name} ${item.internal_id ? '(' + item.internal_id + ')' : ''} - ${this.getFormatDecimal(item.sale_unit_price)} ${this.currency.symbol}`,
+                        value: `${item.name} ${item.internal_id ? '(' + item.internal_id + ')' : ''} - ${this.getFormatDecimal(item.sale_unit_price)} ${this.currency.symbol} | Stock: ${stock}`,
                         itemData: item
                     });
                 });
@@ -1955,7 +1966,7 @@ export default {
             }
 
         },
-        async searchItemsBarcode() {
+        async searchItemsBarcode() { //EN DESUSO
 
             // console.log(query)
             // console.log("in:" + this.input_item)
@@ -1963,7 +1974,7 @@ export default {
             if (this.input_item.length > 1) {
 
                 this.loading = true;
-                let parameters = `input_item=${this.input_item}`;
+                let parameters = `input_item=${this.input_item}&barcode_only=1`;
 
                 await this.$http.get(`/${this.resource}/search_items?${parameters}`)
                     .then(response => {
@@ -1990,7 +2001,7 @@ export default {
             }
 
         },
-        enabledSearchItemsBarcode() {
+        enabledSearchItemsBarcode() { //DESUSO
 
             if (this.search_item_by_barcode) {
                 console.log(this.items)
@@ -1998,11 +2009,12 @@ export default {
 
                     // console.log(this.items)
                     this.clickAddItem(this.items[0], 0);
-                    this.filterItems();
+                    // this.filterItems();
+                    // this.cleanInput();
 
                 }
 
-                this.cleanInput();
+                // this.cleanInput();
 
             }
 
