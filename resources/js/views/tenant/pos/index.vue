@@ -87,7 +87,7 @@
                     </el-autocomplete>
                 </template>
                 <template v-else>
-                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @change="onBarcodeChange" autofocus class="m-bottom">
+                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @change="searchItemsBarcode" autofocus class="m-bottom">
                         <el-button slot="append" icon="el-icon-plus" @click.prevent="showDialogNewItem = true"></el-button>
                     </el-input>
                 </template>
@@ -921,6 +921,9 @@ export default {
     },
     watch: {
         async input_item(val) {
+            // Si está activo el modo código de barras, el watch NO hace nada
+            if (this.search_item_by_barcode) return;
+
             if (!val || val.trim().length === 0) {
                 // Si está vacío, mostrar todos los productos de la página actual
                 await this.getRecords();
@@ -1993,7 +1996,7 @@ export default {
             }
 
         },
-        async searchItemsBarcode() { //EN DESUSO
+        async searchItemsBarcode() { 
 
             // console.log(query)
             // console.log("in:" + this.input_item)
@@ -2028,7 +2031,7 @@ export default {
             }
 
         },
-        enabledSearchItemsBarcode() { //DESUSO
+        enabledSearchItemsBarcode() {
 
             if (this.search_item_by_barcode) {
                 console.log(this.items)
@@ -2036,12 +2039,12 @@ export default {
 
                     // console.log(this.items)
                     this.clickAddItem(this.items[0], 0);
-                    // this.filterItems();
+                    this.filterItems();
                     // this.cleanInput();
 
                 }
 
-                // this.cleanInput();
+                this.cleanInput();
 
             }
 
