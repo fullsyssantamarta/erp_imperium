@@ -14,6 +14,7 @@ use Modules\Factcolombia1\Models\Tenant\{
 };
 use Modules\Finance\Traits\FinanceTrait;
 use Exception;
+use App\Services\HealthFieldsValidatorService;
 
 
 class DocumentHelper
@@ -27,8 +28,8 @@ class DocumentHelper
 //\Log::debug("1");
         $establishment = EstablishmentInput::set(auth()->user()->establishment_id);
         $shipping_two_steps = ($type_environment_id == 2);
-        $document = new Document();
-        $document->prefix = $nextConsecutive->prefix;
+    $document = new Document();
+    $document->prefix = $request->prefix ?? $nextConsecutive->prefix;
         $document->number = $correlative_api;
         $document->user_id = auth()->id();
         $document->seller_id = $request->seller_id ?? null;
@@ -285,20 +286,269 @@ class DocumentHelper
 
     public static function getHealthFields($request)
     {
-        $health_fields = null;
-        if ($request->health_fields)
-        {
-            if (isset($request->health_fields['invoice_period_start_date']) && isset($request->health_fields['invoice_period_end_date']))
-            {
-                $health_fields = [
-                    'invoice_period_start_date' => $request->health_fields['invoice_period_start_date'],
-                    'invoice_period_end_date' => $request->health_fields['invoice_period_end_date'],
-                    'health_type_operation_id' => 1,
-                    'users_info' => $request->health_users,
+        $rawHealthFields = $request->health_fields ?? null;
+
+        if (empty($rawHealthFields)) {
+            return null;
+        }
+
+        if ($rawHealthFields instanceof \Illuminate\Support\Collection) {
+            $rawHealthFields = $rawHealthFields->toArray();
+        }
+
+        if (is_string($rawHealthFields)) {
+            $decoded = json_decode($rawHealthFields, true);
+            $rawHealthFields = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($rawHealthFields)) {
+            return null;
+        }
+
+        if (!isset($rawHealthFields['invoice_period_start_date']) || !isset($rawHealthFields['invoice_period_end_date'])) {
+            return null;
+        }
+
+        $usersSource = $request->health_users ?? ($rawHealthFields['users_info'] ?? []);
+        if ($usersSource instanceof \Illuminate\Support\Collection) {
+            $usersSource = $usersSource->toArray();
+        }
+
+        $usersSource = is_array($usersSource) ? $usersSource : [];
+
+        // Normalizar estructura con nombres y atributos requeridos por PDF/XML
+        $normalized_users = [];
+
+        $docTypeMap = [
+            'CC' => 1,
+            'CE' => 2,
+            'TI' => 3,
+            'PA' => 4,
+            'RC' => 5,
+            'MS' => 6,
+            'AS' => 7,
+        ];
+
+        foreach ($usersSource as $user) {
+            if ($user instanceof \Illuminate\Support\Collection) {
+                $user = $user->toArray();
+            }
+
+            if (is_object($user)) {
+                $user = json_decode(json_encode($user), true);
+            }
+
+            if (!is_array($user)) {
+                continue;
+            }
+
+            $first = function (array $keys, array $src) {
+                foreach ($keys as $key) {
+                    if (isset($src[$key]) && $src[$key] !== '' && $src[$key] !== null) {
+                        return $src[$key];
+                    }
+                }
+
+                return null;
+            };
+
+            $docType = $first([
+                'health_type_document_identification_id',
+                'document_id_type_id',
+                'user_type_document_id',
+                'type_document_id',
+            ], $user);
+
+            if ($docType === null) {
+                $docTypeCode = $first(['tipo_documento', 'type_document'], $user);
+                if (is_string($docTypeCode) && isset($docTypeMap[$docTypeCode])) {
+                    $docType = $docTypeMap[$docTypeCode];
+                }
+            }
+
+            $identNumber = $first([
+                'identification_number',
+                'user_document_number',
+                'documento',
+                'document_number',
+            ], $user);
+
+            $firstName = $first(['first_name', 'primer_nombre', 'nombres', 'user_first_name'], $user);
+            $middleName = $first(['middle_name', 'segundo_nombre'], $user);
+            $surname = $first(['surname', 'primer_apellido', 'last_name', 'user_last_name'], $user);
+            $secondSurname = $first(['second_surname', 'segundo_apellido', 'second_last_name'], $user);
+
+            if (!$middleName && isset($user['user_first_name'])) {
+                $parts = preg_split('/\s+/', trim((string) $user['user_first_name']));
+                if (count($parts) > 1) {
+                    $firstName = $parts[0];
+                    $middleName = implode(' ', array_slice($parts, 1));
+                }
+            }
+
+            if (!$secondSurname && isset($user['user_last_name'])) {
+                $parts = preg_split('/\s+/', trim((string) $user['user_last_name']));
+                if (count($parts) > 1) {
+                    $surname = $parts[0];
+                    $secondSurname = implode(' ', array_slice($parts, 1));
+                }
+            }
+
+            $normalized = [
+                'health_type_document_identification_id' => $docType !== null ? (int) $docType : null,
+                'document_id_type_id' => $docType !== null ? (int) $docType : null,
+                'identification_number' => $identNumber !== null ? (string) $identNumber : '',
+                'first_name' => $firstName !== null ? (string) $firstName : '',
+                'middle_name' => $middleName !== null ? (string) $middleName : '',
+                'surname' => $surname !== null ? (string) $surname : '',
+                'second_surname' => $secondSurname !== null ? (string) $secondSurname : '',
+            ];
+
+            $typeUser = $first(['health_type_user_id', 'type_user_id', 'user_type_id'], $user);
+            if ($typeUser !== null) {
+                $normalized['health_type_user_id'] = (int) $typeUser;
+                $normalized['type_user_id'] = (int) $typeUser;
+            }
+
+            $contractMethod = $first([
+                'health_contracting_payment_method_id',
+                'contract_method_id',
+                'method_id',
+            ], $user);
+
+            $contractMethodId = null;
+            if ($contractMethod !== null) {
+                $contractMethodId = (int) $contractMethod;
+                $normalized['health_contracting_payment_method_id'] = $contractMethodId;
+                $normalized['contract_method_id'] = $contractMethodId;
+            }
+
+            $normalized['user_payment_code'] = self::mapHealthPaymentCode($user, $contractMethodId);
+
+            $coverage = $first([
+                'health_coverage_id',
+                'coverage_type_id',
+                'coverage_id',
+            ], $user);
+            if ($coverage !== null) {
+                $normalized['health_coverage_id'] = (int) $coverage;
+                $normalized['coverage_type_id'] = (int) $coverage;
+            }
+
+            if (isset($user['provider_code'])) {
+                $normalized['provider_code'] = (string) $user['provider_code'];
+            }
+            if (isset($user['contract_number'])) {
+                $normalized['contract_number'] = (string) $user['contract_number'];
+            }
+            if (isset($user['policy_number'])) {
+                $normalized['policy_number'] = (string) $user['policy_number'];
+            }
+            if (isset($user['co_payment'])) {
+                $normalized['co_payment'] = $user['co_payment'];
+            }
+            if (isset($user['moderating_fee'])) {
+                $normalized['moderating_fee'] = $user['moderating_fee'];
+            }
+            if (isset($user['shared_payment'])) {
+                $normalized['shared_payment'] = $user['shared_payment'];
+            }
+            if (isset($user['advance_payment'])) {
+                $normalized['advance_payment'] = $user['advance_payment'];
+            }
+            if (isset($user['autorization_numbers'])) {
+                $normalized['autorization_numbers'] = $user['autorization_numbers'];
+            }
+            if (isset($user['mipres'])) {
+                $normalized['mipres'] = $user['mipres'];
+            }
+
+            $normalized_users[] = $normalized;
+        }
+
+        if (empty($normalized_users)) {
+            return null;
+        }
+
+        $validatorPayload = [
+            'invoice_period_start_date' => $rawHealthFields['invoice_period_start_date'],
+            'invoice_period_end_date' => $rawHealthFields['invoice_period_end_date'],
+            'health_type_operation_id' => $rawHealthFields['health_type_operation_id'] ?? 1,
+            'users_info' => array_map(function (array $user) {
+                $firstNames = trim(implode(' ', array_filter([
+                    $user['first_name'] ?? '',
+                    $user['middle_name'] ?? '',
+                ])));
+
+                $lastNames = trim(implode(' ', array_filter([
+                    $user['surname'] ?? '',
+                    $user['second_surname'] ?? '',
+                ])));
+
+                return [
+                    'user_type_document_id' => (int) ($user['health_type_document_identification_id'] ?? 1),
+                    'user_document_number' => (string) ($user['identification_number'] ?? ''),
+                    'user_first_name' => $firstNames,
+                    'user_last_name' => $lastNames,
+                    'user_contract_code' => (string) ($user['contract_number'] ?? $user['provider_code'] ?? 'DEFAULT'),
+                    'user_payment_code' => (string) ($user['user_payment_code'] ?? self::mapHealthPaymentCode($user)),
                 ];
+            }, $normalized_users),
+        ];
+
+        $healthValidator = app(HealthFieldsValidatorService::class);
+        $validated = $healthValidator->validateAndTransform($validatorPayload);
+
+        foreach ($validated['users_info'] as $index => $validatedUser) {
+            $normalized_users[$index] = array_merge($normalized_users[$index] ?? [], $validatedUser);
+        }
+
+        return [
+            'invoice_period_start_date' => $validated['invoice_period_start_date'],
+            'invoice_period_end_date' => $validated['invoice_period_end_date'],
+            'health_type_operation_id' => $validated['health_type_operation_id'],
+            'users_info' => array_values($normalized_users),
+        ];
+    }
+
+    private static function mapHealthPaymentCode(array $source, ?int $methodId = null): string
+    {
+        $candidates = [
+            'user_payment_code',
+            'payment_code',
+            'payment_method_code',
+            'paymentMethodCode',
+        ];
+
+        foreach ($candidates as $key) {
+            if (isset($source[$key])) {
+                $raw = trim((string) $source[$key]);
+                if ($raw !== '') {
+                    if (ctype_digit($raw) && strlen($raw) === 1) {
+                        $raw = str_pad($raw, 2, '0', STR_PAD_LEFT);
+                    }
+
+                    return substr($raw, 0, 2);
+                }
             }
         }
-        return $health_fields;
+
+        if ($methodId === null) {
+            $methodId = (int) ($source['health_contracting_payment_method_id']
+                ?? $source['contract_method_id']
+                ?? $source['method_id']
+                ?? 1);
+        }
+
+        $safeMap = [
+            1 => '01',
+            2 => '01',
+            3 => '01',
+            4 => '01',
+            5 => '01',
+        ];
+
+        return $safeMap[$methodId] ?? '01';
     }
 
     /**

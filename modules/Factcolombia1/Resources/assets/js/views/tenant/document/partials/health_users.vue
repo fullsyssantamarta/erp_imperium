@@ -104,8 +104,37 @@
             </div>
             <div class="col-lg-3 col-md-3">
                 <div class="form-group" :class="{'has-danger': errors.mipres_delivery}">
-                    <label class="control-label">Entrega mipres</label>
-                    <el-input v-model="form.mipres_delivery" :maxlength=25></el-input>
+                    <label class="control-label">Entregas mipres</label>
+                    <div
+                        v-for="(delivery, index) in mipresDeliveryItems"
+                        :key="`mipres-delivery-${index}`"
+                        class="d-flex align-items-center mb-2"
+                    >
+                        <el-input
+                            v-model="mipresDeliveryItems[index]"
+                            :maxlength="25"
+                            :placeholder="`ID de entrega ${index + 1}`"
+                            @input="onMipresDeliveryInput(index)"
+                        ></el-input>
+                        <el-button
+                            v-if="mipresDeliveryItems.length > 1"
+                            type="text"
+                            icon="el-icon-close"
+                            class="ml-2"
+                            @click="removeMipresDelivery(index)"
+                        ></el-button>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <el-button
+                            type="text"
+                            class="p-0"
+                            :disabled="mipresDeliveryItems.length >= maxMipresDeliveries"
+                            @click="addMipresDelivery"
+                        >
+                            Agregar ID de entrega
+                        </el-button>
+                        <small class="text-muted">{{ Math.min(mipresDeliveryItems.filter(item => item && item.trim()).length, maxMipresDeliveries) }} / {{ maxMipresDeliveries }}</small>
+                    </div>
                     <small class="form-control-feedback" v-if="errors.mipres_delivery" v-text="errors.mipres_delivery[0]"></small>
                 </div>
             </div>
@@ -181,6 +210,8 @@
                 health_type_users: [],
                 health_contracting_payment_methods: [],
                 health_coverages: [],
+                maxMipresDeliveries: 15,
+                mipresDeliveryItems: [''],
             }
         },
 
@@ -220,11 +251,6 @@
                     this.form.mipres = newVal.toUpperCase();
             },
 
-            'form.mipres_delivery'(newVal) {
-                if(this.form.mipres_delivery)
-                    this.form.mipres_delivery = newVal.toUpperCase();
-            },
-
             'form.contract_number'(newVal) {
                 if(this.form.contract_number)
                     this.form.contract_number = newVal.toUpperCase();
@@ -257,13 +283,15 @@
                     this.form.health_coverage_id = this.recordItemHealthUser.health_coverage_id
                     this.form.autorization_numbers = this.recordItemHealthUser.autorization_numbers
                     this.form.mipres = this.recordItemHealthUser.mipres
-                    this.form.mipres_delivery = this.recordItemHealthUser.mipres_delivery
+                                        this.form.mipres_delivery = this.recordItemHealthUser.mipres_delivery
                     this.form.contract_number = this.recordItemHealthUser.contract_number
                     this.form.policy_number = this.recordItemHealthUser.policy_number
                     this.form.co_payment = this.recordItemHealthUser.co_payment
                     this.form.moderating_fee = this.recordItemHealthUser.moderating_fee
                     this.form.recovery_fee = this.recordItemHealthUser.recovery_fee
                     this.form.shared_payment = this.recordItemHealthUser.shared_payment
+                    this.mipresDeliveryItems = this.parseMipresDelivery(this.form.mipres_delivery)
+                    this.form.mipres_delivery_list = this.mipresDeliveryItems.filter(item => item && item.trim())
                 }
                 else
                   this.initForm()
@@ -295,7 +323,10 @@
                     moderating_fee: 0,
                     recovery_fee: 0,
                     shared_payment: 0,
+                    mipres_delivery: null,
+                    mipres_delivery_list: [],
                 }
+                this.mipresDeliveryItems = ['']
                 this.$http.get(`/${this.resource}/health/tables`).then(response => {
                     this.health_type_document_identifications = response.data.health_type_document_identifications;
                     this.health_type_users = response.data.health_type_users;
@@ -310,6 +341,7 @@
                 const num_only = /^[0-9]+$/; // Numeros solamente, obligatorio
                 const alpha_only = /^[A-Za-zñÑ]*$/; // Letras solamente, opcional
                 const alpha_num_dash_semicolon = /^[A-Za-z0-9-;]*$/; // Letras numeros y guiones, opcional
+                const alpha_num_dash_single = /^[A-Za-z0-9-]*$/; // Letras numeros y guiones, sin separadores
                 const num_dot = /^[0-9.]+$/; // Numeros solamente, obligatorio
                 const response = {}
 
@@ -399,11 +431,29 @@
                     response.mipres = ["Solo se permiten letras, numeros, guiones y punto y coma en este campo"]
                 }
 
-                isValidText = alpha_num_dash_semicolon.test(this.form.mipres_delivery);
-                if(!isValidText){
+                const cleanedMipresDelivery = this.mipresDeliveryItems
+                    .map(item => item ? item.toString().trim().toUpperCase() : '')
+                    .filter(item => item !== '')
+                    .slice(0, this.maxMipresDeliveries)
+
+                this.mipresDeliveryItems = cleanedMipresDelivery.length
+                    ? cleanedMipresDelivery
+                    : ['']
+
+                if (cleanedMipresDelivery.length > this.maxMipresDeliveries) {
                     response.success = false
-                    response.mipres_delivery = ["Solo se permiten letras, numeros, guiones y punto y coma en este campo"]
+                    response.mipres_delivery = [`Solo se permiten ${this.maxMipresDeliveries} identificadores de entrega como máximo`]
                 }
+
+                const invalidDeliveries = cleanedMipresDelivery.filter(item => !alpha_num_dash_single.test(item))
+
+                if (invalidDeliveries.length) {
+                    response.success = false
+                    response.mipres_delivery = ["Cada identificador de entrega solo puede contener letras, numeros y guiones"]
+                }
+
+                this.form.mipres_delivery = cleanedMipresDelivery.join(';')
+                this.form.mipres_delivery_list = cleanedMipresDelivery
 
                 isValidText = alpha_num_dash_semicolon.test(this.form.contract_number);
                 if(!isValidText){
@@ -462,6 +512,41 @@
                 this.initForm();
                 this.$emit('update:showDialog', false)
             },
+
+            addMipresDelivery() {
+                if (this.mipresDeliveryItems.length < this.maxMipresDeliveries) {
+                    this.mipresDeliveryItems.push('')
+                }
+            },
+
+            removeMipresDelivery(index) {
+                if (this.mipresDeliveryItems.length > 1) {
+                    this.mipresDeliveryItems.splice(index, 1)
+                } else {
+                    this.mipresDeliveryItems = ['']
+                }
+            },
+
+            onMipresDeliveryInput(index) {
+                const value = this.mipresDeliveryItems[index]
+                if (value) {
+                    this.$set(this.mipresDeliveryItems, index, value.toUpperCase())
+                }
+            },
+
+            parseMipresDelivery(value) {
+                if (!value || typeof value !== 'string') {
+                    return ['']
+                }
+
+                const parsed = value
+                    .split(';')
+                    .map(item => item.trim().toUpperCase())
+                    .filter(item => item !== '')
+                    .slice(0, this.maxMipresDeliveries)
+
+                return parsed.length ? parsed : ['']
+            }
         }
     }
 </script>

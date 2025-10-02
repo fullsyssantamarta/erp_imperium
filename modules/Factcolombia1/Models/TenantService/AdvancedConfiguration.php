@@ -44,6 +44,11 @@ class AdvancedConfiguration extends Model
         'foot_note',
         'head_note',
         'notes',
+        'rips_enabled',
+        'rips_type_document_identification_id',
+        'rips_number_identification',
+        'rips_password',
+        'rips_url',
     ];
 
     protected $casts = [
@@ -56,6 +61,7 @@ class AdvancedConfiguration extends Model
         'enable_seller_views' => 'bool',
         'radian_show_credit_only' => 'bool',
         'default_format_print' => 'integer',
+        'rips_enabled' => 'bool',
     ];
 
 
@@ -89,6 +95,11 @@ class AdvancedConfiguration extends Model
             'foot_note' => $this->foot_note,
             'head_note' => $this->head_note,
             'notes' => $this->notes,
+            'rips_enabled' => $this->rips_enabled,
+            'rips_type_document_identification_id' => $this->rips_type_document_identification_id,
+            'rips_number_identification' => $this->rips_number_identification,
+            'rips_password' => $this->rips_password,
+            'rips_url' => $this->rips_url,
         ];
 
     }

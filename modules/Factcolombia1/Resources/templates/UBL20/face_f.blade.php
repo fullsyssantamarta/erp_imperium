@@ -124,6 +124,47 @@
             </fe:Person>
         </fe:Party>
     </fe:AccountingCustomerParty>
+    @php
+        // Consolidate health fields from possible structures
+        $rawHealth = $document->health_fields ?? [];
+        if (!is_array($rawHealth)) {
+            $decoded = json_decode($rawHealth, true);
+            $rawHealth = is_array($decoded) ? $decoded : [];
+        }
+
+        // Prefer nested 'health_fields' block when present
+        $hf = isset($rawHealth['health_fields']) && is_array($rawHealth['health_fields'])
+            ? array_merge($rawHealth, $rawHealth['health_fields'])
+            : $rawHealth;
+
+        // Normalize users_info into a plain indexed array
+        $users = [];
+        if (isset($hf['users_info']) && is_array($hf['users_info'])) {
+            $users = array_values($hf['users_info']);
+        } elseif (isset($rawHealth['users_info']) && is_array($rawHealth['users_info'])) {
+            $users = array_values($rawHealth['users_info']);
+        }
+
+        $healthPayload = [
+            'invoice_period_start_date' => $hf['invoice_period_start_date'] ?? null,
+            'invoice_period_end_date' => $hf['invoice_period_end_date'] ?? null,
+            'health_type_operation_id' => $hf['health_type_operation_id'] ?? ($rawHealth['health_type_operation_id'] ?? 1),
+            'users_info' => $users,
+        ];
+
+        // Encode as JSON and then base64 for safe XML embedding
+        $healthJson = json_encode($healthPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $healthB64 = base64_encode($healthJson ?: '{}');
+    @endphp
+    @if(!empty($users) || !empty($healthPayload['invoice_period_start_date']) || !empty($healthPayload['invoice_period_end_date']))
+    <cac:AdditionalDocumentReference>
+        <cbc:ID>HEALTH_FIELDS</cbc:ID>
+        <cbc:DocumentDescription>Sector salud - datos RIPS y usuarios</cbc:DocumentDescription>
+        <cac:Attachment>
+            <cbc:EmbeddedDocumentBinaryObject mimeCode="application/json" filename="health_fields.json">{{$healthB64}}</cbc:EmbeddedDocumentBinaryObject>
+        </cac:Attachment>
+    </cac:AdditionalDocumentReference>
+    @endif
     @foreach ($taxes as $tax)
         <fe:TaxTotal>
             <cbc:TaxAmount currencyID="{{$document->currency->code}}">{{number_format(($document->taxes_collect->where('id', $tax->id)->first()->is_retention) ? $document->taxes_collect->where('id', $tax->id)->first()->retention : $document->taxes_collect->where('id', $tax->id)->first()->total, 2, '.', '')}}</cbc:TaxAmount>

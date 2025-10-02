@@ -338,6 +338,115 @@
                 </tr>
             </tbody>
         </table>
+        
+        @php
+            // Normalizar health_fields a arreglo si existe
+            $health = null;
+            if (!empty($document->health_fields)) {
+                $health = is_array($document->health_fields)
+                    ? $document->health_fields
+                    : json_decode($document->health_fields, true);
+            }
+            // Mapas de salud para mostrar nombres legibles (inyectados desde el controlador)
+            $healthMaps = $healthMaps ?? [
+                'docIdTypes' => [],
+                'userTypes' => [],
+                'contractMethods' => [],
+                'coverages' => [],
+            ];
+
+            // Helper inline para obtener etiqueta por id
+            $label = function($map, $id) {
+                if ($id === null || $id === '' || $id === '-') return '-';
+                return $map[$id] ?? $id;
+            };
+            // Intentar fallback: si este documento no trae usuarios, buscar en la factura referenciada
+            if (is_array($health)) {
+                $healthUsers = [];
+                if (!empty($health['users_info']) && is_array($health['users_info'])) {
+                    $healthUsers = $health['users_info'];
+                } elseif (!empty($document->reference) && !empty($document->reference->health_fields)) {
+                    $refHealth = is_array($document->reference->health_fields)
+                        ? $document->reference->health_fields
+                        : json_decode($document->reference->health_fields, true);
+                    if (is_array($refHealth) && !empty($refHealth['users_info']) && is_array($refHealth['users_info'])) {
+                        $healthUsers = $refHealth['users_info'];
+                    }
+                }
+            }
+
+        @endphp
+
+        @if (is_array($health))
+            <br>
+            <table class="voucher-information">
+                <tr>
+                    <td>
+                        <table class="voucher-information-left">
+                            <tbody>
+                                <tr>
+                                    <td class="font-lg font-bold" colspan="2">INFORMACIÓN REFERENCIAL SECTOR SALUD</td>
+                                </tr>
+                                <tr>
+                                    <td width="50%">
+                                        <strong>Período facturado:</strong>
+                                        {{ $health['invoice_period_start_date'] ?? '-' }}
+                                        @if(!empty($health['invoice_period_start_date']) || !empty($health['invoice_period_end_date']))
+                                            al
+                                        @endif
+                                        {{ $health['invoice_period_end_date'] ?? '-' }}
+                                    </td>
+                                    <td width="50%">
+                                        <strong>Operación salud (ID):</strong> {{ $health['health_type_operation_id'] ?? '-' }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            @if (!empty($healthUsers) && is_array($healthUsers))
+                <br>
+                <table class="voucher-details health-users-table" style="font-size: 9px;">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Tipo Doc</th>
+                            <th class="text-center">Identificación</th>
+                            <th class="text-center">Primer Nombre</th>
+                            <th class="text-center">Segundo Nombre</th>
+                            <th class="text-center">Primer Apellido</th>
+                            <th class="text-center">Segundo Apellido</th>
+                            <th class="text-center">Tipo Usuario</th>
+                            <th class="text-center">Método Contrato</th>
+                            <th class="text-center">Cobertura</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($healthUsers as $u)
+                            @php
+                                $u = is_array($u) ? $u : (array) $u;
+                                $docTypeId = $u['document_id_type_id'] ?? $u['id_document_type'] ?? $u['health_type_document_identification_id'] ?? null;
+                                $userTypeId = $u['health_type_user_id'] ?? $u['type_user_id'] ?? $u['user_type_id'] ?? null;
+                                $methodId = $u['contract_method_id'] ?? $u['method_id'] ?? $u['health_contracting_payment_method_id'] ?? null;
+                                $coverageId = $u['health_coverage_id'] ?? $u['coverage_type_id'] ?? $u['coverage_id'] ?? null;
+                            @endphp
+                            <tr>
+                                <td class="text-center">{{ $label($healthMaps['docIdTypes'], $docTypeId) }}</td>
+                                <td class="text-center">{{ $u['identification_number'] ?? '-' }}</td>
+                                <td class="text-center">{{ $u['primer_nombre'] ?? $u['first_name'] ?? '-' }}</td>
+                                <td class="text-center">{{ $u['segundo_nombre'] ?? $u['middle_name'] ?? '-' }}</td>
+                                <td class="text-center">{{ $u['primer_apellido'] ?? $u['last_name'] ?? '-' }}</td>
+                                <td class="text-center">{{ $u['segundo_apellido'] ?? $u['second_last_name'] ?? '-' }}</td>
+                                <td class="text-center">{{ $label($healthMaps['userTypes'], $userTypeId) }}</td>
+                                <td class="text-center">{{ $label($healthMaps['contractMethods'], $methodId) }}</td>
+                                <td class="text-center">{{ $label($healthMaps['coverages'], $coverageId) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        @endif
         <br>
         <table class="voucher-footer">
             <tbody>

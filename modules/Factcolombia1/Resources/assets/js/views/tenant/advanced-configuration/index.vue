@@ -192,6 +192,94 @@
                                 </div>
                             </el-tab-pane>
 
+                            <el-tab-pane class="mb-3" name="rips">
+                                <span slot="label">RIPS Salud</span>
+                                <div class="row">
+                                    <div class="col-md-4 mt-4">
+                                        <label class="control-label">
+                                            Activar integración con FEV-RIPS
+                                            <el-tooltip class="item" effect="dark" content="Habilita el envío automático de paquetes RIPS a través de la integración con APIDIAN." placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <div class="form-group">
+                                            <el-switch
+                                                v-model="form.rips_enabled"
+                                                active-text="Sí"
+                                                inactive-text="No"
+                                                @change="submit"
+                                            ></el-switch>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4 mt-4" v-if="form.rips_enabled" :class="{'has-danger': errors.rips_url}">
+                                        <label class="control-label">URL servicio FEV-RIPS</label>
+                                        <div class="form-group">
+                                            <el-input
+                                                v-model="form.rips_url"
+                                                placeholder="https://api.apidian.com"
+                                                @change="submit"
+                                            ></el-input>
+                                            <small class="form-control-feedback" v-if="errors.rips_url" v-text="errors.rips_url[0]"></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4 mt-4" v-if="form.rips_enabled" :class="{'has-danger': errors.rips_type_document_identification_id}">
+                                        <label class="control-label">Tipo de documento SISPRO</label>
+                                        <div class="form-group">
+                                            <el-select
+                                                v-model="form.rips_type_document_identification_id"
+                                                placeholder="Seleccione"
+                                                filterable
+                                                :disabled="!type_document_identifications.length"
+                                                @change="submit"
+                                            >
+                                                <el-option
+                                                    v-for="option in type_document_identifications"
+                                                    :key="option.id"
+                                                    :value="option.id"
+                                                    :label="`${option.name} (${option.code})`"
+                                                ></el-option>
+                                            </el-select>
+                                            <small class="form-control-feedback" v-if="errors.rips_type_document_identification_id" v-text="errors.rips_type_document_identification_id[0]"></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4 mt-4" v-if="form.rips_enabled" :class="{'has-danger': errors.rips_number_identification}">
+                                        <label class="control-label">Número de identificación SISPRO</label>
+                                        <div class="form-group">
+                                            <el-input
+                                                v-model="form.rips_number_identification"
+                                                placeholder="Ingrese el número"
+                                                @change="submit"
+                                            ></el-input>
+                                            <small class="form-control-feedback" v-if="errors.rips_number_identification" v-text="errors.rips_number_identification[0]"></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4 mt-4" v-if="form.rips_enabled" :class="{'has-danger': errors.rips_password}">
+                                        <label class="control-label">Contraseña SISPRO</label>
+                                        <div class="form-group">
+                                            <el-input
+                                                v-model="form.rips_password"
+                                                show-password
+                                                placeholder="Clave de acceso"
+                                                @change="submit"
+                                            ></el-input>
+                                            <small class="form-control-feedback" v-if="errors.rips_password" v-text="errors.rips_password[0]"></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-8 mt-2" v-if="form.rips_enabled">
+                                        <el-alert
+                                            title="Recuerda registrar también los usuarios y prestadores en el módulo de RIPS."
+                                            type="info"
+                                            show-icon>
+                                        </el-alert>
+                                    </div>
+                                </div>
+                            </el-tab-pane>
+
                             <el-tab-pane class="mb-3"
                                          name="payroll">
                                 <span slot="label">Nómina</span>
@@ -385,22 +473,35 @@ export default {
             resource: 'co-advanced-configuration',
             errors: {},
             form: {},
-            loading_submit: false,
             activeName: 'general',
             openDialogDataDelete: false,
             resolutions: [],
             resolution_id: null,
             loading_delete: false,
+            type_document_identifications: [],
         }
     },
-    created() {
-        this.getRecord()
+    async created() {
+        this.initForm()
+        await Promise.all([
+            this.getTables(),
+            this.getRecord(),
+        ])
     },
     methods: {
         async getRecord() {
 
             await this.$http.get(`/${this.resource}/record`).then(response => {
-                this.form = response.data.data
+                const data = response.data.data || {}
+                this.form = Object.assign({}, this.form, data)
+                this.form.rips_enabled = Boolean(this.form.rips_enabled)
+            })
+        },
+        async getTables() {
+            await this.$http.get(`/${this.resource}/tables`).then(response => {
+                this.type_document_identifications = response.data.type_document_identifications || []
+            }).catch(() => {
+                this.type_document_identifications = []
             })
         },
         initForm() {
@@ -425,6 +526,11 @@ export default {
                 foot_note: '',
                 head_note: '',
                 // notes: '',
+                rips_enabled: false,
+                rips_type_document_identification_id: null,
+                rips_number_identification: null,
+                rips_password: null,
+                rips_url: null,
             }
         },
         clickSaveEmailRadian()

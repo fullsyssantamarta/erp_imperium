@@ -8,6 +8,7 @@ use App\Models\Tenant\Item;
 use App\Http\Controllers\Controller;
 use Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration;
 use Modules\Factcolombia1\Http\Requests\Tenant\AdvancedConfigurationRequest;
+use Modules\Factcolombia1\Models\TenantService\TypeDocumentIdentification;
 use App\Models\Tenant\Document;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +25,18 @@ class AdvancedConfigurationController extends Controller
     {
         $record = new AdvancedConfigurationResource(AdvancedConfiguration::firstOrFail());
         return  $record;
+    }
+
+    public function tables()
+    {
+        $documents = TypeDocumentIdentification::query()
+            ->select('id', 'name', 'code')
+            ->orderBy('name')
+            ->get();
+
+        return [
+            'type_document_identifications' => $documents,
+        ];
     }
 
     public function store(AdvancedConfigurationRequest $request) {

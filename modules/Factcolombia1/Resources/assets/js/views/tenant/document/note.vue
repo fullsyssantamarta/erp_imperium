@@ -9,6 +9,65 @@
                     <div class="form-body">
                         <div class="row">
                         </div>
+                        <!-- Datos de salud (solo lectura) cuando la nota referencia una factura con campos de salud -->
+                        <div class="row mt-2" v-if="note && healthInfo && healthInfo.health_fields">
+                            <div class="col-md-12">
+                                <div class="alert alert-info">
+                                    <strong>Datos sector salud (referencia)</strong>
+                                    <div class="mt-2">
+                                        <div><b>Factura:</b> {{ healthInfo.prefix }}-{{ healthInfo.number }} | <b>Fecha:</b> {{ healthInfo.issue_date }}</div>
+                                        <div><b>Periodo:</b> {{ healthInfo.health_fields.invoice_period_start_date }} a {{ healthInfo.health_fields.invoice_period_end_date }}</div>
+                                        <div v-if="healthInfo.health_fields.users_info">
+                                            <b>Usuarios en factura:</b> {{ healthInfo.health_fields.users_info.length }}
+                                        </div>
+                                    </div>
+                                    <div class="small text-muted mt-1">Esta información se copiará automáticamente a la nota y no puede editarse.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de usuarios del sector salud (referencia) -->
+                        <div class="row" v-if="note && healthInfo && healthInfo.health_fields && healthInfo.health_fields.users_info && healthInfo.health_fields.users_info.length">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">Usuarios sector salud (referencia)</div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Identificación</th>
+                                                        <th>Nombre</th>
+                                                        <th>Tipo usuario</th>
+                                                        <th>Cobertura</th>
+                                                        <th>Método contrato</th>
+                                                        <th>Autorización</th>
+                                                        <th>MIPRES</th>
+                                                        <th>Copago</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(u, idx) in healthInfo.health_fields.users_info" :key="idx">
+                                                        <td>
+                                                            <div>{{ labelDocIdType(u.health_type_document_identification_id) }} {{ u.identification_number }}</div>
+                                                        </td>
+                                                        <td>
+                                                            {{ [u.first_name, u.middle_name, u.surname, u.second_surname].filter(Boolean).join(' ') }}
+                                                        </td>
+                                                        <td>{{ labelUserType(u.health_type_user_id) }}</td>
+                                                        <td>{{ labelCoverage(u.health_coverage_id) }}</td>
+                                                        <td>{{ labelContractMethod(u.health_contracting_payment_method_id) }}</td>
+                                                        <td>{{ u.autorization_numbers || '-' }}</td>
+                                                        <td>{{ u.mipres || '-' }}</td>
+                                                        <td>{{ ratePrefix() }} {{ Number(u.co_payment || 0).toFixed(2) | numberFormat }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="row mt-4">
                             <div class="col-md-4 col-lg-4 pb-2">
                                 <div class="form-group" :class="{'has-danger': errors.type_document_id}">
@@ -44,6 +103,30 @@
                                         <el-option v-for="option in currencies" :key="option.id" :value="option.id" :label="option.name"></el-option>
                                     </el-select>
                                     <small class="form-control-feedback" v-if="errors.currency_id" v-text="errors.currency_id[0]"></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Numeración manual -->
+                        <div class="row mt-2">
+                            <div class="col-md-12">
+                                <el-checkbox v-model="manualNumberEnabled" @change="onToggleManualNumber">Asignar número manualmente</el-checkbox>
+                            </div>
+                        </div>
+                        <div class="row" v-if="manualNumberEnabled">
+                            <div class="col-md-2 col-lg-2 pb-2">
+                                <div class="form-group">
+                                    <label class="control-label">Prefijo</label>
+                                    <el-input v-model="manualPrefix" disabled></el-input>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-lg-3 pb-2">
+                                <div class="form-group">
+                                    <label class="control-label">Número</label>
+                                    <el-input v-model.number="manualNumber" @blur="validateManualNumber" placeholder="Ingrese el número"/>
+                                </div>
+                                <div v-if="numberValidationMessage" :class="{'text-success': numberAvailable, 'text-danger': !numberAvailable}">
+                                    {{ numberValidationMessage }}
                                 </div>
                             </div>
                         </div>
@@ -88,6 +171,80 @@
                                             maxlength="250"
                                             show-word-limit>
                                     </el-input>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <el-switch
+                                    v-model="health_sector"
+                                    :disabled="!!note"
+                                    active-text="Sector salud"
+                                    inactive-text="Sector salud"
+                                    @change="toggleHealthSector"
+                                ></el-switch>
+                                <small class="text-muted d-block" v-if="!note">
+                                    Activa esta opción si la nota pertenece al sector salud y requiere usuarios asociados.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3" v-if="health_sector && !note">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                                        <div>
+                                            <strong>Datos sector salud</strong>
+                                            <div class="small text-muted" v-if="form.health_fields && (form.health_fields.invoice_period_start_date || form.health_fields.invoice_period_end_date)">
+                                                Periodo: {{ form.health_fields.invoice_period_start_date || '-' }}
+                                                &nbsp;al&nbsp;
+                                                {{ form.health_fields.invoice_period_end_date || '-' }}
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-wrap">
+                                            <el-button type="primary" size="mini" class="mr-2 mb-2" @click="clickAddHealthData">Periodo facturación</el-button>
+                                            <el-button type="primary" size="mini" class="mb-2" @click="clickAddHealthUser">Agregar usuario</el-button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div v-if="!form.health_users || form.health_users.length === 0" class="p-3 text-center text-muted">
+                                            Sin usuarios registrados. Agrega al menos un usuario del servicio de salud.
+                                        </div>
+                                        <div class="table-responsive" v-else>
+                                            <table class="table mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Identificación</th>
+                                                        <th>Nombre</th>
+                                                        <th>Tipo usuario</th>
+                                                        <th>Cobertura</th>
+                                                        <th>Método contrato</th>
+                                                        <th>Autorización</th>
+                                                        <th>MIPRES</th>
+                                                        <th>Copago</th>
+                                                        <th class="text-right">Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(user, idx) in form.health_users" :key="idx">
+                                                        <td>{{ labelDocIdType(user.health_type_document_identification_id) }} {{ user.identification_number }}</td>
+                                                        <td>{{ [user.first_name, user.middle_name, user.surname, user.second_surname].filter(Boolean).join(' ') }}</td>
+                                                        <td>{{ labelUserType(user.health_type_user_id) }}</td>
+                                                        <td>{{ labelCoverage(user.health_coverage_id) }}</td>
+                                                        <td>{{ labelContractMethod(user.health_contracting_payment_method_id) }}</td>
+                                                        <td>{{ user.autorization_numbers || '-' }}</td>
+                                                        <td>{{ user.mipres || '-' }}</td>
+                                                        <td>{{ ratePrefix() }} {{ Number(user.co_payment || 0).toFixed(2) | numberFormat }}</td>
+                                                        <td class="text-right">
+                                                            <el-button type="text" size="mini" @click="clickEditHealthUser(user, idx)">Editar</el-button>
+                                                            <el-button type="text" size="mini" class="text-danger" @click="clickRemoveHealthUser(idx)">Eliminar</el-button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -238,6 +395,27 @@
         <document-form-retention :showDialog.sync="showDialogAddRetention"
                            @add="addRowRetention"></document-form-retention>
 
+        <document-health-data
+            :showDialog.sync="showDialogHealthData"
+            :health_fields="form.health_fields"
+            @addHealthData="addHealthData"
+        ></document-health-data>
+
+        <document-health-user
+            :showDialog.sync="showDialogAddHealthUser"
+            :recordItemHealthUser="recordItemHealthUser"
+            @add="addRowHealthUser"
+        ></document-health-user>
+
+        <!-- Modal conflicto de numeración -->
+        <el-dialog title="Número en uso" :visible.sync="showNumberConflictModal" width="30%">
+            <p>El número {{ manualPrefix }}-{{ manualNumber }} ya existe. ¿Desea usar el sugerido {{ manualPrefix }}-{{ suggestedNumber }}?</p>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="showNumberConflictModal=false">Cancelar</el-button>
+                <el-button type="primary" @click="acceptSuggestedNumber">Usar sugerido</el-button>
+            </span>
+        </el-dialog>
+
 
     </div>
     </div>
@@ -272,10 +450,12 @@
     // import {calculateRowItem} from '../../../helpers/functions'
     // import Helper from "../../../mixins/Helper";
     import DocumentOptions from './partials/options.vue'
+    import DocumentHealthData from './partials/health_fields.vue'
+    import DocumentHealthUser from './partials/health_users.vue'
 
     export default {
         props: ['typeUser', 'note', 'invoice'],
-        components: {PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions},
+        components: {PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DocumentHealthData, DocumentHealthUser},
         // mixins: [Helper],
         data() {
             return {
@@ -286,17 +466,27 @@
                 },
                 input_person:{},
                 company:{},
+                health_sector: false,
                 is_client:false,
                 recordItem: null,
+                recordItemHealthUser: null,
                 resource: 'co-documents',
                 showDialogAddItem: false,
                 showDialogAddRetention: false,
                 showDialogNewPerson: false,
                 showDialogOptions: false,
+                showDialogHealthData: false,
+                showDialogAddHealthUser: false,
                 loading_submit: false,
                 loading_form: false,
                 errors: {},
                 form: {},
+                healthInfo: null,
+                // Tablas de referencia para etiquetas de usuarios de salud
+                health_type_document_identifications: [],
+                health_type_users: [],
+                health_contracting_payment_methods: [],
+                health_coverages: [],
                 note_concepts: [],
                 type_invoices: [],
                 currencies: [],
@@ -315,6 +505,14 @@
                 type_documents: [],
                 all_type_documents: [],
                 noteService: {},
+                // Manual numbering state
+                manualNumberEnabled: false,
+                manualPrefix: '',
+                manualNumber: null,
+                numberAvailable: true,
+                numberValidationMessage: '',
+                showNumberConflictModal: false,
+                suggestedNumber: null,
             }
         },
 
@@ -338,11 +536,14 @@
                 await this.getRecordCustomer()
             else
                 this.customers = this.all_customers
+            this.fetchHealthTables();
             this.loading_form = true
             if(this.note){
                 this.$eventHub.$on('reloadDataPersons', (customer_id) => {
                     this.reloadDataCustomers(customer_id)
                 })
+                // Cargar datos de salud de la factura referenciada
+                this.fetchHealthInfo();
             }
             this.$eventHub.$on('initInputPerson', () => {
                 this.initInputPerson()
@@ -360,6 +561,22 @@
             typeNoteDocuments() {
                 console.log(this.all_type_documents)
                 this.type_documents = this.all_type_documents.filter(row => row.code === "4" || row.code === "5");
+            },
+
+            onToggleManualNumber() {
+                if (this.manualNumberEnabled) {
+                    // Prefijo desde el tipo de documento seleccionado
+                    const typeDocument = this.type_documents.find(x => x.id == this.form.type_document_id);
+                    this.manualPrefix = typeDocument ? typeDocument.prefix : '';
+                    // Exponer en form para backend
+                    this.form.manual_prefix = this.manualPrefix;
+                } else {
+                    this.manualPrefix = '';
+                    this.manualNumber = null;
+                    this.form.manual_prefix = null;
+                    this.form.manual_number = null;
+                    this.numberValidationMessage = '';
+                }
             },
 
             ratePrefix(tax = null) {
@@ -471,6 +688,9 @@
                     end_invoice_period: moment().format('YYYY-MM-DD'),
                     date_expiration: null,
                     type_invoice_id: null,
+                    resolution_number: this.note && this.note.resolution_number ? this.note.resolution_number : null,
+                    prefix: this.note && this.note.prefix ? this.note.prefix : null,
+                    manual_prefix: null,
                     total_discount: 0,
                     total_tax: 0,
                     watch: false,
@@ -487,7 +707,10 @@
                     payment_method_id: this.note ? this.note.payment_method_id : 1,
                     correlative_api: this.note ? this.note.correlative_api : null,
                     response_api_cufe: this.note ? this.note.response_api_cufe : null,
-                    note_service: {}
+                    note_service: {},
+                    health_fields: {},
+                    health_users: [],
+                    health_type_operation_id: 1
                 }
 
                 this.noteService.customer = {
@@ -507,15 +730,249 @@
                     if (this.note.customer.type_person_id == 1) {
                         this.noteService.customer.dv = this.note.customer.dv;
                     }
+                    this.applyHealthSnapshot(this.note.health_fields || {});
                 }
                 else
                     this.noteService.customer.dv = null;
+
+                if(!this.note){
+                    this.updateHealthSectorState();
+                }
 
                 this.errors = {}
                 this.$eventHub.$emit('eventInitForm')
 
                 this.initInputPerson()
 
+            },
+            async fetchHealthInfo(){
+                try {
+                    const { data } = await this.$http.get(`/co-documents/health/invoice-info`, { params: { id: this.form.reference_id }})
+                    if(data && data.success){
+                        this.healthInfo = data.data
+                    }
+                } catch (e) {
+                    // Silencioso: si no hay datos de salud o error, no bloqueamos
+                    this.healthInfo = null
+                }
+            },
+            async fetchHealthTables(){
+                try {
+                    const { data } = await this.$http.get(`/${this.resource}/health/tables`)
+                    this.health_type_document_identifications = data.health_type_document_identifications || []
+                    this.health_type_users = data.health_type_users || []
+                    this.health_contracting_payment_methods = data.health_contracting_payment_methods || []
+                    this.health_coverages = data.health_coverages || []
+                } catch (e) {
+                    // no-op
+                }
+            },
+            decodeHealthFields(raw) {
+                if (!raw) return {};
+                let parsed = raw;
+                if (typeof parsed === 'string') {
+                    try {
+                        parsed = JSON.parse(parsed);
+                    } catch (error) {
+                        return {};
+                    }
+                }
+                if (parsed && typeof parsed === 'object' && parsed.health_fields && !parsed.invoice_period_start_date) {
+                    parsed = parsed.health_fields;
+                }
+
+                return (parsed && typeof parsed === 'object') ? JSON.parse(JSON.stringify(parsed)) : {};
+            },
+            sanitizeHealthUsers(users) {
+                if (!Array.isArray(users)) return [];
+                return users.map(user => JSON.parse(JSON.stringify(user || {})));
+            },
+            applyHealthSnapshot(healthFields) {
+                if (!this.form) {
+                    return;
+                }
+
+                const normalizedFields = this.decodeHealthFields(healthFields);
+
+                if (!normalizedFields || Object.keys(normalizedFields).length === 0) {
+                    this.form.health_fields = {};
+                    this.form.health_users = [];
+                    this.form.health_type_operation_id = this.form.health_type_operation_id || 1;
+                    this.updateHealthSectorState();
+                    return;
+                }
+
+                const start = normalizedFields.invoice_period_start_date
+                    ? moment(normalizedFields.invoice_period_start_date).format('YYYY-MM-DD')
+                    : (this.form.start_invoice_period || null);
+                const end = normalizedFields.invoice_period_end_date
+                    ? moment(normalizedFields.invoice_period_end_date).format('YYYY-MM-DD')
+                    : (this.form.end_invoice_period || null);
+                const operation = normalizedFields.health_type_operation_id || this.form.health_type_operation_id || 1;
+                const users = this.sanitizeHealthUsers(normalizedFields.users_info || normalizedFields.users || []);
+
+                if (start) this.form.start_invoice_period = start;
+                if (end) this.form.end_invoice_period = end;
+
+                this.form.health_fields = {
+                    invoice_period_start_date: start,
+                    invoice_period_end_date: end,
+                    health_type_operation_id: operation,
+                    users_info: users,
+                };
+                this.form.health_users = users;
+                this.form.health_type_operation_id = operation;
+                this.updateHealthSectorState();
+                this.refreshHealthState();
+            },
+            updateHealthSectorState(forceValue = null) {
+                if (forceValue !== null) {
+                    this.health_sector = !!forceValue;
+                    return;
+                }
+                const currentForm = this.form || {};
+                const hasUsers = Array.isArray(currentForm.health_users) && currentForm.health_users.length > 0;
+                const hasFields = currentForm.health_fields && Object.keys(currentForm.health_fields).length > 0;
+                if (hasUsers || hasFields) {
+                    this.health_sector = true;
+                } else if (!this.note) {
+                    this.health_sector = false;
+                }
+            },
+            buildHealthPayload() {
+                const fields = this.form.health_fields || {};
+                const users = Array.isArray(this.form.health_users) ? this.form.health_users : [];
+                const start = fields.invoice_period_start_date || this.form.start_invoice_period;
+                const end = fields.invoice_period_end_date || this.form.end_invoice_period;
+
+                if (!start || !end || users.length === 0) {
+                    return null;
+                }
+
+                const operation = fields.health_type_operation_id || this.form.health_type_operation_id || 1;
+                const normalizedUsers = users.map(user => JSON.parse(JSON.stringify(user || {})));
+
+                return {
+                    invoice_period_start_date: moment(start).format('YYYY-MM-DD'),
+                    invoice_period_end_date: moment(end).format('YYYY-MM-DD'),
+                    health_type_operation_id: Number(operation) || 1,
+                    users_info: normalizedUsers,
+                };
+            },
+            labelFrom(list, id, key='name'){
+                const row = list.find(x => String(x.id) === String(id))
+                return row ? row[key] : id
+            },
+            labelDocIdType(id){ return this.labelFrom(this.health_type_document_identifications, id, 'code') },
+            labelUserType(id){ return this.labelFrom(this.health_type_users, id) },
+            labelContractMethod(id){ return this.labelFrom(this.health_contracting_payment_methods, id) },
+            labelCoverage(id){ return this.labelFrom(this.health_coverages, id) },
+            toggleHealthSector(value) {
+                if (this.note) {
+                    return;
+                }
+                if (value) {
+                    if (!this.form.health_fields || Object.keys(this.form.health_fields).length === 0) {
+                        this.form.health_fields = {
+                            invoice_period_start_date: this.form.start_invoice_period || null,
+                            invoice_period_end_date: this.form.end_invoice_period || null,
+                            health_type_operation_id: this.form.health_type_operation_id || 1,
+                            users_info: Array.isArray(this.form.health_users) ? this.form.health_users : [],
+                        };
+                    }
+                    this.updateHealthSectorState(true);
+                } else {
+                    this.form.health_fields = {};
+                    this.form.health_users = [];
+                    this.form.health_type_operation_id = 1;
+                    this.updateHealthSectorState(false);
+                }
+                this.refreshHealthState();
+            },
+            refreshHealthState() {
+                if (!this.form) {
+                    return;
+                }
+                if (!this.health_sector) {
+                    delete this.noteService.health_fields;
+                    return;
+                }
+                if (!this.form.health_fields) {
+                    this.form.health_fields = {};
+                }
+                const operation = this.form.health_fields.health_type_operation_id || this.form.health_type_operation_id || 1;
+                this.form.health_type_operation_id = operation;
+                this.form.health_fields.health_type_operation_id = operation;
+                const users = Array.isArray(this.form.health_users) ? this.form.health_users : [];
+                const normalizedUsers = users.map(user => JSON.parse(JSON.stringify(user || {})));
+                this.form.health_users = normalizedUsers;
+                this.form.health_fields.users_info = normalizedUsers;
+                const payload = this.buildHealthPayload();
+                if (payload) {
+                    this.noteService.health_fields = JSON.parse(JSON.stringify(payload));
+                } else {
+                    delete this.noteService.health_fields;
+                }
+            },
+            clickAddHealthData() {
+                if (!this.health_sector && !this.note) {
+                    this.updateHealthSectorState(true);
+                }
+                this.showDialogHealthData = true;
+            },
+            clickAddHealthUser() {
+                if (!this.health_sector && !this.note) {
+                    this.updateHealthSectorState(true);
+                }
+                this.recordItemHealthUser = null;
+                this.showDialogAddHealthUser = true;
+            },
+            clickEditHealthUser(user, index) {
+                if (this.note) {
+                    return;
+                }
+                const record = JSON.parse(JSON.stringify(user || {}));
+                record.indexi = index;
+                this.recordItemHealthUser = record;
+                this.showDialogAddHealthUser = true;
+            },
+            clickRemoveHealthUser(index) {
+                if (this.note) {
+                    return;
+                }
+                if (index < 0 || index >= this.form.health_users.length) {
+                    return;
+                }
+                this.form.health_users.splice(index, 1);
+                this.refreshHealthState();
+            },
+            addHealthData(health_fields) {
+                const start = health_fields.invoice_period_start_date ? moment(health_fields.invoice_period_start_date).format('YYYY-MM-DD') : null;
+                const end = health_fields.invoice_period_end_date ? moment(health_fields.invoice_period_end_date).format('YYYY-MM-DD') : null;
+                const currentFields = this.form.health_fields || {};
+                const currentOperation = currentFields.health_type_operation_id || this.form.health_type_operation_id || 1;
+                this.form.health_fields = Object.assign({}, currentFields, {
+                    invoice_period_start_date: start,
+                    invoice_period_end_date: end,
+                    health_type_operation_id: currentOperation,
+                });
+                if (!this.note) {
+                    if (start) this.form.start_invoice_period = start;
+                    if (end) this.form.end_invoice_period = end;
+                }
+                this.updateHealthSectorState(true);
+                this.refreshHealthState();
+            },
+            addRowHealthUser(row) {
+                const record = JSON.parse(JSON.stringify(row || {}));
+                if (this.recordItemHealthUser && typeof this.recordItemHealthUser.indexi === 'number') {
+                    this.$set(this.form.health_users, this.recordItemHealthUser.indexi, record);
+                } else {
+                    this.form.health_users.push(record);
+                }
+                this.recordItemHealthUser = null;
+                this.updateHealthSectorState(true);
+                this.refreshHealthState();
             },
             initInputPerson(){
                 this.input_person = {
@@ -538,6 +995,41 @@
 
             changeDocumentType() {
                 this.conceptss()
+                const typeDocument = this.type_documents.find(x => x.id == this.form.type_document_id);
+                this.syncResolutionMetadata(typeDocument);
+                if (this.manualNumberEnabled) {
+                    this.manualPrefix = typeDocument && typeDocument.prefix ? typeDocument.prefix : '';
+                    this.form.manual_prefix = this.manualPrefix || null;
+                }
+            },
+
+            syncResolutionMetadata(typeDocument = null) {
+                const target = typeDocument || this.type_documents.find(x => x.id == this.form.type_document_id);
+                const resolutionNumber = target && target.resolution_number ? target.resolution_number : null;
+                const prefix = target && target.prefix ? target.prefix : null;
+
+                this.form.resolution_number = resolutionNumber;
+                this.form.prefix = prefix;
+
+                if (!this.manualNumberEnabled) {
+                    this.form.manual_prefix = null;
+                }
+
+                if (!this.noteService) {
+                    this.noteService = {};
+                }
+
+                if (resolutionNumber !== null && resolutionNumber !== undefined) {
+                    this.noteService.resolution_number = resolutionNumber;
+                } else {
+                    this.noteService.resolution_number = '';
+                }
+
+                if (prefix !== null && prefix !== undefined) {
+                    this.noteService.prefix = prefix;
+                } else {
+                    this.noteService.prefix = '';
+                }
             },
 
             conceptss() {
@@ -794,7 +1286,27 @@
                 if(!this.form.note_concept_id){
                     return this.$message.error('Debe seleccionar un concepto')
                 }
-                await this.generateNoteService();
+                if (this.manualNumberEnabled) {
+                    if (!this.manualPrefix || !this.manualNumber) {
+                        return this.$message.error('Ingrese prefijo y número manual.');
+                    }
+                    // Enviar al backend
+                    this.form.manual_prefix = this.manualPrefix;
+                    this.form.manual_number = this.manualNumber;
+                }
+                if (this.health_sector) {
+                    const healthFields = this.form.health_fields || {};
+                    if (!healthFields.invoice_period_start_date || !healthFields.invoice_period_end_date) {
+                        return this.$message.error('Debe registrar el periodo de facturación del sector salud.');
+                    }
+                    if (!Array.isArray(this.form.health_users) || this.form.health_users.length === 0) {
+                        return this.$message.error('Debe agregar al menos un usuario del sector salud.');
+                    }
+                }
+                const serviceReady = await this.generateNoteService();
+                if (!serviceReady) {
+                    return;
+                }
                 this.form.note_service = this.noteService;
                 // return
                 this.loading_submit = true
@@ -807,7 +1319,15 @@
                         this.showDialogOptions = true;
                     }
                     else {
-                        this.$message.error(response.data.message);
+                        if (response.data && response.data.conflict) {
+                            // conflicto por número existente
+                            this.suggestedNumber = response.data.suggested || null;
+                            this.numberAvailable = false;
+                            this.numberValidationMessage = 'Número en uso';
+                            this.showNumberConflictModal = true;
+                        } else {
+                            this.$message.error(response.data.message);
+                        }
                     }
                 }).catch(error => {
                     if (error.response.status === 422) {
@@ -819,6 +1339,36 @@
                 }).then(() => {
                     this.loading_submit = false;
                 });
+            },
+
+            async validateManualNumber() {
+                if (!this.manualNumberEnabled || !this.manualPrefix || !this.manualNumber) return;
+                try {
+                    const { data } = await this.$http.get(`/${this.resource}/validate-number`, { params: { prefix: this.manualPrefix, number: this.manualNumber } });
+                    if (data.success) {
+                        if (data.available) {
+                            this.numberAvailable = true;
+                            this.numberValidationMessage = 'Número disponible';
+                        } else {
+                            this.numberAvailable = false;
+                            this.numberValidationMessage = 'Número en uso';
+                            this.suggestedNumber = data.suggested;
+                            this.showNumberConflictModal = true;
+                        }
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            },
+
+            acceptSuggestedNumber() {
+                if (this.suggestedNumber) {
+                    this.manualNumber = this.suggestedNumber;
+                    this.form.manual_number = this.suggestedNumber;
+                    this.numberAvailable = true;
+                    this.numberValidationMessage = 'Número sugerido seleccionado';
+                }
+                this.showNumberConflictModal = false;
             },
 
             getTypeDocumentService()
@@ -847,8 +1397,12 @@
 
                 // Obtener el tipo de documento para obtener el prefijo
                 const typeDocument = this.type_documents.find(x => x.id == this.form.type_document_id);
-                this.noteService.prefix = typeDocument ? typeDocument.prefix : '';
-                this.noteService.resolution_number = typeDocument ? typeDocument.resolution_number : '';
+                this.syncResolutionMetadata(typeDocument);
+
+                if (!this.noteService.resolution_number) {
+                    this.$message.error('No se encontró una resolución activa para este tipo de nota. Configure la resolución en DIAN antes de continuar.');
+                    return false;
+                }
 
                 if(!this.note){
                     if (this.form.type_document_id == 2) {
@@ -865,7 +1419,7 @@
 //                console.log(this.noteService)
                 if(this.note){
                     this.noteService.billing_reference = {
-                        number: String(this.note.correlative_api),
+                        number: this.formatBillingReferenceNumber(this.note),
                         uuid: this.note.response_api_cufe,
                         issue_date: moment(this.note.date_issue).format('YYYY-MM-DD')
                     };
@@ -891,6 +1445,19 @@
                         this.noteService.requested_monetary_totals.allowance_total_amount, this.noteService.requested_monetary_totals.line_extension_amount
                     );*/
                 }
+                const healthPayload = this.buildHealthPayload();
+                if (healthPayload) {
+                    this.noteService.health_fields = JSON.parse(JSON.stringify(healthPayload));
+                } else {
+                    delete this.noteService.health_fields;
+                }
+
+                this.form.resolution_number = this.noteService.resolution_number;
+                this.form.prefix = this.noteService.prefix;
+                if (this.manualNumberEnabled) {
+                    this.form.manual_prefix = this.noteService.prefix;
+                }
+                return true;
             },
 
             getCustomer() {
@@ -910,6 +1477,17 @@
                     obj.dv = customer.dv;
                 }
                 return obj;
+            },
+
+            formatBillingReferenceNumber(reference) {
+                if (!reference) return '';
+                const prefix = reference.prefix ? String(reference.prefix).trim() : '';
+                const baseNumber = reference.number ?? reference.correlative_api ?? '';
+                const numberStr = baseNumber !== null && baseNumber !== undefined ? String(baseNumber) : '';
+                if (prefix) {
+                    return `${prefix}${numberStr}`;
+                }
+                return numberStr;
             },
 
             getTaxTotal() {

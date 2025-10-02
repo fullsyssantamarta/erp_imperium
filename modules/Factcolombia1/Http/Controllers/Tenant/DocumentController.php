@@ -61,11 +61,24 @@ use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\ChartAccountSaleConfiguration;
 use Modules\Accounting\Models\AccountingChartAccountConfiguration;
 use Modules\Accounting\Helpers\AccountingEntryHelper;
+use App\Services\HealthFieldsValidatorService;
+use App\Services\ApidianClientService;
+use App\Exceptions\ApidianRequestException;
 
 
 class DocumentController extends Controller
 {
     use DocumentTrait, SearchTrait;
+
+    /**
+     * @var ApidianClientService
+     */
+    protected $apidianClient;
+
+    public function __construct(ApidianClientService $apidianClient)
+    {
+        $this->apidianClient = $apidianClient;
+    }
 
     const REGISTERED = 1;
     const ACCEPTED = 5;
@@ -765,7 +778,7 @@ class DocumentController extends Controller
                 $service_invoice['prefix'] = $request->prefix;
                 $service_invoice['resolution_number'] = $request->resolution_number;
                 if($request->format_print != "2"){
-                    $service_invoice['foot_note'] = "Modo de operación: Software Propio - by ".env('APP_NAME', 'FACTURADOR')." La presente Factura Electrónica de Venta, es un título valor de acuerdo con lo establecido en el Código de Comercio y en especial en los artículos 621,772 y 774. El Decreto 2242 del 24 de noviembre de 2015 y el Decreto Único 1074 de mayo de 2015. El presente título valor se asimila en todos sus efectos a una letra de cambio Art. 779 del Código de Comercio. Con esta el Comprador declara haber recibido real y materialmente las mercancías o prestación de servicios descritos en este título valor.";
+                    $service_invoice['foot_note'] = "Modo de operación: Software Propio - by ".env('APP_NAME', 'IMPERIUM SAS')." La presente Factura Electrónica de Venta, es un título valor de acuerdo con lo establecido en el Código de Comercio y en especial en los artículos 621,772 y 774. El Decreto 2242 del 24 de noviembre de 2015 y el Decreto Único 1074 de mayo de 2015. El presente título valor se asimila en todos sus efectos a una letra de cambio Art. 779 del Código de Comercio. Con esta el Comprador declara haber recibido real y materialmente las mercancías o prestación de servicios descritos en este título valor.";
                 }
             }
             //\Log::debug(json_encode($service_invoice));
@@ -863,36 +876,18 @@ class DocumentController extends Controller
             $id_test = $company->test_id;
             $base_url = config('tenant.service_fact');
 
-            if($company->type_environment_id == 2 && $company->test_id != 'no_test_set_id'){
-            //     \Log::debug("Alexander");
-                $ch = curl_init("{$base_url}ubl2.1/invoice/{$id_test}");
-            }
-            else
-                $ch = curl_init("{$base_url}ubl2.1/invoice");
+            $apidianOptions = [
+                'base_url' => $base_url,
+                'token' => $company->api_token,
+                'environment' => ($company->type_environment_id == 2) ? 'test' : 'production',
+                'test_id' => $id_test,
+            ];
 
-            $data_document = json_encode($service_invoice);
-            // dd($data_document);
-            //\Log::debug("{$base_url}ubl2.1/invoice");
-            //\Log::debug($company->api_token);
-            //\Log::debug($correlative_api);
-            //\Log::debug($data_document);
-            //            return $data_document;
-            //return "";
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS,($data_document));
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'Content-Type: application/json',
-                'Accept: application/json',
-                "Authorization: Bearer {$company->api_token}"
-            ));
-            $response = curl_exec($ch);
+            $apidianResult = $this->apidianClient->sendDocument($service_invoice, $apidianOptions);
+            $response = $apidianResult['raw_body'] ?? json_encode($apidianResult['data'] ?? []);
             if(config('tenant.show_log')) {
                 \Log::debug('DocumentController:715: '.$response);
             }
-            curl_close($ch);
             $response_model = json_decode($response);
             $zip_key = null;
             $invoice_status_api = null;
@@ -1074,6 +1069,20 @@ class DocumentController extends Controller
             // Registrar cupón
             $this->registerCustomerCoupon($this->document);
 
+        }
+        catch (ApidianRequestException $exception) {
+            DB::connection('tenant')->rollBack();
+            \Log::warning('APIDIAN invoice submission failed', [
+                'message' => $exception->getMessage(),
+                'context' => $exception->context(),
+            ]);
+
+            return [
+                'success' => false,
+                'validation_errors' => true,
+                'message' => $exception->getMessage(),
+                'context' => $exception->context(),
+            ];
         }
         catch (\Exception $e) {
             DB::connection('tenant')->rollBack();
@@ -1355,7 +1364,41 @@ class DocumentController extends Controller
 
     public function storeNote(DocumentRequest $request) {
         DB::connection('tenant')->beginTransaction();
+        $response_model = null;
+        $response_status = null;
+        $nextConsecutive = null;
+
         try {
+            $selectedType = null;
+            // Optional manual numbering: if prefix+number is provided, validate uniqueness early
+            if ($request->filled('manual_prefix') && $request->filled('manual_number')) {
+                $exists = Document::where('prefix', $request->manual_prefix)
+                    ->where('number', $request->manual_number)
+                    ->exists();
+                if ($exists) {
+                    $max = Document::where('prefix', $request->manual_prefix)->max('number');
+                    return [
+                        'success' => false,
+                        'message' => 'El número ya existe para ese prefijo. Elija otro número o use el sugerido.',
+                        'conflict' => [
+                            'prefix' => $request->manual_prefix,
+                            'number' => $request->manual_number,
+                        ],
+                        'suggested' => $max ? ($max + 1) : ((int)$request->manual_number + 1),
+                    ];
+                }
+            }
+            // Si la resolución seleccionada es de plantilla 'health', exigir referencia a una factura
+            if (!empty($request->type_document_id)) {
+                $selectedType = TypeDocument::find($request->type_document_id);
+                if ($selectedType && $selectedType->template === 'health' && empty($request->reference_id)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Las notas del sector salud deben referenciar una factura (reference_id requerido).'
+                    ];
+                }
+            }
+
             $note_service = $request->note_service;
             $url_name_note = '';
             $type_document_service = $note_service['type_document_id'];
@@ -1382,7 +1425,12 @@ class DocumentController extends Controller
             //si la empresa esta en habilitacion, envio el parametro ignore_state_document_id en true
             //  para buscar el correlativo en api sin filtrar por el campo state_document_id=1
             $ignore_state_document_id = ($company->type_environment_id === 2);
-            $correlative_api = $this->getCorrelativeInvoice($type_document_service, null, $ignore_state_document_id);
+            // If manual number provided, use it; otherwise, get next correlativo from API
+            if ($request->filled('manual_prefix') && $request->filled('manual_number')) {
+                $correlative_api = (int) $request->manual_number;
+            } else {
+                $correlative_api = $this->getCorrelativeInvoice($type_document_service, null, $ignore_state_document_id);
+            }
             // dd($correlative_api);
 
             if(!is_numeric($correlative_api)){
@@ -1421,33 +1469,209 @@ class DocumentController extends Controller
             $note_service['customer']['dv'] = $this->validarDigVerifDIAN($note_service['customer']['identification_number']);
             $note_service['foot_note'] = "Modo de operación: Software Propio - by ".env('APP_NAME', 'FACTURADOR');
 
+            $referenceDocument = null;
+            if ($request->filled('reference_id')) {
+                $referenceDocument = Document::with('type_document')->find($request->reference_id);
+            }
+
+            $nextConsecutive = FacadeDocument::nextConsecutive($request->type_document_id);
+
+            $resolvedPrefix = $note_service['prefix'] ?? ($request->manual_prefix ?? $request->prefix ?? null);
+            if (empty($resolvedPrefix) && $referenceDocument) {
+                $resolvedPrefix = $referenceDocument->prefix ?? null;
+            }
+            if (empty($resolvedPrefix)) {
+                $resolvedPrefix = $nextConsecutive->prefix ?? null;
+            }
+            if (!empty($resolvedPrefix)) {
+                $note_service['prefix'] = $resolvedPrefix;
+                $request->merge(['prefix' => $resolvedPrefix]);
+            }
+
+            $resolvedResolution = $note_service['resolution_number']
+                ?? $request->resolution_number
+                ?? ($selectedType ? $selectedType->resolution_number : null);
+            if (empty($resolvedResolution) && $referenceDocument && $referenceDocument->type_document) {
+                $resolvedResolution = $referenceDocument->type_document->resolution_number ?? null;
+            }
+            if (empty($resolvedResolution) && isset($nextConsecutive->resolution_number)) {
+                $resolvedResolution = $nextConsecutive->resolution_number;
+            }
+            if (empty($resolvedResolution)) {
+                throw new \Exception('No se encontró una resolución activa para la nota. Configure la resolución correspondiente antes de continuar.');
+            }
+            $note_service['resolution_number'] = $resolvedResolution;
+            $request->merge(['resolution_number' => $resolvedResolution]);
+
+            // Health sector notes: mirror health fields from the referenced invoice
+            // and ensure billing_reference is present, per DIAN/APIDIAN requirements
+            if ($referenceDocument) {
+                $original = $referenceDocument;
+                if ($original) {
+                    // Ensure billing_reference exists using original invoice data
+                    if (empty($note_service['billing_reference'])) {
+                        $note_service['billing_reference'] = [
+                            'number' => '',
+                            'uuid' => $original->response_api_cufe ?? $original->cufe ?? '',
+                            'issue_date' => $original->date_of_issue ? $original->date_of_issue->format('Y-m-d') : date('Y-m-d'),
+                        ];
+                    }
+
+                    $computedReferenceNumber = $this->formatBillingReferenceNumber($original);
+                    if ($computedReferenceNumber !== '') {
+                        $note_service['billing_reference']['number'] = $computedReferenceNumber;
+                    }
+
+                    // If the original invoice has health_fields, enforce exact mirroring in the note
+                    if (!empty($original->health_fields)) {
+                        $decoded_health = is_array($original->health_fields)
+                            ? $original->health_fields
+                            : json_decode($original->health_fields, true);
+
+                        if (is_array($decoded_health) && !empty($decoded_health)) {
+                            // Start from original health_fields and explicitly ensure users_info exists
+                            $note_service['health_fields'] = $decoded_health;
+
+                            // Normalize required keys for APIDIAN note rendering
+                            $note_service['health_fields']['invoice_period_start_date'] = isset($decoded_health['invoice_period_start_date']) ? (string) $decoded_health['invoice_period_start_date'] : null;
+                            $note_service['health_fields']['invoice_period_end_date'] = isset($decoded_health['invoice_period_end_date']) ? (string) $decoded_health['invoice_period_end_date'] : null;
+                            $note_service['health_fields']['health_type_operation_id'] = $decoded_health['health_type_operation_id'] ?? 1;
+
+                            // Ensure users_info is an indexed array (not associative) to avoid serialization quirks
+                            if (isset($decoded_health['users_info']) && is_array($decoded_health['users_info'])) {
+                                $users = array_values($decoded_health['users_info']);
+                            } else {
+                                $users = [];
+                            }
+
+                            // Normalize legacy keys so APIDIAN HealthUser model receives expected attributes
+                            $normalizedUsers = [];
+                            foreach ($users as $user) {
+                                $data = is_object($user) ? (array) $user : (array) $user;
+
+                                $docType = $data['health_type_document_identification_id']
+                                    ?? $data['document_id_type_id']
+                                    ?? $data['type_document_id']
+                                    ?? $data['user_type_document_id']
+                                    ?? null;
+                                if ($docType !== null && $docType !== '') {
+                                    $docType = (int) $docType;
+                                    $data['health_type_document_identification_id'] = $docType;
+                                    $data['document_id_type_id'] = $docType;
+                                }
+
+                                $typeUser = $data['health_type_user_id']
+                                    ?? $data['type_user_id']
+                                    ?? $data['user_type_id']
+                                    ?? null;
+                                if ($typeUser !== null && $typeUser !== '') {
+                                    $typeUser = (int) $typeUser;
+                                    $data['health_type_user_id'] = $typeUser;
+                                    $data['type_user_id'] = $typeUser;
+                                }
+
+                                $contractMethod = $data['health_contracting_payment_method_id']
+                                    ?? $data['contract_method_id']
+                                    ?? $data['method_id']
+                                    ?? null;
+                                if ($contractMethod !== null && $contractMethod !== '') {
+                                    $contractMethod = (int) $contractMethod;
+                                    $data['health_contracting_payment_method_id'] = $contractMethod;
+                                    $data['contract_method_id'] = $contractMethod;
+                                }
+
+                                $coverage = $data['health_coverage_id']
+                                    ?? $data['coverage_type_id']
+                                    ?? $data['coverage_id']
+                                    ?? null;
+                                if ($coverage !== null && $coverage !== '') {
+                                    $coverage = (int) $coverage;
+                                    $data['health_coverage_id'] = $coverage;
+                                    $data['coverage_type_id'] = $coverage;
+                                }
+
+                                $normalizedUsers[] = $data;
+                            }
+
+                            $note_service['health_fields']['users_info'] = $normalizedUsers;
+
+                            // Persist same health_fields into the created note document as well
+                            // so DocumentHelper::getHealthFields can store them
+                            $request->merge([
+                                'health_fields' => $note_service['health_fields'],
+                                'health_users' => $note_service['health_fields']['users_info'],
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Si existe bandera de plantilla personalizada, usarla también en notas
+            if(file_exists(storage_path('template.api'))){
+                $note_service['invoice_template'] = "one"; // plantilla que incluye bloques de salud
+                $note_service['template_token'] = password_hash($company->identification_number, PASSWORD_DEFAULT);
+            }
+
+            // Agregar resumen compacto de usuarios en el pie de página (mejora visual inmediata en PDF)
+            if (!empty($note_service['health_fields']['users_info']) && is_array($note_service['health_fields']['users_info'])) {
+                $users = $note_service['health_fields']['users_info'];
+                $max = 5; // limitar para no saturar el pie
+                $slice = array_slice($users, 0, $max);
+                $parts = [];
+                foreach ($slice as $u) {
+                    $idn = $u['identification_number'] ?? '';
+                    $name = trim(($u['first_name'] ?? '').' '.($u['middle_name'] ?? '').' '.($u['surname'] ?? '').' '.($u['second_surname'] ?? ''));
+                    $parts[] = trim($idn.' - '.$name);
+                }
+                $more = count($users) > $max ? ' +' . (count($users) - $max) . ' más' : '';
+                $summary = 'Usuarios salud: '.count($users).' ['.implode('; ', $parts).']'.$more;
+                $note_service['foot_note'] = isset($note_service['foot_note']) && $note_service['foot_note']
+                    ? ($note_service['foot_note'].' | '.$summary)
+                    : $summary;
+            }
+
+            try {
+                $preparedHealthFields = $this->prepareHealthFieldsPayload(
+                    $note_service['health_fields'] ?? $request->input('health_fields'),
+                    $request->input('health_users', [])
+                );
+
+                if ($preparedHealthFields !== null) {
+                    $note_service['health_fields'] = $preparedHealthFields;
+                    $request->merge([
+                        'health_fields' => $preparedHealthFields,
+                        'health_users' => $preparedHealthFields['users_info'] ?? [],
+                    ]);
+                }
+            } catch (\Exception $exception) {
+                DB::connection('tenant')->rollBack();
+
+                return [
+                    'success' => false,
+                    'message' => 'Error al validar datos del sector salud: '.$exception->getMessage(),
+                ];
+            }
+
             $id_test = $company->test_id;
             $base_url = config('tenant.service_fact');
-            if($company->type_environment_id == 2 && $company->test_id != 'no_test_set_id')
-                $ch = curl_init("{$base_url}ubl2.1/{$url_name_note}/{$id_test}");
-            else
-                $ch = curl_init("{$base_url}ubl2.1/{$url_name_note}");
-            $data_document = json_encode($note_service);
 
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS,($data_document));
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'Content-Type: application/json',
-                'Accept: application/json',
-                "Authorization: Bearer {$company->api_token}"
-            ));
-            $response = curl_exec($ch);
-            curl_close($ch);
-            //\Log::debug("{$base_url}ubl2.1/invoice");
-            //\Log::debug($company->api_token);
-            //\Log::debug($correlative_api);
-            //\Log::debug($data_document);
-            //            return $data_document;
+            // Asegurar que el servicio conozca el tipo de documento para selección de endpoint
+            $note_service['type_document_id'] = $type_document_service;
+
+            if (env('LOG_NOTE_PAYLOAD', false)) {
+                \Log::debug('[storeNote] Payload sent to service: '.json_encode($note_service));
+            }
+
+            $apidianOptions = [
+                'base_url' => $base_url,
+                'token' => $company->api_token,
+                'environment' => ($company->type_environment_id == 2) ? 'test' : 'production',
+                'test_id' => $id_test,
+            ];
+
+            $apidianResult = $this->apidianClient->sendDocument($note_service, $apidianOptions);
+            $response = $apidianResult['raw_body'] ?? json_encode($apidianResult['data'] ?? []);
             \Log::debug($response);
-            //return "";
 
             $response_model = json_decode($response);
             $zip_key = null;
@@ -1552,7 +1776,6 @@ class DocumentController extends Controller
 
             ///-------------------------------
             // dd($response_status, $response_model);
-            $nextConsecutive = FacadeDocument::nextConsecutive($request->type_document_id);
 
             $this->company = Company::query()
                 ->with('country', 'version_ubl', 'type_identity_document')
@@ -1588,26 +1811,34 @@ class DocumentController extends Controller
             }
 
         }
-        catch (\Exception $e) {
+        catch (ApidianRequestException $exception) {
+            DB::connection('tenant')->rollBack();
+            \Log::warning('APIDIAN note submission failed', [
+                'message' => $exception->getMessage(),
+                'context' => $exception->context(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'context' => $exception->context(),
+            ];
+        }
+        catch (\Throwable $e) {
             DB::connection('tenant')->rollBack();
             // Inicializar el mensaje de error
             $userFriendlyMessage = 'Ocurrió un error inesperado.';
             // Verificar si hay un mensaje de error específico en la respuesta de la API
-            if (isset($response_model->message)) {
+            $apiErrors = [];
+            if ($response_model && isset($response_model->message)) {
                 $userFriendlyMessage = $response_model->message;  // Mensaje general de la API
                 // Verificar si hay detalles de errores específicos
-                if (isset($response_model->errors) && is_object($response_model->errors)) {
-                    $errorDetailsArray = []; // Cambia a array para mejorar eficiencia
-                    foreach ($response_model->errors as $field => $errorMessages) {
-                        if (is_array($errorMessages)) {
-                            $errorDetailsArray[] = implode(', ', $errorMessages);
-                        } else {
-                            $errorDetailsArray[] = $errorMessages;
-                        }
-                    }
-                    // Concatenar detalles de los errores al mensaje para el usuario
-                    if (!empty($errorDetailsArray)) {
-                        $userFriendlyMessage .= ' ' . implode(' ', $errorDetailsArray);
+                if (isset($response_model->errors)) {
+                    $apiErrors = json_decode(json_encode($response_model->errors), true) ?? [];
+                    if (!empty($apiErrors)) {
+                        $userFriendlyMessage .= ' ' . implode(' ', array_map(function ($item) {
+                            return is_array($item) ? implode(', ', $item) : $item;
+                        }, $apiErrors));
                     }
                 }
             }
@@ -1618,13 +1849,16 @@ class DocumentController extends Controller
                 // Si el mensaje contiene "Undefined property: stdClass::$Response", no mostrar nada
                 $errorMessage = '';
             }
+            $finalMessage = trim(implode(' ', array_filter([$errorMessage, $userFriendlyMessage])));
+
             // Devolver la respuesta con un mensaje de error más detallado
             return [
                 'success' => false,
-                'validation_errors' => true,
-                'message' =>  $errorMessage . ' ' . $userFriendlyMessage,
+                'validation_errors' => ($e instanceof \Illuminate\Validation\ValidationException),
+                'message' => $finalMessage !== '' ? $finalMessage : $userFriendlyMessage,
+                'errors' => $apiErrors,
                 'line' => $e->getLine(),
-                'trace' => $e->getTrace(),
+                'exception' => get_class($e),
             ];
         }
 
@@ -1652,8 +1886,8 @@ class DocumentController extends Controller
     {
         try {
             $accountConfiguration = AccountingChartAccountConfiguration::first();
-            $accountIdCustomer = ChartOfAccount::where('code',$accountConfiguration->customer_returns_account)->first();
-            $accountIdIncome = ChartOfAccount::where('code','417505')->first();
+            $accountIdCustomer = ChartOfAccount::where('code', $accountConfiguration->customer_returns_account)->first();
+            $accountIdIncome = ChartOfAccount::where('code', '417505')->first();
             $document_type = TypeDocument::find($document->type_document_id);
 
             AccountingEntryHelper::registerEntry([
@@ -1674,19 +1908,142 @@ class DocumentController extends Controller
                         'affects_balance' => true,
                     ],
                 ],
-                'taxes' => $document->taxes ?? [],
-                'tax_config' => [
-                    'tax_field' => 'chart_account_return_sale',
-                    'tax_debit' => true,
-                    'tax_credit' => false,
-                    'retention_debit' => false,
-                    'retention_credit' => true,
-                ],
             ]);
-        } catch (\Exception $e) {
-            \Log::error('insert Entry '.$e->getMessage());
+        } catch (Exception $e) {
+            // Se omite manejo específico: la nota continúa su flujo aun sin asiento contable
         }
     }
+
+    private function prepareHealthFieldsPayload($healthFields, array $fallbackUsers = [])
+        {
+            if (empty($healthFields)) {
+                return null;
+            }
+
+            if ($healthFields instanceof \Illuminate\Support\Collection) {
+                $healthFields = $healthFields->toArray();
+            }
+
+            if (is_string($healthFields)) {
+                $decoded = json_decode($healthFields, true);
+                $healthFields = is_array($decoded) ? $decoded : [];
+            }
+
+            if (!is_array($healthFields)) {
+                throw new Exception('La estructura de health_fields no es válida.');
+            }
+
+            if (empty($healthFields['users_info']) && !empty($fallbackUsers)) {
+                $healthFields['users_info'] = $fallbackUsers;
+            }
+
+            $users = $healthFields['users_info'] ?? [];
+            if ($users instanceof \Illuminate\Support\Collection) {
+                $users = $users->toArray();
+            }
+
+            $users = array_values(array_map(function ($user) {
+                if ($user instanceof \Illuminate\Support\Collection) {
+                    $user = $user->toArray();
+                }
+
+                if (is_object($user)) {
+                    $user = json_decode(json_encode($user), true);
+                }
+
+                return (array) $user;
+            }, $users));
+
+            if (empty($users)) {
+                throw new Exception('Debe registrar al menos un usuario de salud para la nota.');
+            }
+
+            $validatorPayload = [
+                'invoice_period_start_date' => $healthFields['invoice_period_start_date'] ?? null,
+                'invoice_period_end_date' => $healthFields['invoice_period_end_date'] ?? null,
+                'health_type_operation_id' => $healthFields['health_type_operation_id'] ?? 1,
+                'users_info' => array_map(function (array $user) {
+                    $firstNames = trim(implode(' ', array_filter([
+                        $user['first_name'] ?? '',
+                        $user['middle_name'] ?? '',
+                    ])));
+
+                    $lastNames = trim(implode(' ', array_filter([
+                        $user['surname'] ?? '',
+                        $user['second_surname'] ?? '',
+                    ])));
+
+                    return [
+                        'user_type_document_id' => (int) ($user['health_type_document_identification_id']
+                            ?? $user['document_id_type_id']
+                            ?? $user['user_type_document_id']
+                            ?? 1),
+                        'user_document_number' => (string) ($user['identification_number']
+                            ?? $user['user_document_number']
+                            ?? ''),
+                        'user_first_name' => $firstNames !== '' ? $firstNames : (string) ($user['user_first_name'] ?? ''),
+                        'user_last_name' => $lastNames !== '' ? $lastNames : (string) ($user['user_last_name'] ?? ''),
+                        'user_contract_code' => (string) ($user['contract_number']
+                            ?? $user['provider_code']
+                            ?? $user['user_contract_code']
+                            ?? 'DEFAULT'),
+                        'user_payment_code' => (string) ($user['user_payment_code']
+                            ?? $this->safeHealthPaymentCode($user)),
+                    ];
+                }, $users),
+            ];
+
+            $healthValidator = app(HealthFieldsValidatorService::class);
+            $validated = $healthValidator->validateAndTransform($validatorPayload);
+
+            $healthFields['invoice_period_start_date'] = $validated['invoice_period_start_date'];
+            $healthFields['invoice_period_end_date'] = $validated['invoice_period_end_date'];
+            $healthFields['health_type_operation_id'] = $validated['health_type_operation_id'];
+
+            foreach ($validated['users_info'] as $index => $validatedUser) {
+                $original = $users[$index] ?? [];
+                $users[$index] = array_merge($original, $validatedUser);
+            }
+
+            $healthFields['users_info'] = $users;
+
+            return $healthFields;
+        }
+
+        private function safeHealthPaymentCode(array $user): string
+        {
+            $methodId = (int) ($user['health_contracting_payment_method_id'] ?? $user['contract_method_id'] ?? 1);
+
+            $safeMap = [
+                1 => '01',
+                2 => '01',
+                3 => '01',
+                4 => '01',
+                5 => '01',
+            ];
+
+            return $safeMap[$methodId] ?? '01';
+        }
+
+        private function formatBillingReferenceNumber(?Document $document): string
+        {
+            if (!$document) {
+                return '';
+            }
+
+            $prefix = trim((string)($document->prefix ?? ''));
+            $numberPart = $document->number ?? $document->correlative_api ?? null;
+
+            if ($prefix !== '' && $numberPart !== null) {
+                return $prefix . (string) $numberPart;
+            }
+
+            if ($prefix !== '' && $numberPart === null) {
+                return $prefix;
+            }
+
+            return (string)($numberPart ?? '');
+        }
 
     /**
      * Download
@@ -1710,11 +2067,57 @@ class DocumentController extends Controller
 
                 $servicecompany = TenantServiceCompany::firstOrFail();
 
+                // Log selected pdf template for this document
+                try {
+                    \Log::info('[PDF] Using template for document', [
+                        'document_id' => $document->id,
+                        'number' => $document->prefix.$document->number,
+                        'type_document' => $document->type_document->name ?? null,
+                        'template' => $document->type_document->template ?? null,
+                    ]);
+                } catch (\Throwable $e) {
+                    // ignore logging failures
+                }
+
+                // Obtener tablas de salud para mapear IDs a nombres en el PDF
+                try {
+                    $health_type_document_identifications = $this->api_conection("table/health_type_document_identifications", "GET")->health_type_document_identifications ?? [];
+                    $health_type_users = $this->api_conection("table/health_type_users", "GET")->health_type_users ?? [];
+                    $health_contracting_payment_methods = $this->api_conection("table/health_contracting_payment_methods", "GET")->health_contracting_payment_methods ?? [];
+                    $health_coverages = $this->api_conection("table/health_coverages", "GET")->health_coverages ?? [];
+                } catch (\Throwable $e) {
+                    // En caso de fallo en API, mantener arreglos vacíos para no romper el PDF
+                    $health_type_document_identifications = [];
+                    $health_type_users = [];
+                    $health_contracting_payment_methods = [];
+                    $health_coverages = [];
+                }
+
+                // Construir mapas id => nombre para uso directo en Blade
+                $mapById = function($arr) {
+                    $map = [];
+                    foreach ($arr as $row) {
+                        // Cada fila suele venir como objeto con id y name
+                        $rid = is_array($row) ? ($row['id'] ?? null) : ($row->id ?? null);
+                        $rname = is_array($row) ? ($row['name'] ?? null) : ($row->name ?? null);
+                        if ($rid !== null) $map[$rid] = $rname ?? $rid;
+                    }
+                    return $map;
+                };
+
+                $healthMaps = [
+                    'docIdTypes' => $mapById($health_type_document_identifications),
+                    'userTypes' => $mapById($health_type_users),
+                    'contractMethods' => $mapById($health_contracting_payment_methods),
+                    'coverages' => $mapById($health_coverages),
+                ];
+
                 $mpdf->WriteHTML(view("pdf/{$document->type_document->template}", [
                     'typeIdentityDocuments' => TypeIdentityDocument::all(),
                     'company' => Company::firstOrFail(),
                     'servicecompany' => $servicecompany,
                     'document' => $document,
+                    'healthMaps' => $healthMaps,
 
                 ])->render());
 
@@ -2081,6 +2484,52 @@ class DocumentController extends Controller
         return compact('health_type_document_identifications', 'health_type_users', 'health_contracting_payment_methods', 'health_coverages');
     }
 
+    /**
+     * Lookup health info for a given invoice by id or prefix+number
+     */
+    public function health_invoice_info(Request $request)
+    {
+        $query = Document::query();
+
+        if ($request->filled('id')) {
+            $doc = $query->find($request->id);
+        } else if ($request->filled('prefix') && $request->filled('number')) {
+            $doc = $query->where('prefix', $request->prefix)
+                        ->where('number', $request->number)
+                        ->first();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parámetros insuficientes. Use id o prefix+number.'
+            ], 422);
+        }
+
+        if (!$doc) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Documento no encontrado.'
+            ], 404);
+        }
+
+        $health = $doc->health_fields;
+        if (is_string($health)) {
+            $decoded = json_decode($health, true);
+            $health = is_array($decoded) ? $decoded : null;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $doc->id,
+                'prefix' => $doc->prefix,
+                'number' => $doc->number,
+                'issue_date' => optional($doc->date_of_issue)->format('Y-m-d'),
+                'cufe' => $doc->response_api_cufe ?? $doc->cufe ?? null,
+                'health_fields' => $health,
+            ]
+        ]);
+    }
+
 
     public function table($table)
     {
@@ -2294,6 +2743,36 @@ class DocumentController extends Controller
         }
 
         return [];
+    }
+
+    /**
+     * Validate if a given prefix+number is available for a note/invoice in current tenant.
+     * GET /co-documents/validate-number?prefix=NC&number=900001
+     */
+    public function validateNoteNumber(Request $request)
+    {
+        $prefix = trim((string) $request->get('prefix', ''));
+        $number = (int) $request->get('number', 0);
+        if ($prefix === '' || $number <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parámetros inválidos.',
+            ], 422);
+        }
+
+        $exists = Document::where('prefix', $prefix)->where('number', $number)->exists();
+
+        $suggested = null;
+        if ($exists) {
+            $max = Document::where('prefix', $prefix)->max('number');
+            $suggested = $max ? ($max + 1) : ($number + 1);
+        }
+
+        return response()->json([
+            'success' => true,
+            'available' => !$exists,
+            'suggested' => $suggested,
+        ]);
     }
 
     /**

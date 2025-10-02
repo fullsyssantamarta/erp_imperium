@@ -38,6 +38,8 @@ if($current_hostname) {
                 Route::get('download/{type}/{document}', 'Tenant\DocumentController@download');
                 Route::post('sendEmail', 'Tenant\DocumentController@sendEmailCoDocument');
                 Route::post('note', 'Tenant\DocumentController@storeNote');
+                Route::get('validate-number', 'Tenant\DocumentController@validateNoteNumber');
+                Route::get('health/invoice-info', 'Tenant\DocumentController@health_invoice_info');
                 Route::get('documents/search/externalId/{external_id}', 'Tenant\DocumentController@searchExternalId');
                 Route::post('store_aiu', 'Tenant\DocumentController@store_aiu');
                 Route::get('downloadFile/{filename}', 'Tenant\DocumentController@downloadFile');
@@ -123,6 +125,7 @@ if($current_hostname) {
             Route::prefix('co-advanced-configuration')->group(function () {
                 Route::get('', 'Tenant\AdvancedConfigurationController@index')->name('tenant.co-advanced-configuration.index');
                 Route::get('record', 'Tenant\AdvancedConfigurationController@record');
+                Route::get('tables', 'Tenant\AdvancedConfigurationController@tables');
                 Route::post('', 'Tenant\AdvancedConfigurationController@store');
                 Route::post('/delete-documents', 'Tenant\AdvancedConfigurationController@deleteDocumentByResolution');
                 Route::post('/generate-discount-code', 'Tenant\AdvancedConfigurationController@generateDiscountCode'); // <-- Agrega esta línea

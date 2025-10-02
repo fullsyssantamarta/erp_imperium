@@ -16,6 +16,11 @@ class AdvancedConfigurationRequest extends FormRequest
     public function rules() {
         return [
             'uvt' => 'required|numeric|gte:0',
+            'rips_enabled' => 'nullable|boolean',
+            'rips_type_document_identification_id' => 'nullable|integer|exists:co_service_type_document_identifications,id',
+            'rips_number_identification' => 'nullable|string|max:191',
+            'rips_password' => 'nullable|string|max:191',
+            'rips_url' => 'nullable|url',
         ];
     }
 

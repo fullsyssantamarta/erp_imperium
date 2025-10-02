@@ -62,11 +62,20 @@
                                         v-text="errors.type_invoice_id[0]"></small>
                                 </div>
                             </div>
+                            <div class="col-lg-2 pb-2">
+                                <div class="form-group" :class="{ 'has-danger': errors.number }">
+                                    <label class="control-label">Número de factura</label>
+                                    <el-input v-model="form.number" type="number" @input="onInvoiceNumberInput"
+                                        :disabled="is_edit"></el-input>
+                                    <small class="form-control-feedback" v-if="errors.number"
+                                        v-text="errors.number[0]"></small>
+                                </div>
+                            </div>
                             <div class="col-lg-2">
                                 <div class="form-group" :class="{ 'has-danger': errors.date_issue }">
                                     <label class="control-label">Fec. Emisión</label>
                                     <el-date-picker v-model="form.date_issue" type="date" value-format="yyyy-MM-dd"
-                                        :clearable="false" @change="calculate_time_days_credit"
+                                        :clearable="false" @change="onChangeDateIssue"
                                         :picker-options="datEmision"></el-date-picker>
                                     <small class="form-control-feedback" v-if="errors.date_issue"
                                         v-text="errors.date_issue[0]"></small>
@@ -76,7 +85,7 @@
                                 <div class="form-group" :class="{ 'has-danger': errors.date_expiration }">
                                     <label class="control-label">Fec. Vencimiento</label>
                                     <el-date-picker v-model="form.date_expiration" type="date" value-format="yyyy-MM-dd"
-                                        :clearable="false" @change="calculate_time_days_credit"></el-date-picker>
+                                        :clearable="false" @change="onChangeDateExpiration"></el-date-picker>
                                     <small class="form-control-feedback" v-if="errors.date_expiration"
                                         v-text="errors.date_expiration[0]"></small>
                                 </div>
@@ -336,7 +345,7 @@
                                         </td>
                                         <td>:</td>
                                         <!-- <td class="text-right">
-                                            {{ratePrefix()}} {{Number(tax.retention).toFixed(2)}}
+                                            {{ratePrefix}} {{Number(tax.retention).toFixed(2)}}
                                         </td> -->
                                         <td class="text-right" id="input-with-select">
                                             <el-input v-model="total_global_discount" :min="0" class="input-discount"
@@ -538,6 +547,10 @@ export default {
             sellers: [],
             loading_sellers: false,
             seller_search_timeout: null,
+            manualInvoiceNumber: false,
+            expirationAutoSet: true,
+            updatingInvoiceNumber: false,
+            healthUsersDiscountAmount: 0,
         }
     },
     //filtro de separadores de mil
@@ -581,7 +594,15 @@ export default {
                 //ordenar resolicones por cristian
                 // Ordenar por 'id' de forma descendente
                 this.resolutions.sort((a, b) => b.id - a.id);
-                this.form.payment_form_id = 1
+                const isNewInvoice = (typeof this.invoice === 'undefined' || this.invoice === null);
+                if (isNewInvoice && !this.form.resolution_id && this.resolutions.length > 0) {
+                    const defaultResolution = this.resolutions.find(option => this.shouldShowResolution(option));
+                    if (defaultResolution) {
+                        this.form.resolution_id = defaultResolution.id;
+                        this.changeResolution();
+                    }
+                }
+                this.form.payment_form_id = (this.form.time_days_credit > 0) ? 2 : 1
                 // this.selectDocumentType()
                 this.filterCustomers();
                 // this.changeEstablishment()
@@ -722,6 +743,26 @@ export default {
             new_item.presentation = (row.presentation && !_.isEmpty(row.presentation)) ? row.presentation : {}
             return new_item
         },
+        setDefaultExpiration() {
+            if (!this.form || !this.form.date_issue) {
+                return;
+            }
+            const defaultExpiration = moment(this.form.date_issue, 'YYYY-MM-DD').add(30, 'days').format('YYYY-MM-DD');
+            this.expirationAutoSet = true;
+            this.form.date_expiration = defaultExpiration;
+            this.calculate_time_days_credit();
+        },
+        onChangeDateIssue() {
+            if (this.expirationAutoSet) {
+                this.setDefaultExpiration();
+            } else {
+                this.calculate_time_days_credit();
+            }
+        },
+        onChangeDateExpiration() {
+            this.expirationAutoSet = false;
+            this.calculate_time_days_credit();
+        },
         calculate_time_days_credit() {
             var f1 = moment(this.form.date_issue)
             var f2 = moment(this.form.date_expiration)
@@ -743,6 +784,12 @@ export default {
                 try {
                     const response = await this.$http.get(`/${this.resource}/invoice-correlative/${typeService}/${this.currentPrefix}`);
                     this.correlative_api = response.data.correlative;
+                    if (!this.is_edit && !this.manualInvoiceNumber) {
+                        this.updatingInvoiceNumber = true;
+                        this.form.number = this.correlative_api !== null && this.correlative_api !== undefined
+                            ? String(this.correlative_api)
+                            : null;
+                    }
                 } catch (error) {
                     console.error('Error al obtener el correlativo:', error);
                 }
@@ -761,7 +808,27 @@ export default {
                 this.form.prefix = resol.prefix;
                 this.form.type_document_id = resol.id;
                 this.currentPrefix = resol.prefix; // Actualizar el prefijo en data
+                this.manualInvoiceNumber = false;
                 this.fetchCorrelative(); // Llama al método para obtener el correlativo
+            }
+        },
+        onInvoiceNumberInput(value) {
+            if (this.is_edit) {
+                return;
+            }
+            if (this.updatingInvoiceNumber) {
+                this.updatingInvoiceNumber = false;
+                this.manualInvoiceNumber = false;
+                return;
+            }
+            if (value === '' || value === null || typeof value === 'undefined') {
+                this.manualInvoiceNumber = false;
+                if (this.correlative_api !== null && this.correlative_api !== undefined) {
+                    this.updatingInvoiceNumber = true;
+                    this.form.number = String(this.correlative_api);
+                }
+            } else {
+                this.manualInvoiceNumber = true;
             }
         },
         ratePrefix(tax = null) {
@@ -896,8 +963,8 @@ export default {
                 this.form.is_tirilla2 = typeof this.invoice.is_tirilla2 !== 'undefined' ? this.invoice.is_tirilla2 : false;
                 if (this.is_edit) {
                     this.form.number = this.invoice.number
-                    this.calculateTotal()
                 }
+                this.calculateTotal()
             }
         },
         initForm() {
@@ -906,6 +973,9 @@ export default {
                 this.health_sector = true
             else
                 this.health_sector = false
+            this.manualInvoiceNumber = false
+            this.expirationAutoSet = true
+            this.updatingInvoiceNumber = false
             this.form = {
                 is_tirilla2: false,
                 type_document_id: null,
@@ -958,6 +1028,15 @@ export default {
             this.errors = {}
             this.$eventHub.$emit('eventInitForm')
             this.initInputPerson()
+            const isNewInvoice = (typeof this.invoice === 'undefined' || this.invoice === null)
+            if (isNewInvoice) {
+                this.setDefaultExpiration()
+            } else {
+                this.expirationAutoSet = false
+                if (this.form.date_issue && this.form.date_expiration) {
+                    this.calculate_time_days_credit()
+                }
+            }
         },
         initInputPerson() {
             this.input_person = {
@@ -980,6 +1059,7 @@ export default {
             // this.changeDocumentType()
             // this.changeDateOfIssue()
             // this.changeCurrencyType()
+            this.calculate_time_days_credit()
         },
         async changeOperationType() {
             await this.filterCustomers();
@@ -1085,6 +1165,7 @@ export default {
             else
                 this.form.health_users.push(JSON.parse(JSON.stringify(row)));
             this.recordItemHealthUser = null
+            this.calculateTotal()
         },
         async addRowRetention(row) {
             await this.taxes.forEach(tax => {
@@ -1115,6 +1196,7 @@ export default {
         },
         clickRemoveUser(index) {
             this.form.health_users.splice(index, 1)
+            this.calculateTotal()
         },
         changeCurrencyType() {
             // this.currency_type = _.find(this.currencies, {'id': this.form.currency_id})
@@ -1128,9 +1210,50 @@ export default {
         calculateTotal() {
             this.setDataTotals()
         },
+        parseDiscountNumericValue(value) {
+            if (value === null || value === undefined) {
+                return 0;
+            }
+            if (typeof value === 'number') {
+                return isNaN(value) ? 0 : value;
+            }
+            let stringValue = String(value).trim();
+            if (!stringValue) {
+                return 0;
+            }
+            stringValue = stringValue.replace(/[^0-9.,-]/g, '');
+            if (!stringValue) {
+                return 0;
+            }
+            if (stringValue.includes(',')) {
+                stringValue = stringValue.replace(/\./g, '');
+                stringValue = stringValue.replace(/,/g, '.');
+            }
+            const parsed = parseFloat(stringValue);
+            return isNaN(parsed) ? 0 : parsed;
+        },
+        calculateHealthUsersDiscount() {
+            if (!this.health_sector || !this.form || !Array.isArray(this.form.health_users)) {
+                return 0;
+            }
+            const discountFields = ['co_payment', 'moderating_fee', 'recovery_fee', 'shared_payment'];
+            return this.form.health_users.reduce((accumulator, current) => {
+                if (!current) {
+                    return accumulator;
+                }
+                discountFields.forEach(field => {
+                    const numericValue = this.parseDiscountNumericValue(current[field]);
+                    if (!isNaN(numericValue)) {
+                        accumulator += numericValue;
+                    }
+                });
+                return accumulator;
+            }, 0);
+        },
         setDataTotals() {
             let val = this.form
             //console.log(val.items)
+            this.healthUsersDiscountAmount = 0
             val.taxes = JSON.parse(JSON.stringify(this.taxes));
             val.items.forEach(item => {
                 item.tax = this.taxes.find(tax => tax.id == item.tax_id);
@@ -1176,6 +1299,16 @@ export default {
             val.sale = val.items.reduce((p, c) => Number(p) + Number(c.price * c.quantity) - Number(c.total_discount), 0).toFixed(2);
             val.total_discount = (val.items.reduce((p, c) => Number(p) + Number(c.total_discount), 0) + Number(amount_total_dicount_global)).toFixed(2);
             total = (Number(total) - Number(amount_total_dicount_global)).toFixed(2);
+            const healthUsersDiscount = this.calculateHealthUsersDiscount();
+            if (healthUsersDiscount > 0) {
+                this.healthUsersDiscountAmount = parseFloat(healthUsersDiscount.toFixed(2));
+                total = (Number(total) - this.healthUsersDiscountAmount).toFixed(2);
+            } else {
+                this.healthUsersDiscountAmount = 0;
+            }
+            if (Number(total) < 0) {
+                total = '0.00';
+            }
             let totalRetentionBase = Number(0);
             // this.taxes.forEach(tax => {
             val.taxes.forEach(tax => {
@@ -1206,6 +1339,9 @@ export default {
                     total -= Number(tax.retention).toFixed(2);
                 }
             });
+            if (Number(total) < 0) {
+                total = 0;
+            }
             val.total = Number(total).toFixed(2)
         },
         async preeliminarview() {
@@ -1428,8 +1564,11 @@ export default {
         },
         async createInvoiceService() {
             // let resol = this.resolution.resolution; //TODO
+            const invoiceNumber = (this.form.number !== null && this.form.number !== undefined && this.form.number !== '' && !isNaN(parseInt(this.form.number, 10)))
+                ? parseInt(this.form.number, 10)
+                : null;
             let invoice = {
-                number: 0,
+                number: invoiceNumber,
                 type_document_id: 1,
                 prefix: this.form.prefix,
                 resolution_number: this.form.resolution_number,
@@ -1440,6 +1579,15 @@ export default {
             invoice.allowance_charges = await this.createAllowanceCharge(invoice.legal_monetary_totals.allowance_total_amount, invoice.legal_monetary_totals.line_extension_amount);
             invoice.invoice_lines = await this.getInvoiceLines();
             invoice.with_holding_tax_total = await this.getWithHolding();
+            const healthDiscount = Number(this.healthUsersDiscountAmount || 0);
+            if (this.health_sector && healthDiscount > 0) {
+                invoice.additional_information = [
+                    {
+                        name: 'COPAGO',
+                        value: this.cadenaDecimales(healthDiscount)
+                    }
+                ];
+            }
             return invoice;
         },
         getCustomer() {
@@ -1494,7 +1642,7 @@ export default {
         getLegacyMonetaryTotal() {
             let line_ext_am = 0;
             let tax_incl_am = 0;
-            let allowance_total_amount = this.total_global_discount; // descuento global
+            let allowance_total_amount = Number(this.total_global_discount || 0); // descuento global
             this.form.items.forEach(element => {
                 line_ext_am += (Number(element.price) * Number(element.quantity)) - Number(element.discount);
                 //                    allowance_total_amount += Number(element.discount);
@@ -1511,7 +1659,14 @@ export default {
             if (!this.global_discount_is_amount && allowance_total_amount > 0) {
                 allowance_total_amount = (tax_excl_am * allowance_total_amount) / 100;
             }
-            let pay_am = tax_incl_am - allowance_total_amount;
+            if (allowance_total_amount > tax_incl_am) {
+                allowance_total_amount = tax_incl_am;
+            }
+            const healthDiscount = Number(this.healthUsersDiscountAmount || 0);
+            let pay_am = tax_incl_am - allowance_total_amount - healthDiscount;
+            if (pay_am < 0) {
+                pay_am = 0;
+            }
             return {
                 line_extension_amount: this.cadenaDecimales(line_ext_am),
                 tax_exclusive_amount: this.cadenaDecimales(tax_excl_am),
