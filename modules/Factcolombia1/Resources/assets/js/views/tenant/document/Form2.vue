@@ -67,6 +67,26 @@
                                     <label class="control-label">Número de factura</label>
                                     <el-input v-model="form.number" type="number" @input="onInvoiceNumberInput"
                                         :disabled="is_edit"></el-input>
+                                    <div class="mt-1 invoice-number-status" v-if="invoiceNumberValidation.message">
+                                        <el-tag
+                                            v-if="invoiceNumberValidation.state === 'available'"
+                                            type="success"
+                                            size="mini">
+                                            {{ invoiceNumberValidation.message }}
+                                        </el-tag>
+                                        <el-tag
+                                            v-else-if="invoiceNumberValidation.state === 'unavailable'"
+                                            type="danger"
+                                            size="mini">
+                                            {{ invoiceNumberValidation.message }}
+                                        </el-tag>
+                                        <el-tag
+                                            v-else
+                                            :type="invoiceNumberValidation.loading ? 'info' : 'warning'"
+                                            size="mini">
+                                            {{ invoiceNumberValidation.message }}
+                                        </el-tag>
+                                    </div>
                                     <small class="form-control-feedback" v-if="errors.number"
                                         v-text="errors.number[0]"></small>
                                 </div>
@@ -551,6 +571,13 @@ export default {
             expirationAutoSet: true,
             updatingInvoiceNumber: false,
             healthUsersDiscountAmount: 0,
+            invoiceNumberValidation: {
+                state: null,
+                message: '',
+                loading: false,
+                suggested: null,
+            },
+            invoiceNumberValidationTimer: null,
         }
     },
     //filtro de separadores de mil
@@ -625,6 +652,12 @@ export default {
                     this.bank_accounts = response.data.data
                 })
         },
+    beforeDestroy() {
+        if (this.invoiceNumberValidationTimer) {
+            clearTimeout(this.invoiceNumberValidationTimer);
+            this.invoiceNumberValidationTimer = null;
+        }
+    },
     computed: {
         generatedFromPos() {
             const form_exceed_uvt = this.$getStorage('form_exceed_uvt')
@@ -778,6 +811,84 @@ export default {
                 else
                     this.form.payment_form_id = 2
         },
+        clearInvoiceNumberValidation() {
+            if (this.invoiceNumberValidationTimer) {
+                clearTimeout(this.invoiceNumberValidationTimer);
+                this.invoiceNumberValidationTimer = null;
+            }
+            this.invoiceNumberValidation.state = null;
+            this.invoiceNumberValidation.message = '';
+            this.invoiceNumberValidation.loading = false;
+            this.invoiceNumberValidation.suggested = null;
+        },
+        scheduleInvoiceNumberValidation() {
+            if (!this.manualInvoiceNumber) {
+                this.clearInvoiceNumberValidation();
+                return;
+            }
+
+            const prefix = this.currentPrefix || this.form.prefix;
+            const rawNumber = this.form.number;
+
+            if (!prefix) {
+                this.invoiceNumberValidation.state = null;
+                this.invoiceNumberValidation.loading = false;
+                this.invoiceNumberValidation.message = 'Seleccione una resolución para validar el número.';
+                return;
+            }
+
+            const parsedNumber = parseInt(rawNumber, 10);
+            if (!Number.isFinite(parsedNumber) || parsedNumber <= 0) {
+                this.invoiceNumberValidation.state = null;
+                this.invoiceNumberValidation.loading = false;
+                this.invoiceNumberValidation.message = 'Ingrese un número de factura válido.';
+                return;
+            }
+
+            if (this.invoiceNumberValidationTimer) {
+                clearTimeout(this.invoiceNumberValidationTimer);
+            }
+
+            this.invoiceNumberValidation.loading = true;
+            this.invoiceNumberValidation.state = null;
+            this.invoiceNumberValidation.message = 'Verificando disponibilidad...';
+            this.invoiceNumberValidationTimer = setTimeout(() => {
+                this.validateManualInvoiceNumber(prefix, parsedNumber);
+            }, 500);
+        },
+        async validateManualInvoiceNumber(prefix, number) {
+            try {
+                const response = await this.$http.get(`/${this.resource}/validate-number`, {
+                    params: {
+                        prefix,
+                        number,
+                    },
+                });
+
+                if (response.data && response.data.success) {
+                    const available = Boolean(response.data.available);
+                    this.invoiceNumberValidation.state = available ? 'available' : 'unavailable';
+                    this.invoiceNumberValidation.suggested = available ? null : (response.data.suggested || null);
+                    if (available) {
+                        this.invoiceNumberValidation.message = 'Disponible';
+                    } else {
+                        this.invoiceNumberValidation.message = this.invoiceNumberValidation.suggested
+                            ? `No disponible. Sugerido: ${prefix} ${this.invoiceNumberValidation.suggested}.`
+                            : 'No disponible.';
+                    }
+                } else {
+                    this.invoiceNumberValidation.state = null;
+                    this.invoiceNumberValidation.message = 'No se pudo validar la disponibilidad.';
+                }
+            } catch (error) {
+                console.error('Error al validar número de factura:', error);
+                this.invoiceNumberValidation.state = null;
+                this.invoiceNumberValidation.message = 'No se pudo validar la disponibilidad.';
+            } finally {
+                this.invoiceNumberValidation.loading = false;
+                this.invoiceNumberValidationTimer = null;
+            }
+        },
         async fetchCorrelative() {
             const typeService = 1; // supongo que es el Id del tipo de documento que para este caso es 1 factura de venta
             if (this.currentPrefix) {
@@ -789,6 +900,7 @@ export default {
                         this.form.number = this.correlative_api !== null && this.correlative_api !== undefined
                             ? String(this.correlative_api)
                             : null;
+                        this.clearInvoiceNumberValidation();
                     }
                 } catch (error) {
                     console.error('Error al obtener el correlativo:', error);
@@ -809,6 +921,7 @@ export default {
                 this.form.type_document_id = resol.id;
                 this.currentPrefix = resol.prefix; // Actualizar el prefijo en data
                 this.manualInvoiceNumber = false;
+                this.clearInvoiceNumberValidation();
                 this.fetchCorrelative(); // Llama al método para obtener el correlativo
             }
         },
@@ -819,16 +932,19 @@ export default {
             if (this.updatingInvoiceNumber) {
                 this.updatingInvoiceNumber = false;
                 this.manualInvoiceNumber = false;
+                this.clearInvoiceNumberValidation();
                 return;
             }
             if (value === '' || value === null || typeof value === 'undefined') {
                 this.manualInvoiceNumber = false;
+                this.clearInvoiceNumberValidation();
                 if (this.correlative_api !== null && this.correlative_api !== undefined) {
                     this.updatingInvoiceNumber = true;
                     this.form.number = String(this.correlative_api);
                 }
             } else {
                 this.manualInvoiceNumber = true;
+                this.scheduleInvoiceNumberValidation();
             }
         },
         ratePrefix(tax = null) {
@@ -976,6 +1092,7 @@ export default {
             this.manualInvoiceNumber = false
             this.expirationAutoSet = true
             this.updatingInvoiceNumber = false
+            this.clearInvoiceNumberValidation()
             this.form = {
                 is_tirilla2: false,
                 type_document_id: null,
@@ -1449,6 +1566,14 @@ export default {
             //validacion de format_print
             if (!this.form.format_print) {
                 return this.$message.error('Debe seleccionar un Formato de Impresión')
+            }
+            if (this.manualInvoiceNumber) {
+                if (this.invoiceNumberValidation.loading) {
+                    return this.$message.warning('Espera a que se valide la disponibilidad del número de factura.');
+                }
+                if (this.invoiceNumberValidation.state === 'unavailable') {
+                    return this.$message.error('El número de factura ingresado ya está en uso.');
+                }
             }
             // Establecer el valor booleano para `is_tirilla2`
             if (this.form.format_print === "3") {
