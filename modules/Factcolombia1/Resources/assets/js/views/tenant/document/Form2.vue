@@ -1168,11 +1168,17 @@ export default {
             this.calculateTotal()
         },
         async addRowRetention(row) {
-            await this.taxes.forEach(tax => {
-                if (tax.id == row.tax_id) {
-                    tax.apply = true
-                }
-            });
+            const rows = Array.isArray(row) ? row : [row]
+            rows.forEach(retention => {
+                this.taxes.forEach(tax => {
+                    if (tax.id == retention.tax_id) {
+                        tax.apply = true
+                        if (retention.base_type) {
+                            tax.base_type = retention.base_type
+                        }
+                    }
+                })
+            })
             await this.calculateTotal()
         },
         cleanTaxesRetention(tax_id) {
