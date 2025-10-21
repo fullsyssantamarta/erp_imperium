@@ -265,6 +265,94 @@ class ConfigurationController extends Controller
     }
 
     /**
+     * Store new type document (resolution)
+     * @param  \App\Http\Requests\Tenant\ConfigurationTypeDocumentRequest $request
+     * @return \Illuminate\Http\Response
+     */
+    public function storeTypeDocument(ConfigurationTypeDocumentRequest $request) {
+        $base_url = config("tenant.service_fact", "");
+        $servicecompany = ServiceCompany::firstOrFail();
+        
+        $typeDocument = TypeDocument::create([
+            'name' => $request->name,
+            'code' => $request->code,
+            'resolution_number' => $request->resolution_number,
+            'resolution_date' => $request->resolution_date,
+            'resolution_date_end' => $request->resolution_date_end,
+            'technical_key' => $request->technical_key,
+            'prefix' => mb_strtoupper($request->prefix),
+            'from' => $request->from,
+            'to' => $request->to,
+            'generated' => $request->generated,
+            'description' => $request->description,
+            'show_in_establishments' => $request->show_in_establishments,
+            'establishment_ids' => $request->establishment_ids,
+        ]);
+
+        $ch = curl_init("{$base_url}ubl2.1/config/generateddocuments");
+        $data = [
+            'identification_number' => $servicecompany->identification_number,
+            'type_document_id' => $typeDocument->code,
+            'prefix' => mb_strtoupper($request->prefix),
+            'number' => $request->generated
+        ];
+
+        $data_initial_number = json_encode($data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch, CURLOPT_POSTFIELDS,($data_initial_number));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Accept: application/json',
+            "Authorization: Bearer {$servicecompany->api_token}"
+        ));
+        $response_initial_number = curl_exec($ch);
+        $err = curl_error($ch);
+        $respuesta = json_decode($response_initial_number);
+
+        if($err) {
+            return [
+                'message' => "Error en peticion Api.",
+                'success' => false,
+            ];
+        } else {
+            if(property_exists($respuesta, 'success')) {
+                return [
+                    'message' => "Resolución creada satisfactoriamente.",
+                    'success' => true,
+                ];
+            } else {
+                return [
+                    'message' => "Error en validacion de datos Api.",
+                    'success' => false,
+                ];
+            }
+        }
+    }
+
+    /**
+     * Delete type document (resolution)
+     * @param  \Modules\Factcolombia1\Models\Tenant\TypeDocument $typeDocument
+     * @return \Illuminate\Http\Response
+     */
+    public function destroyTypeDocument(TypeDocument $typeDocument) {
+        try {
+            $typeDocument->delete();
+            return [
+                'message' => "Resolución eliminada satisfactoriamente.",
+                'success' => true,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'message' => "Error al eliminar la resolución: " . $e->getMessage(),
+                'success' => false,
+            ];
+        }
+    }
+
+    /**
      * Upload logo
      * @param  \App\Http\Requests\Tenant\ConfigurationUploadLogoRequest $request
      * @return \Illuminate\Http\Response

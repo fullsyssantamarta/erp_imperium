@@ -403,7 +403,7 @@ import { calcularDv } from '../../../../../../../../resources/js/functions/Nit.j
 
                 this.button_text = (this.form.is_update) ? 'Actualizando compañia...':'Creando base de datos...'
                 this.loading_submit = true
-                await this.$http.post(`${this.resource}${(this.form.is_update ? '/update' : '')}`, this.form)
+                await this.$http.post(`${this.resource}${(this.form.is_update ? `/update/${this.form.id}` : '')}`, this.form)
                     .then(response => {
                         if (response.data.success) {
                             this.$message.success(response.data.message)

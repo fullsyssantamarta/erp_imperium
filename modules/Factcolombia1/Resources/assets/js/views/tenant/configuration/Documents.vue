@@ -7,6 +7,9 @@
                 <li><span class="text-muted">Documentos</span></li>
             </ol>
             <div class="right-wrapper pull-right">
+                <button type="button" class="btn btn-success" @click.prevent="createItem">
+                    <i class="fas fa-plus"></i> Agregar Resolución
+                </button>
             </div>
         </div>
         <div class="card mb-0">
@@ -47,6 +50,7 @@
                             <td class="text-right">
                                 <template>
                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="editItem(row)">Editar</button>
+                                    <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="deleteItem(row)">Eliminar</button>
                                 </template>
                             </td>
                         </tr>
@@ -54,7 +58,7 @@
                 </table>
             </div>
         </div>
-        <edit-form @refresh="refresh" :showDialog.sync="dialog" :record="item" ></edit-form>
+        <edit-form @refresh="refresh" :showDialog.sync="dialog" :record="item" :isCreate="isCreate"></edit-form>
     </div>
 </template>
 
@@ -78,9 +82,9 @@
             typeDocuments: [],
             dialog: false,
             item: {},
+            isCreate: false,
             loadDataTable: false,
             items: [],
-            item:null
         }),
 
         computed: {
@@ -101,9 +105,61 @@
                 }).then(() => {});
             },
 
+            createItem() {
+                this.item = {
+                    id: null,
+                    name: '',
+                    code: '',
+                    prefix: '',
+                    resolution_number: '',
+                    resolution_date: '',
+                    resolution_date_end: '',
+                    technical_key: '',
+                    from: 1,
+                    to: 1,
+                    generated: 0,
+                    description: '',
+                    show_in_establishments: 'all',
+                    establishment_ids: []
+                };
+                this.isCreate = true;
+                this.dialog = true;
+            },
+
             editItem(item) {
                 this.item = JSON.parse(JSON.stringify(item));
+                this.isCreate = false;
                 this.dialog = true;
+            },
+
+            deleteItem(item) {
+                this.$confirm('¿Está seguro de eliminar esta resolución?', 'Confirmación', {
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar',
+                    type: 'warning'
+                }).then(() => {
+                    axios.delete(`/client/configuration/type_document/${item.id}`).then(response => {
+                        if (response.data.success) {
+                            this.$message({
+                                type: 'success',
+                                message: response.data.message
+                            });
+                            this.refresh();
+                        } else {
+                            this.$message({
+                                type: 'error',
+                                message: response.data.message
+                            });
+                        }
+                    }).catch(error => {
+                        this.$message({
+                            type: 'error',
+                            message: 'Error al eliminar la resolución'
+                        });
+                    });
+                }).catch(() => {
+                    // Cancelado
+                });
             },
 
             validate(scope, model = null, models = null, modelObject = null) {

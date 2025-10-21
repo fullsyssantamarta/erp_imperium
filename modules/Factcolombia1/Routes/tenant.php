@@ -40,11 +40,9 @@ if ($currentHostname) {
                 Route::post('/configuration/production/changeEnvironmentProduction', 'Tenant\ConfigurationController@changeEnvironmentProduction');
                 Route::post('/configuration/production/queryTechnicalKey', 'Tenant\ConfigurationController@queryTechnicalKey');
 
-
-//                Route::post('/configuration/storeServiceCompanieSoftware', 'Tenant\ConfigurationController@storeServiceSoftware');
-//                Route::post('/configuration/storeServiceCompanieCertificate', 'Tenant\ConfigurationController@storeServiceCertificate');
-//                Route::post('/configuration/storeServiceCompanieResolution', 'Tenant\ConfigurationController@storeServiceResolution');
-
+                Route::post('/configuration/storeServiceCompanieSoftware', 'Tenant\ConfigurationController@storeServiceSoftware');
+                Route::post('/configuration/storeServiceCompanieCertificate', 'Tenant\ConfigurationController@storeServiceCertificate');
+                Route::post('/configuration/storeServiceCompanieResolution', 'Tenant\ConfigurationController@storeServiceResolution');
 
                 Route::get('/configurationAll', 'Tenant\ConfigurationController@all');
                 Route::put('/configuration/company/{company}', 'Tenant\ConfigurationController@updateCompany');

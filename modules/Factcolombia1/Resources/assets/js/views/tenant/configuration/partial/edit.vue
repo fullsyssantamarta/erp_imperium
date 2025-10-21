@@ -1,13 +1,13 @@
 <template>
     <el-dialog width="65%" :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" @close="close" @open="create" append-to-body top="7vh">
         <form autocomplete="off" @submit.prevent="submit">
-            <div v-if="form.id" class="form-body">
+            <div v-if="form.id !== null || isCreate" class="form-body">
                 <div class="row">
 
                     <div class="col-md-12">
                         <div class="form-group" :class="{'has-danger': errors.resolution_number}">
                             <label class="control-label">Número de resolución<span class="text-danger">*</span></label>
-                            <el-input v-model="form.resolution_number" :disabled="true"></el-input>
+                            <el-input v-model="form.resolution_number"></el-input>
                             <small class="form-control-feedback" v-if="errors.resolution_number" v-text="errors.resolution_number[0]"></small>
                         </div>
                     </div>
@@ -51,15 +51,23 @@
                     <div class="col-md-4">
                         <div class="form-group" :class="{'has-danger': errors.name}">
                             <label class="control-label">Nombre<span class="text-danger">*</span></label>
-                            <el-input v-model="form.name" :disabled="true"></el-input>
+                            <el-input v-model="form.name"></el-input>
                             <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="form-group" :class="{'has-danger': errors.code}">
+                            <label class="control-label">Código<span class="text-danger">*</span></label>
+                            <el-input v-model="form.code"></el-input>
+                            <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.prefix}">
                             <label class="control-label">Prefijo<span class="text-danger">*</span></label>
-                            <el-input v-model="form.prefix" :disabled="true"></el-input>
+                            <el-input v-model="form.prefix"></el-input>
                             <small class="form-control-feedback" v-if="errors.prefix" v-text="errors.prefix[0]"></small>
                         </div>
                     </div>
@@ -154,14 +162,14 @@
     // import LotsForm from './partials/lots.vue'
 
     export default {
-        props: ['showDialog', 'record', 'external'],
+        props: ['showDialog', 'record', 'external', 'isCreate'],
         // components: {LotsForm},
 
         data() {
             return {
                 showDialogLots:false,
                 loading_submit: false,
-                titleDialog: null,
+                titleDialog: 'Editar Resolución',
                 resource: 'configuration',
                 errors: {},
                 headers: headers_token,
@@ -206,6 +214,17 @@
 
             // await this.setDefaultConfiguration()
             this.loadEstablishments();
+        },
+
+        watch: {
+            isCreate(newVal) {
+                this.titleDialog = newVal ? 'Crear Resolución' : 'Editar Resolución';
+            },
+            showDialog(newVal) {
+                if (newVal) {
+                    this.titleDialog = this.isCreate ? 'Crear Resolución' : 'Editar Resolución';
+                }
+            }
         },
 
         methods: {
@@ -283,7 +302,13 @@
                 this.form_clone.resolution = this.form.resolution_number
                 this.form_clone.type_document_id = this.form.code
                 this.form_clone.description = this.form.description
-                await this.$http.post(`/${this.resource}/type_document/${this.form.id}`, this.form)
+                
+                // Determinar la URL según el modo (crear o editar)
+                const url = this.isCreate 
+                    ? `/${this.resource}/type_document` 
+                    : `/${this.resource}/type_document/${this.form.id}`;
+                
+                await this.$http.post(url, this.form)
                     .then(response => {
                         if (response.data.success) {
                             this.$message.success(response.data.message)

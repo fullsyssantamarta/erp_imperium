@@ -115,7 +115,9 @@ if($current_hostname) {
             Route::get('/co-configuration', 'Tenant\ConfigurationController@index')->name('tenant.configuration');
             Route::get('/co-configuration-documents', 'Tenant\ConfigurationController@document')->name('tenant.configuration.documents');
             Route::get('/co-configuration-all', 'Tenant\ConfigurationController@all');
+            Route::post('/configuration/type_document', 'Tenant\ConfigurationController@storeTypeDocument');
             Route::post('/configuration/type_document/{type_document}', 'Tenant\ConfigurationController@updateTypeDocument');
+            Route::delete('/configuration/type_document/{type_document}', 'Tenant\ConfigurationController@destroyTypeDocument');
             Route::get('/co-configuration-change-ambient', 'Tenant\ConfigurationController@changeAmbient')->name('tenant.configuration.change.ambient');
             Route::post('/co-configuration/production/changeEnvironmentProduction/{environment}', 'Tenant\ConfigurationController@changeEnvironmentProduction');
             Route::post('/co-configuration/production/queryTechnicalKey', 'Tenant\ConfigurationController@queryTechnicalKey');
@@ -176,7 +178,7 @@ if($current_hostname) {
                 Route::get('', 'System\HomeController@index')->name('system.co-companies');
                 Route::get('tables', 'System\CompanyController@tables');
                 Route::post('', 'System\CompanyController@store')->name('system.company');
-                Route::post('update', 'System\CompanyController@update');
+                Route::post('update/{company?}', 'System\CompanyController@update');
                 Route::get('records', 'System\CompanyController@records');
                 Route::get('record/{id}', 'System\CompanyController@record');
                 Route::delete('{company}', 'System\CompanyController@destroy');

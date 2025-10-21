@@ -222,7 +222,8 @@ class CompanyController extends Controller
             $tenancy = app(Environment::class);
             $tenancy->tenant($row->hostname->website);
             // $row->count_doc = DB::connection('tenant')->table('documents')->count();
-            $row->count_doc = DB::connection('tenant')->table('configurations')->first()->quantity_documents;
+            $config = DB::connection('tenant')->table('configurations')->first();
+            $row->count_doc = $config ? $config->quantity_documents : 0;
             //$row->count_user = DB::connection('tenant')->table('users')->count();
 
             if($row->start_billing_cycle)

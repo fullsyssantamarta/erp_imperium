@@ -191,6 +191,50 @@
                     >Sincronizar</el-button>
                 </span>
             </el-dialog>
+
+            <!-- Modal para seleccionar formato de PDF -->
+            <el-dialog
+                :visible.sync="showFormatDialog"
+                width="400px"
+                :close-on-click-modal="false"
+            >
+                <div slot="title">
+                    <span>
+                        <i class="fas fa-file-pdf" style="color:#F56C6C;margin-right:10px;"></i>
+                        <b>Seleccionar formato de PDF</b>
+                    </span>
+                </div>
+                <el-alert
+                    title="Seleccione el formato en el que desea descargar el documento PDF."
+                    type="info"
+                    show-icon
+                    :closable="false"
+                    style="margin-bottom: 15px;"
+                ></el-alert>
+                <el-form label-width="140px" label-position="top">
+                    <el-form-item label="Formato de página">
+                        <el-radio-group v-model="selectedFormat">
+                            <el-radio label="letter">
+                                <i class="el-icon-document"></i> Carta (Letter)
+                            </el-radio>
+                            <el-radio label="a4">
+                                <i class="el-icon-document"></i> Media Carta (A4)
+                            </el-radio>
+                            <el-radio label="ticket">
+                                <i class="el-icon-tickets"></i> Tirilla (Ticket)
+                            </el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                </el-form>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="showFormatDialog = false" icon="el-icon-close">Cancelar</el-button>
+                    <el-button
+                        type="primary"
+                        @click="downloadPdfWithFormat"
+                        icon="el-icon-download"
+                    >Descargar</el-button>
+                </span>
+            </el-dialog>
         </div>
     </div>
 </template>
@@ -229,6 +273,9 @@
                     hasta: '',
                     page: 1,
                 },
+                showFormatDialog: false,
+                selectedFormat: 'letter',
+                pendingDownload: null,
             }
         },
         created() {
@@ -322,6 +369,15 @@
             clickDownload(download) {
                 console.log(download)
                 console.log(this.downloadFilename(download))
+                
+                // Si es PDF, mostrar selector de formato
+                if(download.indexOf("PDF") >= 0 || download.indexOf("pdf") >= 0) {
+                    this.pendingDownload = download;
+                    this.showFormatDialog = true;
+                    return;
+                }
+                
+                // Para XML, descarga directa
                 this.$http.get(`/${this.resource}/downloadFile/${this.downloadFilename(download)}`).then((response) => {
 
                     let res_data = response.data
@@ -333,14 +389,39 @@
                         byteNumbers[i] = byteCharacters.charCodeAt(i);
                     }
                     var byteArray = new Uint8Array(byteNumbers);
-                    if(download.indexOf("PDF") >= 0 || download.indexOf("pdf") >= 0)
-                      var file = new Blob([byteArray], { type: 'application/pdf;base64' });
-                    else
-                      var file = new Blob([byteArray], { type: 'application/xml;base64' });
+                    var file = new Blob([byteArray], { type: 'application/xml;base64' });
                     var fileURL = URL.createObjectURL(file);
                     window.open(fileURL, '_blank');
                 })
-//                window.open(download, '_blank');
+            },
+            downloadPdfWithFormat() {
+                // Cerrar el diálogo
+                this.showFormatDialog = false;
+                
+                // Construir URL con formato
+                const url = `/${this.resource}/downloadFile/${this.downloadFilename(this.pendingDownload)}?format=${this.selectedFormat}`;
+                console.log('downloadPdfWithFormat - URL:', url);
+                console.log('downloadPdfWithFormat - Format:', this.selectedFormat);
+                
+                // Descargar con formato seleccionado
+                this.$http.get(url).then((response) => {
+
+                    let res_data = response.data
+                    if(!res_data.success) return this.$message.error(res_data.message)
+
+                    var byteCharacters = atob(response.data.filebase64);
+                    var byteNumbers = new Array(byteCharacters.length);
+                    for (var i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    var byteArray = new Uint8Array(byteNumbers);
+                    var file = new Blob([byteArray], { type: 'application/pdf;base64' });
+                    var fileURL = URL.createObjectURL(file);
+                    window.open(fileURL, '_blank');
+                })
+                
+                // Resetear
+                this.pendingDownload = null;
             },
             clickOptions(recordId = null) {
                 this.recordId = recordId
