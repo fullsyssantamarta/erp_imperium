@@ -2002,7 +2002,31 @@ class DocumentController extends Controller
 
             foreach ($validated['users_info'] as $index => $validatedUser) {
                 $original = $users[$index] ?? [];
-                $users[$index] = array_merge($original, $validatedUser);
+                // Preserve ALL original fields, then add/override with validated fields
+                $merged = array_merge($validatedUser, $original);
+                
+                // Ensure required fields for APIDIAN XML template have defaults
+                $merged['provider_code'] = $merged['provider_code'] ?? '';
+                $merged['contract_number'] = $merged['contract_number'] ?? '';
+                $merged['policy_number'] = $merged['policy_number'] ?? '';
+                $merged['co_payment'] = $merged['co_payment'] ?? '';
+                $merged['moderating_fee'] = $merged['moderating_fee'] ?? '';
+                $merged['shared_payment'] = $merged['shared_payment'] ?? '';
+                $merged['advance_payment'] = $merged['advance_payment'] ?? '';
+                $merged['authorization_numbers'] = $merged['authorization_numbers'] ?? $merged['autorization_numbers'] ?? '';
+                $merged['mipres'] = $merged['mipres'] ?? '';
+                
+                // Ensure health_type_user_id exists (if not, try to infer from other fields or use default)
+                if (empty($merged['health_type_user_id'])) {
+                    $merged['health_type_user_id'] = $merged['type_user_id'] ?? $merged['user_type_id'] ?? null;
+                }
+                
+                // Ensure health_coverage_id exists (if not, try to infer from other fields or use default)
+                if (empty($merged['health_coverage_id'])) {
+                    $merged['health_coverage_id'] = $merged['coverage_type_id'] ?? $merged['coverage_id'] ?? null;
+                }
+                
+                $users[$index] = $merged;
             }
 
             $healthFields['users_info'] = $users;
@@ -2917,17 +2941,115 @@ class DocumentController extends Controller
     /**
      *
      * Descargar xml - pdf
+     * Si es PDF y se pasa parámetro 'format', regenera el PDF con ese formato
+     * Formatos soportados: letter, a4, ticket
+     * 
      * Usado en:
      * DocumentController - comprobantes
      * DocumentPayrollController - nóminas
      *
+     * @param Request $request
      * @param string $filename
      * @return array
      */
-    public function downloadFile($filename)
+    public function downloadFile(Request $request, $filename)
     {
+        \Log::info('Factcolombia1.downloadFile.START', [
+            'filename' => $filename,
+            'all_params' => $request->all(),
+            'query_string' => $request->getQueryString()
+        ]);
+        
         $company = ServiceTenantCompany::firstOrFail();
         $base_url = config('tenant.service_fact');
+        
+        // Si es PDF y tiene parámetro format, regenerar PDF
+        $isPdf = (strpos($filename, 'PDF') !== false || strpos($filename, 'pdf') !== false);
+        $format = $request->input('format');
+        
+        if ($isPdf && $format) {
+            \Log::info('Factcolombia1.downloadFile.regenerate_pdf', [
+                'filename' => $filename,
+                'format' => $format
+            ]);
+            
+            // Buscar documento por urlinvoicepdf
+            $document = Document::whereRaw("JSON_EXTRACT(response_api_invoice, '$.urlinvoicepdf') = ?", [$filename])->first();
+            
+            if (!$document) {
+                \Log::warning('Factcolombia1.downloadFile.document_not_found', ['filename' => $filename]);
+                return [
+                    'success' => false,
+                    'message' => "No se encontró el documento para regenerar PDF"
+                ];
+            }
+            
+            \Log::info('Factcolombia1.downloadFile.document_found', [
+                'document_id' => $document->id,
+                'prefix' => $document->prefix,
+                'number' => $document->number
+            ]);
+            
+            // Llamar al DownloadController de apidian para regenerar
+            try {
+                // Crear request con formato en query string
+                $regenerateRequest = Request::create(
+                    '/api/reload-pdf',
+                    'GET',
+                    ['format' => $format]
+                );
+                
+                $downloadController = app(\App\Http\Controllers\Api\DownloadController::class);
+                
+                // Llamar con los parámetros correctos: identification, file, cufe
+                $result = $downloadController->reloadPdf(
+                    $company->identification_number,
+                    $filename,
+                    $document->cufe
+                );
+                
+                // Si result es un array con success=false, retornarlo
+                if (is_array($result) && isset($result['success']) && !$result['success']) {
+                    return $result;
+                }
+                
+                \Log::info('Factcolombia1.downloadFile.regenerate_success');
+                
+                // Si es un Response, obtener contenido
+                if ($result instanceof \Symfony\Component\HttpFoundation\Response) {
+                    $pdfContent = $result->getContent();
+                    $base64 = base64_encode($pdfContent);
+                    
+                    return [
+                        'success' => true,
+                        'filebase64' => $base64
+                    ];
+                }
+                
+                // Si ya es un array con filebase64, retornarlo
+                if (is_array($result) && isset($result['filebase64'])) {
+                    return $result;
+                }
+                
+                return [
+                    'success' => false,
+                    'message' => "Formato de respuesta inesperado al regenerar PDF"
+                ];
+                
+            } catch (\Exception $e) {
+                \Log::error('Factcolombia1.downloadFile.regenerate_error', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                return [
+                    'success' => false,
+                    'message' => "Error al regenerar PDF: " . $e->getMessage()
+                ];
+            }
+        }
+        
+        // Descarga normal desde API
         $ch2 = curl_init("{$base_url}ubl2.1/download/{$company->identification_number}/{$filename}/BASE64");
 
         curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);

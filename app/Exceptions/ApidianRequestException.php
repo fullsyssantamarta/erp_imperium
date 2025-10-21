@@ -9,7 +9,7 @@ class ApidianRequestException extends Exception
     /**
      * Additional context about the failing request.
      */
-    protected array $context = [];
+    protected $context = [];
 
     public function __construct(string $message, array $context = [], int $code = 0, ?Exception $previous = null)
     {
