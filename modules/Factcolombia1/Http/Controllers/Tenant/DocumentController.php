@@ -2990,50 +2990,57 @@ class DocumentController extends Controller
                 'number' => $document->number
             ]);
             
-            // Llamar al DownloadController de apidian para regenerar
+            // Llamar a la API de APIDIAN para regenerar con formato
             try {
-                // Crear request con formato en query string
-                $regenerateRequest = Request::create(
-                    '/api/reload-pdf',
-                    'GET',
-                    ['format' => $format]
-                );
+                $apiUrl = "{$base_url}reload-pdf/{$company->identification_number}/{$filename}/{$document->cufe}?format={$format}";
                 
-                $downloadController = app(\App\Http\Controllers\Api\DownloadController::class);
+                \Log::info('Factcolombia1.downloadFile.api_call', ['url' => $apiUrl]);
                 
-                // Llamar con los parámetros correctos: identification, file, cufe
-                $result = $downloadController->reloadPdf(
-                    $company->identification_number,
-                    $filename,
-                    $document->cufe
-                );
+                $ch = curl_init($apiUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    "Authorization: Bearer {$company->api_token}"
+                ));
                 
-                // Si result es un array con success=false, retornarlo
-                if (is_array($result) && isset($result['success']) && !$result['success']) {
-                    return $result;
-                }
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
                 
-                \Log::info('Factcolombia1.downloadFile.regenerate_success');
-                
-                // Si es un Response, obtener contenido
-                if ($result instanceof \Symfony\Component\HttpFoundation\Response) {
-                    $pdfContent = $result->getContent();
-                    $base64 = base64_encode($pdfContent);
-                    
+                if ($curlError) {
+                    \Log::error('Factcolombia1.downloadFile.curl_error', ['error' => $curlError]);
                     return [
-                        'success' => true,
-                        'filebase64' => $base64
+                        'success' => false,
+                        'message' => "Error de conexión: " . $curlError
                     ];
                 }
                 
-                // Si ya es un array con filebase64, retornarlo
-                if (is_array($result) && isset($result['filebase64'])) {
+                if ($httpCode !== 200) {
+                    \Log::warning('Factcolombia1.downloadFile.http_error', [
+                        'code' => $httpCode,
+                        'response' => $response
+                    ]);
+                    return [
+                        'success' => false,
+                        'message' => "Error HTTP {$httpCode} al regenerar PDF"
+                    ];
+                }
+                
+                $result = json_decode($response, true);
+                
+                if (isset($result['success']) && $result['success'] && isset($result['filebase64'])) {
+                    \Log::info('Factcolombia1.downloadFile.regenerate_success');
                     return $result;
                 }
                 
                 return [
                     'success' => false,
-                    'message' => "Formato de respuesta inesperado al regenerar PDF"
+                    'message' => $result['message'] ?? "Error desconocido al regenerar PDF"
                 ];
                 
             } catch (\Exception $e) {
