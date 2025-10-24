@@ -642,5 +642,67 @@ class CompanyController extends Controller
         ];
     }
 
+    public function exportDocuments($id)
+    {
+        try {
+            $company = Company::with('hostname.website')->findOrFail($id);
+            
+            // Conectar a la base de datos del tenant
+            $tenancy = app(Environment::class);
+            $tenancy->tenant($company->hostname->website);
+            
+            // Usar DB::raw para la consulta con COALESCE
+            $documents = DB::connection('tenant')
+                ->table('documents')
+                ->select(
+                    'created_at as Fecha',
+                    DB::raw("CONCAT(prefix, '-', number) as Número"),
+                    DB::raw("COALESCE(cufe, JSON_UNQUOTE(JSON_EXTRACT(response_api, '$.cufe')), 'SIN CUFE') as CUFE"),
+                    'total as Valor'
+                )
+                ->orderBy('created_at', 'DESC')
+                ->get();
+            
+            // Crear archivo CSV
+            $fileName = 'documentos_' . str_replace('.', '_', $company->hostname->fqdn) . '_' . date('Y-m-d_His') . '.csv';
+            $filePath = storage_path('app/public/exports/' . $fileName);
+            
+            // Crear directorio si no existe
+            if (!file_exists(storage_path('app/public/exports'))) {
+                mkdir(storage_path('app/public/exports'), 0755, true);
+            }
+            
+            // Abrir archivo para escritura
+            $file = fopen($filePath, 'w');
+            
+            // Escribir BOM para UTF-8 (Excel compatibility)
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Escribir encabezados
+            fputcsv($file, ['Fecha', 'Número', 'CUFE', 'Valor']);
+            
+            // Escribir datos
+            foreach ($documents as $document) {
+                fputcsv($file, [
+                    $document->Fecha,
+                    $document->Número,
+                    $document->CUFE,
+                    $document->Valor
+                ]);
+            }
+            
+            fclose($file);
+            
+            // Descargar el archivo
+            return response()->download($filePath)->deleteFileAfterSend(true);
+            
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al exportar documentos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 }

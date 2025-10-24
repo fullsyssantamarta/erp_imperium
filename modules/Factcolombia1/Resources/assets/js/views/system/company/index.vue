@@ -245,6 +245,8 @@
                                                     @click.native="clickEdit(row.id)">Editar</el-dropdown-item>
                                                 <el-dropdown-item @click.native="openPasswordDialog(row.id)">Cambiar
                                                     contraseña</el-dropdown-item>
+                                                <el-dropdown-item @click.native="clickExportDocuments(row.id)">Exportar
+                                                    documentos</el-dropdown-item>
                                                 <el-dropdown-item divided
                                                     @click.native="clickDelete(row.id)">Eliminar</el-dropdown-item>
                                             </el-dropdown-menu>
@@ -572,6 +574,10 @@ export default {
             }).catch(error => {
                 this.$message.error('Error al cambiar la contraseña');
             });
+        },
+        clickExportDocuments(id) {
+            this.$message.info('Generando archivo de exportación...');
+            window.location.href = `/${this.resource}/export-documents/${id}`;
         },
     }
 };
