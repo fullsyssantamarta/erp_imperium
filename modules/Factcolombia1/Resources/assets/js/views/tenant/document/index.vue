@@ -367,11 +367,11 @@
                 this.showDialogVoided = true
             },
             clickDownload(download) {
-                console.log(download)
-                console.log(this.downloadFilename(download))
+                console.log('clickDownload - download:', download)
+                console.log('clickDownload - filename:', this.downloadFilename(download))
                 
                 // Si es PDF, mostrar selector de formato
-                if(download.indexOf("PDF") >= 0 || download.indexOf("pdf") >= 0) {
+                if(download && (download.indexOf("PDF") >= 0 || download.indexOf("pdf") >= 0)) {
                     this.pendingDownload = download;
                     this.showFormatDialog = true;
                     return;
@@ -392,36 +392,100 @@
                     var file = new Blob([byteArray], { type: 'application/xml;base64' });
                     var fileURL = URL.createObjectURL(file);
                     window.open(fileURL, '_blank');
+                }).catch(error => {
+                    console.error('Error descargando XML:', error);
+                    this.$message.error('Error al descargar el archivo XML');
                 })
             },
             downloadPdfWithFormat() {
-                // Cerrar el diálogo
-                this.showFormatDialog = false;
+                console.log('downloadPdfWithFormat - pendingDownload:', this.pendingDownload);
+                console.log('downloadPdfWithFormat - selectedFormat:', this.selectedFormat);
                 
-                // Construir URL con formato
-                const url = `/${this.resource}/downloadFile/${this.downloadFilename(this.pendingDownload)}?format=${this.selectedFormat}`;
-                console.log('downloadPdfWithFormat - URL:', url);
-                console.log('downloadPdfWithFormat - Format:', this.selectedFormat);
+                if (!this.pendingDownload) {
+                    this.$message.error('No hay archivo pendiente para descargar');
+                    this.showFormatDialog = false;
+                    return;
+                }
+                
+                const filename = this.downloadFilename(this.pendingDownload);
+                const url = `/${this.resource}/downloadFile/${filename}?format=${this.selectedFormat}`;
+                console.log('downloadPdfWithFormat - URL completa:', url);
+                console.log('downloadPdfWithFormat - Filename:', filename);
+                
+                // Mostrar indicador de carga
+                const loading = this.$loading({
+                    lock: true,
+                    text: 'Generando PDF...',
+                    spinner: 'el-icon-loading',
+                    background: 'rgba(0, 0, 0, 0.7)'
+                });
                 
                 // Descargar con formato seleccionado
                 this.$http.get(url).then((response) => {
+                    console.log('downloadPdfWithFormat - response recibida:', response);
+                    console.log('downloadPdfWithFormat - response.data:', response.data);
+                    
+                    let res_data = response.data;
+                    
+                    // Si viene como string, intentar parsear
+                    if (typeof res_data === 'string') {
+                        try {
+                            res_data = JSON.parse(res_data);
+                            console.log('downloadPdfWithFormat - data parseada:', res_data);
+                        } catch(e) {
+                            console.error('downloadPdfWithFormat - error parseando JSON:', e);
+                        }
+                    }
+                    
+                    if (!res_data.success) {
+                        this.$message.error(res_data.message || 'Error al generar el PDF');
+                        console.error('downloadPdfWithFormat - Error del servidor:', res_data.message);
+                        return;
+                    }
+                    
+                    if (!res_data.filebase64) {
+                        this.$message.error('El servidor no retornó el archivo PDF');
+                        console.error('downloadPdfWithFormat - No hay filebase64 en la respuesta');
+                        return;
+                    }
 
-                    let res_data = response.data
-                    if(!res_data.success) return this.$message.error(res_data.message)
-
-                    var byteCharacters = atob(response.data.filebase64);
+                    console.log('downloadPdfWithFormat - Convirtiendo base64 a PDF...');
+                    var byteCharacters = atob(res_data.filebase64);
                     var byteNumbers = new Array(byteCharacters.length);
                     for (var i = 0; i < byteCharacters.length; i++) {
                         byteNumbers[i] = byteCharacters.charCodeAt(i);
                     }
                     var byteArray = new Uint8Array(byteNumbers);
-                    var file = new Blob([byteArray], { type: 'application/pdf;base64' });
+                    var file = new Blob([byteArray], { type: 'application/pdf' });
                     var fileURL = URL.createObjectURL(file);
+                    
+                    console.log('downloadPdfWithFormat - Abriendo PDF en nueva pestaña');
                     window.open(fileURL, '_blank');
+                    
+                    // Cerrar el diálogo después de descarga exitosa
+                    this.showFormatDialog = false;
+                    this.pendingDownload = null;
+                    
+                    this.$message.success('PDF descargado correctamente');
+                }).catch(error => {
+                    console.error('downloadPdfWithFormat - Error completo:', error);
+                    console.error('downloadPdfWithFormat - Error response:', error.response);
+                    
+                    let errorMessage = 'Error al descargar el archivo PDF';
+                    if (error.response && error.response.data) {
+                        if (error.response.data.message) {
+                            errorMessage = error.response.data.message;
+                        } else if (typeof error.response.data === 'string') {
+                            errorMessage = error.response.data;
+                        }
+                    }
+                    
+                    this.$message.error(errorMessage);
+                    this.showFormatDialog = false;
+                    this.pendingDownload = null;
+                }).finally(() => {
+                    loading.close();
                 })
-                
-                // Resetear
-                this.pendingDownload = null;
             },
             clickOptions(recordId = null) {
                 this.recordId = recordId
