@@ -2973,8 +2973,8 @@ class DocumentController extends Controller
                 'format' => $format
             ]);
             
-            // Buscar documento por urlinvoicepdf
-            $document = Document::whereRaw("JSON_EXTRACT(response_api_invoice, '$.urlinvoicepdf') = ?", [$filename])->first();
+            // Buscar documento por urlinvoicepdf (la columna correcta es response_api)
+            $document = Document::whereRaw("JSON_EXTRACT(response_api, '$.urlinvoicepdf') = ?", [$filename])->first();
             
             if (!$document) {
                 \Log::warning('Factcolombia1.downloadFile.document_not_found', ['filename' => $filename]);
